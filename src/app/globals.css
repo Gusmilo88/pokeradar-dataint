@@ -634,33 +634,34 @@ body {
 }
 
 .enclave-visit {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 40;
-  display: flex;
-  min-height: 0;
-  flex-direction: column;
   overflow: hidden;
   background: #07131c;
-}
-
-.enclave-scroll {
-  min-height: 0;
-  flex: 1;
-  overflow: auto;
+  animation: scene-fade 0.42s ease-out;
 }
 
 .art-window {
-  position: relative;
-  width: 100%;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  aspect-ratio: 1672 / 941;
+  container-type: size;
   background: #07131c;
 }
 
 .art-stage {
   position: absolute;
-  inset: 0;
+  top: 50%;
+  left: 50%;
+  width: max(100cqw, calc(100cqh * 1672 / 941));
+  aspect-ratio: 1672 / 941;
+  /* El alto coincide con el viewport: un sesgo vertical dejaría una franja. */
+  transform: translate(-50%, -50%);
+}
+
+.enclave-visit[data-stage="exterior"] .art-stage {
+  transform: translate(-66%, -50%);
 }
 
 .art-plate {
@@ -758,25 +759,217 @@ body {
   animation: ice-spark 5.6s ease-in-out infinite;
 }
 
-@media (max-width: 700px) {
+.altar-pulse {
+  position: absolute;
+  z-index: 6;
+  width: 7%;
+  min-width: 3rem;
+  min-height: 3rem;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.altar-pulse:disabled {
+  cursor: progress;
+}
+
+.altar-pulse-ring {
+  position: absolute;
+  inset: 8%;
+  border: 2px solid rgba(244, 255, 253, 0.92);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(186, 244, 255, 0.85);
+  animation: altar-pulse 2.2s ease-out infinite;
+}
+
+.altar-pulse-core {
+  position: absolute;
+  inset: 38%;
+  border-radius: 50%;
+  background: rgba(244, 255, 253, 0.95);
+  box-shadow: 0 0 10px #fff;
+}
+
+.altar-pulse-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.altar-pulse:hover .altar-pulse-label,
+.altar-pulse:focus-visible .altar-pulse-label {
+  top: auto;
+  right: auto;
+  bottom: calc(100% + 0.4rem);
+  left: 50%;
+  width: max-content;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  color: #fff;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 3px #000, 0 2px 12px rgba(0, 0, 0, 0.9);
+  transform: translateX(-50%);
+}
+
+.altar-pulse:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}
+
+.enclave-visit[data-charging="true"] .altar-pulse-ring {
+  animation-duration: 0.85s;
+}
+
+.scene-ui {
+  position: absolute;
+  z-index: 8;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-height: 46vh;
+  overflow: auto;
+  padding:
+    2.75rem
+    max(1.25rem, env(safe-area-inset-right))
+    max(0.85rem, env(safe-area-inset-bottom))
+    max(1.25rem, env(safe-area-inset-left));
+  background: linear-gradient(transparent, rgba(4, 12, 18, 0.42) 38%, rgba(4, 12, 18, 0.62));
+  pointer-events: none;
+}
+
+.scene-caption {
+  max-width: 44rem;
+  animation: scene-fade 0.4s ease-out;
+}
+
+.scene-kicker {
+  margin: 0;
+  color: #fff;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px #000, 0 0 12px rgba(0, 0, 0, 0.85);
+}
+
+.scene-title {
+  margin: 0.15rem 0 0;
+  color: #fff;
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+.scene-narration {
+  max-width: 38rem;
+  margin: 0.4rem 0 0;
+  color: #fff;
+  font-size: clamp(0.95rem, 1.45vw, 1.12rem);
+  line-height: 1.45;
+  text-shadow: 0 1px 3px #000, 0 2px 14px rgba(0, 0, 0, 0.92);
+}
+
+.enclave-visit[data-rite="true"] .scene-kicker {
+  opacity: 0.45;
+}
+
+.scene-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1.1rem;
+  margin-top: 0.55rem;
+  pointer-events: auto;
+}
+
+.scene-btn {
+  min-height: 2.75rem;
+  padding: 0.15rem 0.1rem;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px #000, 0 2px 10px rgba(0, 0, 0, 0.9);
+}
+
+.scene-btn-go {
+  font-weight: 700;
+}
+
+.scene-btn:hover {
+  color: #e7fff8;
+}
+
+.scene-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.scene-sheet {
+  max-width: 36rem;
+  margin-top: 0.7rem;
+  pointer-events: auto;
+}
+
+.scene-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  margin: 0;
+  color: #fff;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px #000;
+}
+
+.scene-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem 0.8rem;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: #fff;
+  font-size: 0.72rem;
+  text-shadow: 0 1px 3px #000;
+}
+
+.scene-stats li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.15rem 0.4rem;
+}
+
+.scene-stats .sanctuary-stat {
+  grid-column: 1 / -1;
+}
+
+@media (max-height: 360px) {
+  .enclave-visit {
+    overflow-y: auto;
+  }
+
   .art-window {
-    height: min(58dvh, 34rem);
-    min-height: 16rem;
-    aspect-ratio: auto;
+    position: relative;
+    height: 100dvh;
+    min-height: 22rem;
   }
 
-  .art-stage {
-    inset: auto;
-    top: 0;
-    left: 50%;
-    width: auto;
-    height: 100%;
-    aspect-ratio: 1672 / 941;
-    transform: translateX(-50%);
-  }
-
-  .enclave-visit[data-stage="exterior"] .art-stage {
-    transform: translateX(-66%);
+  .scene-ui {
+    position: relative;
+    max-height: none;
   }
 }
 
@@ -798,17 +991,6 @@ body {
   animation: sanctuary-flash 0.9s ease-out 1 forwards;
 }
 
-.enclave-dock {
-  /* La ficha no se recorta: la ilustración es la que se desplaza. */
-  position: relative;
-  z-index: 5;
-  flex-shrink: 0;
-  overflow: auto;
-  border-top: 1px solid rgba(142, 246, 223, 0.22);
-  background: rgba(6, 16, 24, 0.94);
-  padding: 0.75rem 1rem 1rem;
-}
-
 .enclave-visit[data-skipped="true"] .perch-rite,
 .enclave-visit[data-skipped="true"] .altar-glow-hot {
   animation: none;
@@ -825,7 +1007,8 @@ body {
 .enclave-visit[data-paused="true"] .mouth-glow,
 .enclave-visit[data-paused="true"] .altar-glow,
 .enclave-visit[data-paused="true"] .ice-spark,
-.enclave-visit[data-paused="true"] .sanctuary-mote {
+.enclave-visit[data-paused="true"] .sanctuary-mote,
+.enclave-visit[data-paused="true"] .altar-pulse-ring {
   animation-play-state: paused;
 }
 
@@ -875,6 +1058,29 @@ body {
 
   100% {
     opacity: 0.7;
+  }
+}
+
+@keyframes scene-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes altar-pulse {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.72);
+  }
+
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
   }
 }
 
@@ -957,7 +1163,11 @@ body {
   .altar-glow-hot,
   .ice-spark,
   .perch-rite,
-  .cold-mist {
+  .cold-mist,
+  .altar-pulse-ring,
+  .enclave-visit,
+  .scene-caption,
+  .scene-fade {
     animation: none;
   }
 

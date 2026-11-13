@@ -89,6 +89,7 @@ export function GlacialSanctuary({
   const src = stage === "exterior" ? EXTERIOR_SRC : INTERIOR_SRC;
   const [skipStage, setSkipStage] = useState<"exterior" | "interior" | null>(null);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const [sheetStage, setSheetStage] = useState<"exterior" | "interior" | null>(null);
   const [paused, setPaused] = useState(false);
   const skipped = skipStage === stage;
   const artFailed = failedSrc === src;
@@ -96,6 +97,8 @@ export function GlacialSanctuary({
   const failed = stage === "interior" && !discovered && phase === "error";
   const statsFailed = stage === "interior" && discovered && phase === "error";
   const rite = stage === "interior" && ceremony && discovered && !skipped;
+  const sheet = sheetStage === stage && discovered && entry !== null;
+  const canExamine = stage === "interior" && !discovered && !loading && !failed;
 
   useEffect(() => {
     if (stage !== "exterior") {
@@ -135,9 +138,8 @@ export function GlacialSanctuary({
       data-charging={loading ? "true" : "false"}
       data-skipped={skipped ? "true" : "false"}
     >
-      <div className="enclave-scroll">
-        <div className="art-window">
-          <div className="art-stage">
+      <div className="art-window">
+        <div className="art-stage scene-fade" key={stage}>
           {artFailed ? (
             <p className="art-fallback">La ilustración no cargó. La señal sigue en el lugar.</p>
           ) : (
@@ -171,126 +173,114 @@ export function GlacialSanctuary({
               </div>
             ) : null}
           </div>
+          {canExamine || loading ? (
+            <button
+              type="button"
+              className="altar-pulse"
+              style={{ left: "50%", top: "51%" }}
+              onClick={onExamine}
+              disabled={loading}
+              aria-busy={loading}
+              autoFocus={canExamine}
+            >
+              <span className="altar-pulse-ring" aria-hidden="true" />
+              <span className="altar-pulse-core" aria-hidden="true" />
+              <span className="altar-pulse-label">Examinar la señal del altar</span>
+            </button>
+          ) : null}
+        </div>
+      </div>
+      <div className="scene-ui">
+        <div className="scene-caption" key={rite ? "rite" : stage}>
+          <p className="scene-kicker">Santa Cruz · Patagonia</p>
+          <h2 id={titleId} className="scene-title">
+            {rite ? "¡Una presencia legendaria se ha manifestado!" : stage === "interior" && discovered && label ? label : enclave.place}
+          </h2>
+          {rite && label ? (
+            <p className="scene-narration">{label} ha sido registrado en la Pokédex.</p>
+          ) : (
+            <p className="scene-narration" role={failed || statsFailed ? "alert" : undefined} aria-busy={loading || undefined}>
+              {stage === "exterior"
+                ? discovered && label
+                  ? `${label} ya está en la bitácora. La entrada sigue abierta.`
+                  : "Una luz desconocida emerge desde las profundidades del hielo. Algo parece aguardar en su interior."
+                : loading
+                  ? "La señal responde. Consultando PokéAPI."
+                  : failed
+                    ? "PokéAPI no respondió. La señal sigue sin identificar."
+                    : statsFailed
+                      ? "La ficha no llegó. Sigue registrada como vista."
+                      : discovered && label
+                        ? `${label} permanece sobre el altar.`
+                        : "El aire se vuelve helado. Una energía desconocida parece concentrarse sobre el altar..."}
+            </p>
+          )}
+          {sheet && entry ? <DossierSheet entry={entry} /> : null}
+          <div className="scene-actions">
+            {stage === "exterior" ? (
+              <button type="button" className="scene-btn scene-btn-go" onClick={onEnter} autoFocus>
+                Entrar
+              </button>
+            ) : null}
+            {rite ? (
+              <button type="button" className="scene-btn" onClick={() => setSkipStage(stage)} autoFocus>
+                Omitir
+              </button>
+            ) : null}
+            {failed || statsFailed ? (
+              <button type="button" className="scene-btn scene-btn-go" onClick={onRetry}>
+                Reintentar
+              </button>
+            ) : null}
+            {stage === "interior" && discovered && entry && !rite ? (
+              <button
+                type="button"
+                className="scene-btn"
+                onClick={() => setSheetStage(sheet ? null : stage)}
+                aria-expanded={sheet}
+              >
+                {sheet ? "Cerrar ficha" : "Ver ficha"}
+              </button>
+            ) : null}
+            {stage === "interior" ? (
+              <button type="button" className="scene-btn" onClick={onExterior}>
+                Volver afuera
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="scene-btn"
+              onClick={onLeave}
+              autoFocus={stage === "interior" && discovered && !rite}
+            >
+              Volver al mapa
+            </button>
           </div>
         </div>
       </div>
-      <div className="enclave-dock">
-        <p className="font-mono text-[10px] tracking-[0.18em] text-[#8ef6df] uppercase">{enclave.region}</p>
-        {rite ? <p className="sanctuary-omen">Presencia legendaria descubierta</p> : null}
-        <div className="mt-1 flex items-end justify-between gap-3">
-          <h2 id={titleId} className="text-2xl font-semibold tracking-tight text-[#f4fffd]">
-            {stage === "interior" && discovered && label ? label : enclave.place}
-          </h2>
-          {stage === "interior" && discovered ? <span className="sanctuary-chip">Visto</span> : null}
-        </div>
-        {stage === "exterior" ? (
-          <p className="mt-2 text-sm leading-6 text-[#d5eef2]">
-            {discovered && label
-              ? `${label} ya está en la bitácora. La entrada sigue abierta.`
-              : "La boca del hielo respira luz. Adentro, la señal todavía no tiene nombre."}
-          </p>
-        ) : null}
-        {loading ? (
-          <p className="mt-2 text-sm text-[#d5eef2]" aria-busy="true">
-            La señal responde. Consultando PokéAPI.
-          </p>
-        ) : null}
-        {failed ? (
-          <p className="mt-2 text-sm text-[#d5eef2]" role="alert">
-            PokéAPI no respondió. La señal sigue sin identificar.
-          </p>
-        ) : null}
-        {statsFailed ? (
-          <p className="mt-2 text-sm text-[#d5eef2]" role="alert">
-            La ficha no llegó. Sigue registrada como vista.
-          </p>
-        ) : null}
-        {stage === "interior" && !loading && !failed && !discovered ? (
-          <p className="mt-2 text-sm leading-6 text-[#d5eef2]">{enclave.sealed}</p>
-        ) : null}
-        {stage === "interior" && discovered && entry ? (
-          <>
-            <p className="mt-2 flex flex-wrap gap-1.5">
-              {entry.pokemon.types.map((slot) => (
-                <span key={slot.type.name} className="sanctuary-type">
-                  {typeLabel(slot.type.name)}
-                </span>
-              ))}
-            </p>
-            <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
-              {entry.pokemon.stats.map((stat) => (
-                <li key={stat.stat.name}>
-                  <span className="flex items-baseline justify-between gap-2 font-mono text-[10px] text-[#c5e7ea]">
-                    <span>{statLabel(stat.stat.name)}</span>
-                    <span className="text-sm text-[#f4fffd]">{stat.base_stat}</span>
-                  </span>
-                  <div className="sanctuary-stat mt-1">
-                    <span style={{ width: `${Math.min(100, (stat.base_stat / STAT_SCALE) * 100)}%` }} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : null}
-        <div className="mt-3 flex flex-wrap gap-2">
-          {stage === "exterior" ? (
-            <button
-              type="button"
-              className="action-button inline-flex min-h-11 items-center justify-center"
-              onClick={onEnter}
-              autoFocus
-            >
-              Entrar al santuario
-            </button>
-          ) : null}
-          {stage === "interior" && rite ? (
-            <button
-              type="button"
-              className="action-button inline-flex min-h-11 items-center justify-center"
-              onClick={() => setSkipStage(stage)}
-              autoFocus
-            >
-              Omitir
-            </button>
-          ) : null}
-          {stage === "interior" && !discovered && !loading && !failed ? (
-            <button
-              type="button"
-              className="action-button inline-flex min-h-11 items-center justify-center"
-              onClick={onExamine}
-              autoFocus
-            >
-              Examinar la señal
-            </button>
-          ) : null}
-          {failed || statsFailed ? (
-            <button
-              type="button"
-              className="action-button inline-flex min-h-11 items-center justify-center"
-              onClick={onRetry}
-            >
-              Reintentar
-            </button>
-          ) : null}
-          {stage === "interior" ? (
-            <button
-              type="button"
-              className="action-button inline-flex min-h-11 items-center justify-center"
-              onClick={onExterior}
-            >
-              Volver afuera
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="action-button inline-flex min-h-11 items-center justify-center"
-            onClick={onLeave}
-            autoFocus={stage === "interior" && discovered && !rite}
-          >
-            Volver al mapa
-          </button>
-        </div>
-      </div>
+    </div>
+  );
+}
+
+function DossierSheet({ entry }: { entry: DossierEntry }) {
+  return (
+    <div className="scene-sheet">
+      <p className="scene-types">
+        {entry.pokemon.types.map((slot) => (
+          <span key={slot.type.name}>{typeLabel(slot.type.name)}</span>
+        ))}
+      </p>
+      <ul className="scene-stats">
+        {entry.pokemon.stats.map((stat) => (
+          <li key={stat.stat.name}>
+            <span>{statLabel(stat.stat.name)}</span>
+            <span>{stat.base_stat}</span>
+            <span className="sanctuary-stat">
+              <span style={{ width: `${Math.min(100, (stat.base_stat / STAT_SCALE) * 100)}%` }} />
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
