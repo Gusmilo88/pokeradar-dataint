@@ -192,6 +192,9 @@ export function MapView({
 
     const onStyleLoad = () => {
       styleLoaded = true;
+      if (!cancelled) {
+        applyExpeditionStyle(activeMap);
+      }
     };
 
     const onLoad = () => {

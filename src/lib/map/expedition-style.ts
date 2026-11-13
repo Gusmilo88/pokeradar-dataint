@@ -9,6 +9,13 @@ const QUIET_COUNTRY_LABELS = [
   "place_country_major",
 ] as const;
 
+/**
+ * El canvas aplica contrast(1.16) y brightness(1.2).
+ * Este valor es el que ese filtro muestra como #6ec4ea.
+ */
+const ARGENTINA_OUTLINE = "#619eba";
+const OUTLINE_BEFORE = "place_other";
+
 function beforeRoads(map: MapLibreMap): string | undefined {
   if (map.getLayer("waterway")) {
     return "waterway";
@@ -25,8 +32,70 @@ function soften(map: MapLibreMap, id: string, opacity: unknown): void {
   map.setPaintProperty(id, "text-opacity", opacity as never);
 }
 
+function outlinePaint(map: MapLibreMap): void {
+  map.setPaintProperty("argentina-outline", "line-color", ARGENTINA_OUTLINE);
+  map.setPaintProperty("argentina-outline", "line-opacity", 1);
+  map.setPaintProperty("argentina-outline", "line-width", [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    3,
+    2.8,
+    8,
+    4.2,
+    12,
+    5,
+  ]);
+}
+
+/** La frontera de OpenFreeMap queda debajo. Así el celeste es el trazo que se ve. */
+function placeOutline(map: MapLibreMap): void {
+  const before = map.getLayer(OUTLINE_BEFORE) ? OUTLINE_BEFORE : undefined;
+  if (!map.getLayer("argentina-outline")) {
+    map.addLayer(
+      {
+        id: "argentina-outline",
+        type: "line",
+        source: "argentina-land",
+        paint: {
+          "line-color": ARGENTINA_OUTLINE,
+          "line-opacity": 1,
+          "line-width": 2.8,
+        },
+      },
+      before,
+    );
+  } else if (before) {
+    map.moveLayer("argentina-outline", before);
+  }
+  outlinePaint(map);
+}
+
+function labelMalvinas(map: MapLibreMap, id: string): void {
+  if (!map.getLayer(id)) {
+    return;
+  }
+  const current = map.getLayoutProperty(id, "text-field");
+  if (JSON.stringify(current).includes("Islas Malvinas")) {
+    return;
+  }
+  map.setLayoutProperty(id, "text-field", [
+    "case",
+    ["==", ["coalesce", ["get", "name:es"], ""], "Islas Malvinas"],
+    ["get", "name:es"],
+    [
+      "any",
+      ["==", ["coalesce", ["get", "name_en"], ""], "Falkland Islands"],
+      ["==", ["coalesce", ["get", "name:en"], ""], "Falkland Islands"],
+      ["==", ["coalesce", ["get", "name"], ""], "Falkland Islands"],
+    ],
+    "Islas Malvinas",
+    current ?? ["coalesce", ["get", "name_en"], ["get", "name"]],
+  ] as never);
+}
+
 /**
- * Argentina queda por encima de la cobertura del terreno y por debajo de ríos, calles y etiquetas.
+ * El relleno queda debajo de ríos y calles. El contorno queda encima de la frontera del estilo y debajo de las etiquetas.
  * Los acentos son manchas de expedición, no polígonos de bioma.
  */
 export function applyExpeditionStyle(map: MapLibreMap): void {
@@ -78,25 +147,12 @@ export function applyExpeditionStyle(map: MapLibreMap): void {
       before,
     );
   }
-  if (!map.getLayer("argentina-outline")) {
-    map.addLayer(
-      {
-        id: "argentina-outline",
-        type: "line",
-        source: "argentina-land",
-        paint: {
-          "line-color": "#6ec4ea",
-          "line-width": ["interpolate", ["linear"], ["zoom"], 3, 1.6, 8, 1.15, 12, 0.7],
-          "line-opacity": 0.9,
-        },
-      },
-      before,
-    );
-  }
+  placeOutline(map);
 
   const countryOpacity = ["interpolate", ["linear"], ["zoom"], 3, 0.38, 6, 0.82];
   for (const id of QUIET_COUNTRY_LABELS) {
     soften(map, id, countryOpacity);
+    labelMalvinas(map, id);
   }
   soften(map, "place_state", ["interpolate", ["linear"], ["zoom"], 3, 0.28, 6.5, 0.85]);
 }
