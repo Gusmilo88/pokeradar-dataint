@@ -25,6 +25,8 @@ export function DetailDock({
   speciesName,
   knownNames,
   expeditionNumber,
+  revealedIds,
+  status,
   onSelect,
   onRetry,
   onClose,
@@ -38,6 +40,8 @@ export function DetailDock({
   speciesName: string | null;
   knownNames: ReadonlyMap<string, string>;
   expeditionNumber: number | null;
+  revealedIds: ReadonlySet<string>;
+  status: "seen" | "caught";
   onSelect: (id: string) => void;
   onRetry: () => void;
   onClose: () => void;
@@ -49,7 +53,11 @@ export function DetailDock({
   const view =
     pinnedView.id === selectedId ? pinnedView.view : selectedId ? "entry" : "index";
   const moment = phase === "ready" ? "Registrar" : phase === "idle" ? "Explorar" : "Descubrir";
-  const pendingLabel = speciesName ? (knownNames.get(speciesName) ?? speciesLabel(speciesName)) : "la especie";
+  const revealed = selectedId ? revealedIds.has(selectedId) : false;
+  const pendingLabel =
+    revealed && speciesName
+      ? (knownNames.get(speciesName) ?? speciesLabel(speciesName))
+      : "una señal";
 
   function showIndex() {
     setPinnedView({ id: selectedId, view: "index" });
@@ -107,6 +115,7 @@ export function DetailDock({
             sightings={sightings}
             selectedId={selectedId}
             knownNames={knownNames}
+            revealedIds={revealedIds}
             onSelect={onSelect}
           />
         ) : (
@@ -125,7 +134,14 @@ export function DetailDock({
                 className="px-5 py-4 pl-8"
                 aria-busy="true"
               >
-                <h3 className="text-lg font-semibold">Abriendo {pendingLabel}</h3>
+                <h3 className="text-lg font-semibold">
+                  {revealed ? `Abriendo ${pendingLabel}` : "Señal nueva"}
+                </h3>
+                {revealed ? null : (
+                  <p className="mt-2 text-sm text-quiet">
+                    El registro todavía no tiene nombre. Consultando PokéAPI.
+                  </p>
+                )}
                 <div className="mt-4 space-y-2" aria-hidden="true">
                   <div className="h-3 w-2/3 bg-phosphor/15" />
                   <div className="h-3 w-1/2 bg-phosphor/10" />
@@ -140,7 +156,9 @@ export function DetailDock({
               >
                 <h3 className="text-lg font-semibold">La ficha no llegó</h3>
                 <p className="mt-2 text-sm text-quiet">
-                  {message ?? "PokéAPI falló. No se inventaron datos."}
+                  {revealed
+                    ? (message ?? "PokéAPI falló. No se inventaron datos.")
+                    : "PokéAPI no respondió. La señal sigue sin identificar."}
                 </p>
                 <button type="button" className="action-button mt-3 inline-flex items-center justify-center" onClick={onRetry}>
                   Reintentar
@@ -152,6 +170,7 @@ export function DetailDock({
                   entry={entry}
                   zone={zone}
                   expeditionNumber={expeditionNumber}
+                  state={status}
                 />
               </motion.div>
             ) : null}

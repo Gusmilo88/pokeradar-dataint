@@ -10,19 +10,25 @@ La expedición tiene 56 especies de Kanto (Pokédex Nacional 1–151), escritas 
 
 Cincuenta especies están en el mapa. Cada una usa el hábitat que PokéAPI publica para su zona. Las cuotas son 5, 7, 4, 5, 5, 5, 4, 5, 4 y 6. La semilla `pokeradar-kanto-v1` fija la coordenada. Dar vuelta el catálogo no mueve los puntos. Cada punto cae dentro del rectángulo de su zona y al este de una polilínea de la divisoria con Chile. El mar de Puerto Pirámides queda en el Golfo Nuevo. No hay un polígono de costa: un punto dentro del rectángulo puede caer en una laguna chica.
 
-Seis especies quedan reservadas y no se dibujan como encuentros: Articuno, Zapdos, Moltres, Aerodactyl, Mewtwo y Mew. Cinco tienen hábitat `rare`, que no es una zona. Aerodactyl es de montaña, y aun así queda fuera del mapa. No hay escena interior ni revelación.
+Seis especies quedan reservadas y no se dibujan como encuentros: Articuno, Zapdos, Moltres, Aerodactyl, Mewtwo y Mew. Cinco tienen hábitat `rare`, que no es una zona. Aerodactyl es de montaña, y aun así queda fuera del mapa. No hay escena interior. En la interfaz siguen ocultas: el álbum las muestra como `???`, con una pista que no nombra la especie.
 
 En el zoom del país se ven diez sellos con el nombre y la cantidad. Si dos rectángulos se pisan, el sello se corre en pantalla y el ancla no se mueve: así Iguazú y Cataratas se pueden pulsar. Desde zoom 6.5 el mapa cambia a encuentros, agrupados si caen a menos de 36 px. Pulsar una zona vuela a zoom 8. Elegir una criatura vuela a zoom 12.2 y pide la ficha. Con movimiento reducido el mismo destino es un salto.
 
-La ficha muestra el nombre en español cuando PokéAPI lo trae, el número nacional, el número de expedición, los tipos, el artwork oficial o el sprite, las estadísticas base y una línea de zona y hábitat. Si la especie tiene más de una variedad, aclara que se muestra la variedad por defecto. Wormadam es el caso que obliga a esa distinción: `/pokemon/wormadam` responde 404 y la variedad por defecto es `wormadam-plant`. No está en esta expedición.
+Una especie empieza sin descubrir. El sello y el índice dicen `???`. La silueta usa el PNG frontal de Black & White, generación V, con el color apagado: se conserva la forma y no el color. El `alt` queda vacío. Al elegirla aparece «Señal nueva» y se pide la ficha. Si PokéAPI responde, pasa a vista, se guarda y se muestran el nombre, el número nacional, los tipos, las estadísticas y el hábitat. Si falla, sigue sin descubrir y se puede reintentar. Si ya estaba vista, la ficha se abre directo.
+
+El sprite visto prefiere el GIF frontal animado de Black & White (`sprites/pokemon/versions/generation-v/black-white/animated/{id}.gif`). Si esa URL no viene en la ficha, se usa el PNG de la misma generación y, en último caso, `front_default`. Con `prefers-reduced-motion` se pide el PNG, no un GIF detenido con CSS. El pixel art usa `image-rendering: pixelated`. Las URLs se arman con el id nacional para la silueta, así no hace falta bajar las 56 fichas al entrar. Cuando la ficha existe, se usan las URLs que devolvió PokéAPI.
+
+La ficha muestra el nombre en español cuando PokéAPI lo trae. Hasta entonces el nombre visible es el de la especie, con mayúscula. Si hay más de una variedad, aclara que se muestra la variedad por defecto. Wormadam es el caso que obliga a esa distinción: `/pokemon/wormadam` responde 404 y la variedad por defecto es `wormadam-plant`. No está en esta expedición.
 
 Argentina lleva un relleno suave y un contorno, debajo de ríos, calles y etiquetas. Los nombres de países y de provincias del mapa base bajan de opacidad en el zoom nacional; no se borran. Alrededor de cada ancla hay una mancha de color. Es un acento de la expedición, no un bioma ni un límite provincial. No hay fronteras provinciales dibujadas por este proyecto.
 
-El contrato de progreso distingue `undiscovered`, `seen` y `caught`. No hay almacenamiento ni pantalla de captura.
+El progreso vive en `localStorage`, clave `pokeradar.progress.v1`, versión 1: listas `seen` y `caught` de ids `kanto-NNN`. Un documento con versión distinta, JSON roto, un id ajeno o un id repetido se descarta entero. Capturado implica visto. Marcar visto no baja un capturado. La primera pintura, incluida la hidratación, sale vacía; el almacenamiento se lee después y no muestra una especie bloqueada como descubierta. Reiniciar pide confirmación. No hay botón de captura: el estado capturado está dibujado para el bloque siguiente y se puede leer si el documento ya lo trae.
 
 El índice y la ficha no comparten el panel: con una criatura elegida, Ficha e Índice alternan. Cerrar guarda la selección. En escritorio el mapa ocupa el ancho que deja el panel; un botón Bitácora lo vuelve a abrir. En el teléfono el panel es una hoja inferior, y al cerrarla el mapa crece. El momento (explorar, descubrir, registrar) es un texto de estado, no un botón.
 
-Si la API falla, la bitácora muestra el error y un reintento. No se completan tipos ni estadísticas inventadas. Una respuesta vieja no pisa la criatura que quedó seleccionada después.
+La Pokédex es un álbum de las 56 entradas, ordenadas por número de expedición. Se abre encima del mapa, que sigue montado: el zoom y la selección no se pierden al volver. En el teléfono el álbum o la ficha ocupan la pantalla, no los dos a la vez. Escape cierra el álbum. Una entrada desconocida muestra el número, `???`, la silueta y una pista del hábitat o de la región, sin el nombre ni los tipos. Las seis reservadas dicen que todavía no tienen región de campo. «Buscar en el mapa» elige el encuentro de campo y cierra el álbum.
+
+Si la API falla, la bitácora muestra el error y un reintento. No se completan tipos ni estadísticas inventadas y no se marca la especie como vista. Una respuesta vieja no pisa la criatura que quedó seleccionada después, ni la descubre.
 
 ## Arquitectura
 
@@ -36,18 +42,19 @@ Si la API falla, la bitácora muestra el error y un reintento. No se completan t
 src/
   app/                  layout, página, loading, error, not-found
   components/
-    expedition/         marco, bitácora, ficha, índice
+    expedition/         marco, bitácora, ficha, índice, Pokédex, sprite y progreso
     map/                mapa cliente, marcadores y tema de controles
     states/             loading, error y vacío
   lib/
     pokeapi/            tipos, parser, caché y cliente
-    expedition/         zonas, semilla, encuentros y sellos
+    expedition/         zonas, semilla, encuentros, sellos, pistas y progreso
     map/                estilo, worker y textos de controles
     a11y/               reduced motion
     errors/             mensaje a partir de unknown
 scripts/
   copy-maplibre-worker.mjs
   verify-pokeapi.ts
+  verify-progress.ts
 ```
 
 La página sigue siendo un Server Component. `MapCanvas` carga `MapView` con `next/dynamic` y `ssr: false`. La instancia del mapa se crea una sola vez por intento. La selección cambia la clase del sello y pide un `flyTo` o un `jumpTo`; no vuelve a construir MapLibre.
@@ -74,7 +81,7 @@ No se agregaron dependencias. `npm audit` reporta 8 moderadas. La raíz es GHSA-
 
 ## Uso de inteligencia artificial
 
-Herramienta: Cursor, con el modelo Grok. Se usó para leer el brief, contrastar PokéAPI, OpenFreeMap y Natural Earth, y escribir los bloques B0, B1, B1.5 y B2.
+Herramienta: Cursor, con el modelo Grok. Se usó para leer el brief, contrastar PokéAPI, OpenFreeMap y Natural Earth, y escribir los bloques B0, B1, B1.5, B2 y B3.
 
 Correcciones sobre la salida del modelo:
 
@@ -96,6 +103,8 @@ Correcciones sobre la salida del modelo:
 - En una ventana de unos 440 px de alto, la bitácora abierta dejaba el mapa tan bajo que la brújula se salía. El mapa conserva un alto mínimo en móvil.
 - La atribución de MapLibre arranca expandida en anchos chicos y tapaba la base del mapa. Al cargar se pliega; el botón de atribución sigue ahí.
 - Enter sobre un sello propio no lo activaba solo con el comportamiento nativo bajo el evento de prueba. El sello escucha Enter y Espacio. Las flechas siguen yendo al lienzo de MapLibre.
+- En B3 el CSS de desarrollo no incorporó `.pixel-sprite` ni `.creature-silhouette` aunque el archivo fuente sí las tiene. El sprite lleva el mismo recorte de color y `image-rendering: pixelated` en el atributo `style`, que es lo que se midió en el navegador.
+- La automatización del navegador manda teclas con `isTrusted: false`. Tab no mueve el foco. Escape sí cerró la Pokédex, porque el cierre está en un listener propio. Enter y Espacio de un usuario real los resuelve el botón nativo; esa pulsación de confianza no se pudo reproducir con la herramienta.
 
 ## Verificación
 
@@ -104,6 +113,7 @@ npm run typecheck
 npm run lint
 npm run build
 npx tsx scripts/verify-pokeapi.ts
+npx tsx scripts/verify-progress.ts
 ```
 
 El script pega a PokéAPI. Comprueba Pikachu, rechaza un objeto inválido, recorre los nueve hábitats y exige que Wormadam resuelva a `wormadam-plant`. Para Kanto exige 56 especies, ids nacionales 1–151, sin duplicados, los seis reservados fuera del mapa, coordenadas iguales si se invierte el catálogo, puntos dentro de la zona y al este de la divisoria, cero `fetch` al colocar, y el estado inicial `undiscovered`. Después contrasta cada ficha con `/pokemon-species/{id}`: nombre, generación I y hábitat.
@@ -117,11 +127,27 @@ En el navegador, sobre `npm run dev`, en B2:
 - Teléfono 390×844: el título no se corta, no hay scroll, el mapa mide 420 px con la hoja abierta y 700 px cerrada. El botón Bitácora del encabezado queda en `display: none`. El control de abajo dice «Abrir bitácora».
 - La atribución, plegada, incluye la nota de Natural Earth 5.1.2.
 
-No se repitió en este bloque la prueba de movimiento reducido, la de respuestas fuera de orden ni la de fallo de red. Esas rutas no se reescribieron. No se usó un teléfono táctil real. No se volvió a medir la ventana de 525×444 ni el zoom de navegador al 150 %.
+`scripts/verify-progress.ts` no usa red. Comprueba el arranque en cero, la revelación idempotente, que visto no baja un capturado, el viaje de ida y vuelta del esquema, el rechazo de versión, JSON, id ajeno e id repetido, las seis reservadas sin zona y sin su nombre en la pista, y las URLs de Black & White para el id 25.
+
+En el navegador, sobre `npm run dev`, en B3, con `localStorage` vacío al empezar:
+
+- El índice mostró 50 botones `01 · ???` y siguientes, cero nombres de especie y cero pedidos de ficha. El contador decía 0 vistas.
+- Elegir la expedición 01 mostró «Señal nueva» y después `#0052`, Meowth, tipo Normal y las seis estadísticas. El almacenamiento quedó `seen: ["kanto-052"]`.
+- Al recargar, la primera pintura seguía en `???` y el contador en `…`. Después pasó a `01 · Meowth` y 1 vista. Abrirla de nuevo no repitió «Señal nueva». El zoom de esa selección era 12.2.
+- La Pokédex listó 56 entradas. Las reservadas 51–56 decían identidad desconocida y no mostraban nombre. La ficha 06, sin descubrir, decía `???`, la pista de bosque y «Nombre, tipos y estadísticas bloqueados». Volver al mapa dejó el zoom en 12.2 y la ficha abierta.
+- Un `fetch` que respondía 503 para Eevee dejó la señal sin identificar y no escribió `kanto-133`. Reintentar con la red real la reveló.
+- Se demoró la ficha de Ditto y se eligió Voltorb antes de soltarla. Quedó `kanto-100` y no `kanto-132`.
+- Con `prefers-reduced-motion: reduce`, el sprite de Voltorb visto fue el PNG `black-white/100.png`, no el GIF.
+- En 390×844 el título no se corta, Bitácora del encabezado queda en `display: none` y el mapa cerrado mide 700 px. El álbum ocupa 390×844, con fichas de 173 px. En 1440×900 el álbum y la ficha comparten la grilla (1056 px y 384 px).
+- Un documento con Meowth en `caught` mostró «Capturado», `#0052` y «1 vistas · 1 capturadas». Cancelar el reinicio lo conservó. Confirmar lo vació y cerró la ficha. No hay un botón que capture.
+- `{roto` en `localStorage` se descartó: la clave desapareció, el contador volvió a 0 vistas y la expedición 01 a `???`.
+- Escape cerró la Pokédex. Las teclas de la herramienta no son de confianza, así que Tab no se pudo usar para recorrer el álbum.
+
+No se usó un teléfono táctil real. No se volvió a medir la ventana de 525×444 ni el zoom de navegador al 150 %. Al abrir el álbum el navegador pidió las siluetas visibles (unas 40 de 56), no las 56 fichas: en esa sesión hubo 2 pedidos a `pokeapi.co`.
 
 ## Qué queda para el bloque siguiente
 
-No hay clima, gritos, equipo, filtros, Pokédex visual ni captura. El índice muestra el slug hasta que esa ficha se abrió. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal, y Malvinas no están dibujadas dentro de Argentina. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar.
+No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja y no se obtiene desde la interfaz. No hay cartas holográficas ni enclaves. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal, y Malvinas no están dibujadas dentro de Argentina. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula.
 
 ## Decisiones
 
@@ -135,3 +161,6 @@ No hay clima, gritos, equipo, filtros, Pokédex visual ni captura. El índice mu
 | Worker en `public/` | Vercel sirve el estático sin leer `node_modules` en runtime | Mantener la ruta que hacía `fs.readFile` |
 | Sustituto del icono ausente, con `console.warn` | El mapa no se cae y el hueco del sprite queda visible | `hasImage`, que dispara el error, o silenciar la consola |
 | No correr `audit fix --force` | El arreglo baja ESLint un major y no toca producción | Actualizar toda la cadena de lint |
+| Progreso en `localStorage`, esquema v1 | Sobrevive al refresco y un documento inválido vuelve a cero | Un backend o guardar el nombre en español |
+| Silueta del PNG de Black & White | La forma es la del sprite real y el color no se revela | Generar una imagen o mostrar el GIF oculto |
+| GIF de Black & White al descubrir; PNG si el movimiento está reducido | El recurso es del repositorio PokeAPI/sprites y el GIF no sigue animado cuando se pidió calma | Un `prefers-reduced-motion` que solo pause por CSS |

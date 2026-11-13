@@ -1,15 +1,17 @@
 import { RadarMark } from "@/components/expedition/radar-mark";
 
 export function HudBar({
-  count,
+  seen,
   notebookOpen,
   onOpen,
+  onDex,
 }: {
-  count: number;
+  seen: number | null;
   notebookOpen: boolean;
   onOpen: () => void;
+  onDex: () => void;
 }) {
-  const label = `${count} en mapa`;
+  const label = seen === null ? "…" : `${seen} vistas`;
 
   return (
     <header className="relative z-20 border-b border-phosphor/20 bg-abyss px-4 py-3 sm:px-6">
@@ -27,6 +29,9 @@ export function HudBar({
           <p className="rounded-full border border-amber/40 px-3 py-1 font-mono text-[10px] tracking-[0.14em] text-amber uppercase">
             {label}
           </p>
+          <button type="button" className="action-button inline-flex items-center justify-center" onClick={onDex}>
+            Pokédex
+          </button>
           {notebookOpen ? null : (
             <button type="button" className="action-button hidden lg:inline-flex" onClick={onOpen}>
               Bitácora

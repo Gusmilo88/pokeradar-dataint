@@ -108,6 +108,8 @@ function readSprites(value: unknown): PokemonSprites {
         ? other
         : fail("sprites.other");
 
+  const blackWhite = readBlackWhite(value);
+
   return {
     front_default: readNullableString(value.front_default, "sprites.front_default"),
     officialArtwork: readOptionalArtwork(
@@ -115,7 +117,54 @@ function readSprites(value: unknown): PokemonSprites {
       "sprites.other.official-artwork",
     ),
     showdown: readOptionalArtwork(artwork?.showdown, "sprites.other.showdown"),
+    blackWhite: blackWhite.still,
+    blackWhiteAnimated: blackWhite.animated,
   };
+}
+
+function readBlackWhite(sprites: Record<string, unknown>): {
+  still: string | null;
+  animated: string | null;
+} {
+  const versions = sprites.versions;
+  if (versions === undefined || versions === null) {
+    return { still: null, animated: null };
+  }
+  if (!isRecord(versions)) {
+    fail("sprites.versions");
+  }
+  const generation = versions["generation-v"];
+  if (generation === undefined || generation === null) {
+    return { still: null, animated: null };
+  }
+  if (!isRecord(generation)) {
+    fail("sprites.versions.generation-v");
+  }
+  const blackWhite = generation["black-white"];
+  if (blackWhite === undefined || blackWhite === null) {
+    return { still: null, animated: null };
+  }
+  if (!isRecord(blackWhite)) {
+    fail("sprites.versions.generation-v.black-white");
+  }
+  const animated = blackWhite.animated;
+  if (animated !== undefined && animated !== null && !isRecord(animated)) {
+    fail("sprites.versions.generation-v.black-white.animated");
+  }
+  return {
+    still: readOptionalUrl(blackWhite.front_default, "black-white.front_default"),
+    animated:
+      animated === undefined || animated === null
+        ? null
+        : readOptionalUrl(animated.front_default, "black-white.animated.front_default"),
+  };
+}
+
+function readOptionalUrl(value: unknown, label: string): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  return readString(value, label);
 }
 
 function readCries(value: unknown): PokemonCries {

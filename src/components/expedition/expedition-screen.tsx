@@ -4,7 +4,9 @@ import { MotionConfig, motion } from "framer-motion";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { DetailDock } from "@/components/expedition/detail-dock";
 import { HudBar } from "@/components/expedition/hud-bar";
+import { PokedexView } from "@/components/expedition/pokedex-view";
 import { useDossier, type DossierEntry } from "@/components/expedition/use-dossier";
+import { useProgress } from "@/components/expedition/use-progress";
 import { MapCanvas } from "@/components/map/map-canvas";
 import { EXPEDITION_ZONES } from "@/lib/expedition/argentina";
 import { loadFieldSightings } from "@/lib/expedition/catalog";
@@ -14,6 +16,7 @@ import {
   findZone,
   INSPECT_ZOOM,
 } from "@/lib/expedition/pins";
+import { discoveryState, tally } from "@/lib/expedition/progress";
 import { findSighting } from "@/lib/expedition/sightings";
 import { speciesLabel } from "@/lib/pokeapi/labels";
 
@@ -29,13 +32,19 @@ export function ExpeditionScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [notebookOpen, setNotebookOpen] = useState(true);
   const [camera, setCamera] = useState<CameraRequest | null>(null);
+  const [dexOpen, setDexOpen] = useState(false);
   const [knownNames, setKnownNames] = useState<ReadonlyMap<string, string>>(
     () => new Map(),
   );
   const cameraRequest = useRef(0);
+  const { progress, hydrated, markSeen, reset } = useProgress();
 
   const rememberName = useCallback((entry: DossierEntry) => {
     const label = entry.species.spanishName ?? speciesLabel(entry.species.name);
+    const sighting = sightings.find((item) => item.speciesName === entry.species.name);
+    if (sighting) {
+      markSeen(sighting.id);
+    }
     setKnownNames((current) => {
       if (current.get(entry.species.name) === label) {
         return current;
@@ -44,7 +53,7 @@ export function ExpeditionScreen() {
       next.set(entry.species.name, label);
       return next;
     });
-  }, []);
+  }, [markSeen, sightings]);
 
   const selected = findSighting(sightings, selectedId);
   const dossier = useDossier(selected?.speciesName ?? null, rememberName);
@@ -54,8 +63,8 @@ export function ExpeditionScreen() {
     [sightings],
   );
   const encounterPins = useMemo(
-    () => buildEncounterPins(EXPEDITION_ZONES, sightings, knownNames),
-    [knownNames, sightings],
+    () => buildEncounterPins(EXPEDITION_ZONES, sightings, knownNames, progress.seen),
+    [knownNames, progress.seen, sightings],
   );
 
   function focusCamera(longitude: number, latitude: number, zoom: number) {
@@ -93,15 +102,16 @@ export function ExpeditionScreen() {
       <div
         className={
           notebookOpen
-            ? "grid h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(10rem,1fr)_minmax(8.5rem,42dvh)] overflow-hidden lg:grid-cols-[minmax(0,1fr)_22.5rem] lg:grid-rows-[auto_minmax(0,1fr)]"
-            : "grid h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden lg:grid-rows-[auto_minmax(0,1fr)]"
+            ? "relative grid h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(10rem,1fr)_minmax(8.5rem,42dvh)] overflow-hidden lg:grid-cols-[minmax(0,1fr)_22.5rem] lg:grid-rows-[auto_minmax(0,1fr)]"
+            : "relative grid h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden lg:grid-rows-[auto_minmax(0,1fr)]"
         }
       >
         <div className="col-span-full row-start-1">
           <HudBar
-            count={sightings.length}
+            seen={hydrated ? tally(progress).seen : null}
             notebookOpen={notebookOpen}
             onOpen={() => setNotebookOpen(true)}
+            onDex={() => setDexOpen(true)}
           />
           <motion.div
             aria-hidden="true"
@@ -138,6 +148,8 @@ export function ExpeditionScreen() {
               speciesName={selected?.speciesName ?? null}
               knownNames={knownNames}
               expeditionNumber={selected?.expeditionNumber ?? null}
+              revealedIds={progress.seen}
+              status={selected && discoveryState(progress, selected.id) === "caught" ? "caught" : "seen"}
               onSelect={selectSighting}
               onRetry={dossier.retry}
               onClose={() => setNotebookOpen(false)}
@@ -150,6 +162,20 @@ export function ExpeditionScreen() {
             </button>
           </div>
         )}
+        {dexOpen ? (
+          <PokedexView
+            progress={progress}
+            onClose={() => setDexOpen(false)}
+            onSeek={(encounterId) => {
+              setDexOpen(false);
+              selectSighting(encounterId);
+            }}
+            onReset={() => {
+              reset();
+              setSelectedId(null);
+            }}
+          />
+        ) : null}
       </div>
     </MotionConfig>
   );

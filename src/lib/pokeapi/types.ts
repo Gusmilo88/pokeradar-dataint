@@ -41,6 +41,10 @@ export interface PokemonSprites {
   front_default: string | null;
   officialArtwork: string | null;
   showdown: string | null;
+  /** PNG frontal de Black & White, si la ficha lo trae. */
+  blackWhite: string | null;
+  /** GIF frontal animado de Black & White, si la ficha lo trae. */
+  blackWhiteAnimated: string | null;
 }
 
 export interface PokemonCries {

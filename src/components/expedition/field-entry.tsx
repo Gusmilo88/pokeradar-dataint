@@ -1,9 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useId } from "react";
+import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import type { DossierEntry } from "@/components/expedition/use-dossier";
 import { HABITAT_LABEL, type ExpeditionZone } from "@/lib/expedition/argentina";
+import type { DiscoveryState } from "@/lib/expedition/discovery";
 import { speciesLabel, statLabel, STAT_SCALE, typeLabel } from "@/lib/pokeapi/labels";
 
 function dexNumber(id: number): string {
@@ -14,27 +16,31 @@ export function FieldEntry({
   entry,
   zone,
   expeditionNumber,
+  state = "seen",
 }: {
   entry: DossierEntry;
   zone: ExpeditionZone;
   expeditionNumber: number | null;
+  state?: Extract<DiscoveryState, "seen" | "caught">;
 }) {
+  const titleId = useId();
   const { species, pokemon } = entry;
   const displayName = species.spanishName ?? speciesLabel(species.name);
-  const image = pokemon.sprites.officialArtwork ?? pokemon.sprites.front_default;
-  const [imageFailed, setImageFailed] = useState(false);
   const severalForms = species.varieties.length > 1;
 
   return (
-    <article aria-labelledby="ficha-titulo" className="px-5 py-4 pl-8">
+    <article aria-labelledby={titleId} className="px-5 py-4 pl-8">
       <p className="font-mono text-[10px] tracking-[0.18em] text-amber uppercase">
         {dexNumber(species.id)}
         {expeditionNumber ? ` · Exp. ${String(expeditionNumber).padStart(2, "0")}` : ""}
         {` · ${zone.code}`}
       </p>
+      <p className={state === "caught" ? "mt-2 font-mono text-[10px] tracking-[0.16em] text-amber uppercase" : "mt-2 font-mono text-[10px] tracking-[0.16em] text-phosphor uppercase"}>
+        {state === "caught" ? "Capturado" : "Visto"}
+      </p>
       <div className="mt-2 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 id="ficha-titulo" className="text-3xl font-semibold tracking-tight text-ink">
+          <h3 id={titleId} className="text-3xl font-semibold tracking-tight text-ink">
             {displayName}
           </h3>
           <p className="mt-2 flex flex-wrap gap-1.5">
@@ -48,22 +54,15 @@ export function FieldEntry({
             ))}
           </p>
         </div>
-        {image && !imageFailed ? (
-          // PokéAPI sirve el sprite directo. next/image pediría un remotePattern que esta ficha no necesita.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={image}
-            alt={`Imagen de ${displayName}`}
-            width={96}
-            height={96}
-            className="h-24 w-24 shrink-0 object-contain"
-            onError={() => setImageFailed(true)}
+        <div className="h-24 w-24 shrink-0">
+          <CreatureSprite
+            nationalId={species.id}
+            revealed
+            label={displayName}
+            stillUrl={pokemon.sprites.blackWhite ?? pokemon.sprites.front_default}
+            animatedUrl={pokemon.sprites.blackWhiteAnimated}
           />
-        ) : (
-          <p className="grid h-24 w-24 shrink-0 place-items-center border border-dashed border-quiet/40 px-2 text-center font-mono text-[10px] leading-4 text-quiet">
-            Sin imagen
-          </p>
-        )}
+        </div>
       </div>
       {severalForms ? (
         <p className="mt-3 font-mono text-[11px] text-quiet">Variedad por defecto.</p>

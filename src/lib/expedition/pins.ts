@@ -62,6 +62,7 @@ export function buildEncounterPins(
   zones: readonly ExpeditionZone[],
   sightings: readonly Sighting[],
   knownNames: ReadonlyMap<string, string>,
+  revealedIds: ReadonlySet<string>,
 ): FieldPin[] {
   const zonesById = zoneById(zones);
   return sightings.flatMap((sighting) => {
@@ -69,6 +70,7 @@ export function buildEncounterPins(
     if (!zone) {
       return [];
     }
+    const revealed = revealedIds.has(sighting.id);
     const name = knownNames.get(sighting.speciesName) ?? speciesLabel(sighting.speciesName);
     return [
       {
@@ -77,8 +79,12 @@ export function buildEncounterPins(
         kind: "encounter" as const,
         longitude: sighting.longitude,
         latitude: sighting.latitude,
-        shortLabel: name.split(" ")[0]?.slice(0, 9) ?? HABITAT_CODE[zone.habitat],
-        label: `${name}. ${zone.name}. ${HABITAT_LABEL[zone.habitat]}. Encuentro simulado de Kanto.`,
+        shortLabel: revealed
+          ? (name.split(" ")[0]?.slice(0, 9) ?? HABITAT_CODE[zone.habitat])
+          : "???",
+        label: revealed
+          ? `${name}. ${zone.name}. ${HABITAT_LABEL[zone.habitat]}. Encuentro simulado de Kanto.`
+          : `Señal sin identificar. Expedición ${sighting.expeditionNumber}. ${zone.name}.`,
         accent: zone.accent,
       },
     ];

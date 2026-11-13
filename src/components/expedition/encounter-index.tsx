@@ -2,15 +2,21 @@ import { EXPEDITION_ZONES, HABITAT_LABEL } from "@/lib/expedition/argentina";
 import type { Sighting } from "@/lib/expedition/argentina";
 import { speciesLabel } from "@/lib/pokeapi/labels";
 
+function pad(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
 export function EncounterIndex({
   sightings,
   selectedId,
   knownNames,
+  revealedIds,
   onSelect,
 }: {
   sightings: readonly Sighting[];
   selectedId: string | null;
   knownNames: ReadonlyMap<string, string>;
+  revealedIds: ReadonlySet<string>;
   onSelect: (id: string) => void;
 }) {
   return (
@@ -31,8 +37,10 @@ export function EncounterIndex({
                 <ul className="mt-1">
                   {items.map((sighting) => {
                     const selected = sighting.id === selectedId;
-                    const name =
-                      knownNames.get(sighting.speciesName) ?? speciesLabel(sighting.speciesName);
+                    const revealed = revealedIds.has(sighting.id);
+                    const name = revealed
+                      ? (knownNames.get(sighting.speciesName) ?? speciesLabel(sighting.speciesName))
+                      : "???";
                     return (
                       <li key={sighting.id}>
                         <button
@@ -43,9 +51,14 @@ export function EncounterIndex({
                               : "min-h-11 w-full border-l-2 border-transparent py-1.5 pl-3 text-left text-sm text-ink hover:border-phosphor/40"
                           }
                           aria-pressed={selected}
+                          aria-label={
+                            revealed
+                              ? `${name}. Expedición ${pad(sighting.expeditionNumber)}.`
+                              : `Expedición ${pad(sighting.expeditionNumber)}. Identidad desconocida.`
+                          }
                           onClick={() => onSelect(sighting.id)}
                         >
-                          {name}
+                          {pad(sighting.expeditionNumber)} · {name}
                         </button>
                       </li>
                     );
@@ -57,7 +70,7 @@ export function EncounterIndex({
         })}
       </div>
       <p className="mt-4 text-sm text-quiet">
-        Los colores del mapa son acentos de la expedición, no biomas ni provincias. Fuera del mapa quedan Articuno, Zapdos, Moltres, Aerodactyl, Mewtwo y Mew.
+        Los colores del mapa son acentos de la expedición, no biomas ni provincias. Seis señales todavía no tienen región de campo.
       </p>
     </div>
   );

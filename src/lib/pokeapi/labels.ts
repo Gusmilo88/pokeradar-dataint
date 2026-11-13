@@ -37,7 +37,11 @@ export function statLabel(name: string): string {
 }
 
 export function speciesLabel(name: string): string {
-  return name.replaceAll("-", " ");
+  return name
+    .split("-")
+    .filter((part) => part.length > 0)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
 }
 
 export const STAT_SCALE = 255;
