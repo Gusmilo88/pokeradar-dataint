@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { useEffect, useId, useRef } from "react";
 import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import type { DossierEntry, DossierPhase } from "@/components/expedition/use-dossier";
@@ -8,11 +7,11 @@ import type { Enclave } from "@/lib/expedition/enclaves";
 import { statLabel, STAT_SCALE, typeLabel } from "@/lib/pokeapi/labels";
 
 const MOTES = [
-  { left: "22%", top: "58%", delay: "0s" },
-  { left: "31%", top: "46%", delay: "1.4s" },
-  { left: "63%", top: "52%", delay: "0.6s" },
-  { left: "71%", top: "40%", delay: "2.1s" },
-  { left: "48%", top: "34%", delay: "1.1s" },
+  { left: "24%", top: "62%", delay: "0s" },
+  { left: "38%", top: "48%", delay: "1.6s" },
+  { left: "54%", top: "36%", delay: "0.8s" },
+  { left: "68%", top: "54%", delay: "2.2s" },
+  { left: "46%", top: "28%", delay: "1.1s" },
 ] as const;
 
 /**
@@ -72,34 +71,32 @@ export function GlacialSanctuary({
       className="absolute inset-0 z-40 flex min-h-0 flex-col bg-[#07141c]"
     >
       <div className="relative min-h-[9rem] flex-1 overflow-hidden">
-        <GlacialStage discovered={discovered} ceremony={ceremony} />
+        <GlacialStage discovered={discovered} ceremony={ceremony} charging={loading && ceremony} />
         <p className="sr-only">
-          Santuario de hielo. Columnas, un altar en el centro y una luz fría desde arriba.
+          Cámara de hielo. Muros irregulares, un altar ritual al centro y una luz fría desde arriba.
         </p>
         {discovered && spriteId && label ? (
-          <div className="sanctuary-presence">
-            <motion.div
-              className="h-full w-full"
-              initial={ceremony ? { opacity: 0, y: 18 } : false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: "easeOut" }}
-            >
-              <CreatureSprite
-                nationalId={spriteId}
-                revealed
-                label={label}
-                stillUrl={entry?.pokemon.sprites.blackWhite}
-                animatedUrl={entry?.pokemon.sprites.blackWhiteAnimated}
-              />
-            </motion.div>
+          <div className={ceremony ? "sanctuary-presence sanctuary-presence-rite" : "sanctuary-presence"}>
+            {ceremony ? <span className="sanctuary-halo" /> : null}
+            <CreatureSprite
+              nationalId={spriteId}
+              revealed
+              label={label}
+              stillUrl={entry?.pokemon.sprites.blackWhite}
+              animatedUrl={entry?.pokemon.sprites.blackWhiteAnimated}
+            />
           </div>
         ) : null}
       </div>
       <div className="sanctuary-log shrink-0">
         <div className="scroll-thin max-h-[32vh] overflow-y-auto px-4 pt-3 pb-2 sm:px-6">
-          <p className="font-mono text-[10px] tracking-[0.18em] text-[#8ef6df] uppercase">
-            {enclave.region}
-          </p>
+          {ceremony && discovered ? (
+            <p className="sanctuary-omen">La señal toma forma.</p>
+          ) : (
+            <p className="font-mono text-[10px] tracking-[0.18em] text-[#8ef6df] uppercase">
+              {enclave.region}
+            </p>
+          )}
           <div className="mt-1 flex items-end justify-between gap-3">
             <h2 id={titleId} className="text-2xl font-semibold tracking-tight text-[#f4fffd]">
               {discovered && label ? label : enclave.place}
@@ -186,30 +183,59 @@ export function GlacialSanctuary({
 function GlacialStage({
   discovered,
   ceremony,
+  charging,
 }: {
   discovered: boolean;
   ceremony: boolean;
+  charging: boolean;
 }) {
+  const rite = ceremony && discovered;
   return (
-    <div className="sanctuary-stage" data-ceremony={ceremony ? "true" : "false"} aria-hidden="true">
-      <div className="sanctuary-sky" />
-      <div className="sanctuary-wall" />
+    <div
+      className="sanctuary-stage"
+      data-ceremony={rite ? "true" : "false"}
+      data-charging={charging ? "true" : "false"}
+      aria-hidden="true"
+    >
+      <svg className="sanctuary-cave" viewBox="0 0 400 240" preserveAspectRatio="xMidYMax slice">
+        <rect width="400" height="240" fill="#07131c" />
+        <ellipse cx="200" cy="8" rx="150" ry="78" fill="#123e52" opacity="0.9" />
+        <ellipse cx="200" cy="0" rx="90" ry="48" fill="#1a6a84" opacity="0.55" />
+        <path d="M28 168 L62 92 L98 118 L132 64 L168 96 L200 42 L236 88 L274 58 L318 104 L352 78 L382 168 Z" fill="#0e3a4c" />
+        <path d="M78 168 L112 104 L156 78 L200 58 L248 82 L292 108 L334 168 Z" fill="#18607a" />
+        <path d="M156 78 L168 122 L152 168" fill="none" stroke="#d7fbff" strokeOpacity="0.35" strokeWidth="1.2" />
+        <path d="M248 82 L236 128 L258 168" fill="none" stroke="#b7f6ff" strokeOpacity="0.28" strokeWidth="1" />
+        <path d="M200 42 L206 70 L194 58 L200 42" fill="#e7fffb" />
+        <path d="M132 64 L138 92 L126 78 Z" fill="#c9f6ff" opacity="0.8" />
+        <path d="M274 58 L282 88 L266 74 Z" fill="#d7fbff" opacity="0.75" />
+        <path d="M168 96 L172 118 L164 108 Z" fill="#9ee7f2" opacity="0.7" />
+        <path d="M0 28 L74 86 L52 240 L0 240 Z" fill="#061018" />
+        <path d="M0 96 L42 124 L28 240 L0 240 Z" fill="#0c2e3e" />
+        <path d="M400 36 L328 92 L354 240 L400 240 Z" fill="#061018" />
+        <path d="M400 108 L356 132 L372 240 L400 240 Z" fill="#0c2e3e" />
+        <path d="M18 176 C90 156 150 168 200 160 C262 150 320 166 388 154 L400 240 L0 240 Z" fill="#12556c" />
+        <path d="M64 186 C120 172 168 182 214 174 C268 166 318 180 360 172 L348 214 C286 202 230 214 168 206 C112 198 78 210 48 198 Z" fill="#1f86a4" opacity="0.9" />
+        <path d="M96 192 L148 206 L128 228" fill="none" stroke="#e7fffb" strokeOpacity="0.32" strokeWidth="1.1" />
+        <path d="M230 180 L268 198 L292 188" fill="none" stroke="#d7fbff" strokeOpacity="0.28" strokeWidth="1" />
+        <path d="M150 210 L176 222 L168 234" fill="none" stroke="#9adff0" strokeOpacity="0.4" strokeWidth="1" />
+        <ellipse cx="200" cy="196" rx="78" ry="10" fill="#06202c" opacity="0.28" />
+        <path d="M86 176 L96 128 L104 136 L112 92 L122 104 L132 176 Z" fill="#2f7f98" />
+        <path d="M96 128 L112 92 L118 100 L104 136 Z" fill="#d8fbff" />
+        <path d="M268 176 L278 118 L288 126 L300 84 L310 98 L322 176 Z" fill="#2a7590" />
+        <path d="M288 126 L300 84 L308 94 L290 122 Z" fill="#e7fffb" />
+        <path d="M48 188 L56 150 L66 188 Z" fill="#8edff0" opacity="0.85" />
+        <path d="M338 184 L350 142 L362 184 Z" fill="#b7f3ff" opacity="0.8" />
+        <path d="M118 196 L128 168 L140 196 Z" fill="#7dffc3" opacity="0.75" />
+        <path d="M248 198 L260 162 L274 198 Z" fill="#8b7cff" opacity="0.7" />
+      </svg>
       <div className="sanctuary-beam" />
-      <div className="sanctuary-col sanctuary-col-back-l" />
-      <div className="sanctuary-col sanctuary-col-back-r" />
-      <div className="sanctuary-well">
-        <div className="sanctuary-floor">
-          <div className="sanctuary-tiles" />
-        </div>
-      </div>
-      <div className="sanctuary-col sanctuary-col-mid-l" />
-      <div className="sanctuary-col sanctuary-col-mid-r" />
-      <div className="sanctuary-crystal sanctuary-crystal-l" />
-      <div className="sanctuary-crystal sanctuary-crystal-r" />
+      <div className="sanctuary-mist" />
       <div className="sanctuary-altar">
-        {discovered ? null : <div className="sanctuary-seal" />}
+        {discovered && !rite ? null : <div className={rite ? "sanctuary-seal sanctuary-seal-break" : "sanctuary-seal"} />}
+        <div className="sanctuary-ring" />
         <div className="sanctuary-altar-top" />
         <div className="sanctuary-altar-step" />
+        <div className="sanctuary-plinth" />
       </div>
       {MOTES.map((mote) => (
         <span
@@ -218,8 +244,7 @@ function GlacialStage({
           style={{ left: mote.left, top: mote.top, animationDelay: mote.delay }}
         />
       ))}
-      <div className="sanctuary-frame sanctuary-frame-l" />
-      <div className="sanctuary-frame sanctuary-frame-r" />
+      {rite ? <div className="sanctuary-flash" /> : null}
     </div>
   );
 }

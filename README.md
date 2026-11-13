@@ -16,7 +16,7 @@ En el zoom del país se ven diez sellos con el nombre y la cantidad, y un sello 
 
 El santuario está en Santa Cruz, latitud -50.7 y longitud -73. Cae dentro del polígono ARG de Natural Earth y al este de la divisoria con Chile, fuera del rectángulo de los cinco encuentros de Perito Moreno. El punto no es un frente de glaciar medido: la escala 1:50.000.000 no alcanza para eso. Antes de entrar, el sello no dice el nombre de la criatura. La bitácora muestra la anomalía y el botón Entrar.
 
-Adentro hay una escena propia, armada con CSS: muro de hielo, columnas, piso en perspectiva, cristales y un altar con sello. No copia un mapa de un juego y no usa imágenes generadas. El campo `scene: "glacial"` es el lugar donde un bloque posterior puede cambiar ese dibujo por un asset pixel art elegido a mano. Examinar el sello pide la ficha real. Si PokéAPI responde, la luz del centro marca la entrada, aparece el sprite animado de Black & White y el estado pasa a visto. La ficha queda debajo de la escena: nombre, visto, tipos y estadísticas, sin el formato de una ficha de campo. Si falla, sigue sin descubrir. Salir no recrea MapLibre: el mapa queda montado debajo, con el mismo tamaño y el mismo zoom. Volver a entrar, ya vista, muestra la criatura sin repetir el examen ni la entrada. Escape sale de la escena. Con movimiento reducido se apagan el halo del sello, el haz, el pulso y las partículas, y el sprite es el PNG.
+Adentro hay una cámara de hielo propia, en SVG y CSS: muro irregular, columnas facetadas, piso con grietas, cristales, bruma y un altar con anillo. La paleta es cian, azul frío, blanco helado y violeta. Cada enclave futuro lleva la suya. No copia un mapa de un juego y no usa imágenes generadas. El campo `scene: "glacial"` es el lugar donde un bloque posterior puede cambiar ese dibujo por un asset pixel art elegido a mano. Examinar el sello pide la ficha real. Si PokéAPI responde, el sello se abre, hay un destello y el sprite de Black & White se materializa sobre el altar. El estado pasa a visto. La ficha queda debajo de la escena: nombre, visto, tipos y estadísticas, sin el formato de una ficha de campo. Si falla, sigue sin descubrir. Salir no recrea MapLibre: el mapa queda montado debajo, con el mismo tamaño y el mismo zoom. Volver a entrar, ya vista, muestra la criatura presente, sin el destello ni la frase de descubrimiento. Escape sale de la escena. Con movimiento reducido no hay destello, bruma animada ni materialización, y el sprite es el PNG.
 
 Una especie empieza sin descubrir. El sello y el índice dicen `???`. La silueta usa el PNG frontal de Black & White, generación V, con el color apagado: se conserva la forma y no el color. El `alt` queda vacío. Al elegirla aparece «Señal nueva» y se pide la ficha. Si PokéAPI responde, pasa a vista, se guarda y se muestran el nombre, el número nacional, los tipos, las estadísticas y el hábitat. Si falla, sigue sin descubrir y se puede reintentar. Si ya estaba vista, la ficha se abre directo.
 
@@ -85,7 +85,7 @@ No se agregaron dependencias. `npm audit` reporta 8 moderadas. La raíz es GHSA-
 
 ## Uso de inteligencia artificial
 
-Herramienta: Cursor, con el modelo Grok. Se usó para leer el brief, contrastar PokéAPI, OpenFreeMap y Natural Earth, y escribir los bloques B0, B1, B1.5, B2, B3, B4A y B4A.5.
+Herramienta: Cursor, con el modelo Grok. Se usó para leer el brief, contrastar PokéAPI, OpenFreeMap y Natural Earth, y escribir los bloques B0, B1, B1.5, B2, B3, B4A, B4A.5 y B4A.75.
 
 Correcciones sobre la salida del modelo:
 
@@ -178,6 +178,15 @@ En el navegador, sobre `npm run dev`, en B4A.5, partiendo de almacenamiento vac�
 - En 390×844 la escena ocupaba 390×567, sin scroll horizontal. El altar quedaba dentro de la sala y «Volver al mapa» dentro de la ventana (y 788–832).
 
 En esta pasada no se repitió el 503 ni la respuesta tardía: esa lógica no se tocó. Salir ahora también apaga la ceremonia, para que la entrada no se repita.
+
+En el navegador, sobre `npm run dev`, en B4A.75, con almacenamiento vacío:
+
+- Entrar mostró «Santuario Glacial», el sello del altar y «Examinar la señal», sin el nombre.
+- Examinar escribió `seen: ["kanto-144"]` y `caught` vacío. La escena quedó con `data-ceremony="true"`, la frase «La señal toma forma.», el destello, el halo y la animación `sanctuary-form`. El sprite fue `animated/144.gif` y el título pasó a Articuno.
+- Salir y volver a entrar dejó `data-ceremony="false"`, sin frase, sin destello y sin sello. Articuno seguía presente. Escape cerró la escena. El sello del mapa decía Articuno.
+- La Pokédex mostró 51 Articuno como Visto. El almacenamiento seguía en `kanto-144`.
+- Con movimiento reducido, el haz, la bruma y las partículas quedaron en `animation-name: none`, el sprite fue `144.png`, y la clase de la materialización tampoco animaba.
+- En 390×844 la sala midió 390×567, sin scroll horizontal. El altar quedaba dentro de la sala y «Volver al mapa» en y 788–832.
 
 ## Qué queda para el bloque siguiente
 
