@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 /**
  * Aviso del PokéRadar antes de entrar a un enclave.
@@ -18,6 +18,15 @@ export function AnomalyGate({
   const titleId = useId();
   const bodyId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    function onHide() {
+      setPaused(document.hidden);
+    }
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
+  }, []);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -55,38 +64,37 @@ export function AnomalyGate({
         aria-labelledby={titleId}
         aria-describedby={bodyId}
         className="gate-card"
+        data-paused={paused ? "true" : "false"}
       >
-        <p className="font-mono text-[10px] tracking-[0.2em] text-[#8ef6df] uppercase">PokéRadar</p>
-        <h2 id={titleId} className="mt-2 text-2xl font-semibold tracking-tight text-[#f4fffd]">
-          Señal extraordinaria
-        </h2>
-        <div id={bodyId} className="mt-3 space-y-3 text-sm leading-6 text-[#d5eef2]">
+        <span className="gate-corner gate-corner-nw" aria-hidden="true" />
+        <span className="gate-corner gate-corner-ne" aria-hidden="true" />
+        <span className="gate-corner gate-corner-sw" aria-hidden="true" />
+        <span className="gate-corner gate-corner-se" aria-hidden="true" />
+        <p id={titleId} className="gate-kicker">
+          PokéRadar · Señal anómala
+        </p>
+        <div className="gate-radar" aria-hidden="true">
+          <span className="gate-radar-ring" />
+          <span className="gate-radar-sweep" />
+          <span className="gate-radar-mark" />
+        </div>
+        <p className="gate-meter">{knownName ? "Señal registrada" : "Energía extraordinaria"}</p>
+        <div id={bodyId} className="gate-copy">
           {knownName ? (
-            <p>
-              {knownName} ya figura en la bitácora. El santuario sigue en el hielo.
-            </p>
+            <p>{knownName} ya figura en la bitácora. El santuario sigue en el hielo.</p>
           ) : (
             <p>
-              El PokéRadar detectó una presencia de energía inusualmente elevada en esta región. Su
-              identidad es desconocida y podría tratarse de un Pokémon extremadamente poderoso.
+              Detectamos una presencia de energía extraordinaria en esta región. Su identidad es
+              desconocida. Podría tratarse de un Pokémon extremadamente poderoso.
             </p>
           )}
-          <p className="text-[#f4fffd]">¿Querés investigar la anomalía?</p>
+          <p className="gate-ask">¿Querés investigar la señal?</p>
         </div>
-        <div className="mt-5 flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="action-button inline-flex min-h-11 items-center justify-center"
-            onClick={onInvestigate}
-            autoFocus
-          >
+        <div className="gate-actions">
+          <button type="button" className="gate-btn gate-btn-go" onClick={onInvestigate} autoFocus>
             Investigar
           </button>
-          <button
-            type="button"
-            className="action-button inline-flex min-h-11 items-center justify-center"
-            onClick={onClose}
-          >
+          <button type="button" className="gate-btn" onClick={onClose}>
             Volver al mapa
           </button>
         </div>

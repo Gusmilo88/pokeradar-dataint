@@ -18,9 +18,9 @@ El santuario está en Santa Cruz, latitud -50.7 y longitud -73. Cae dentro del p
 
 Pulsar «Anomalía» no entra al lugar. Abre un aviso del PokéRadar, «Señal extraordinaria»: hay una energía alta y la identidad es desconocida. Las acciones son Investigar y Volver al mapa. Escape cierra y el foco vuelve al sello. Si ya fue vista, el aviso dice que esa criatura ya está en la bitácora; no repite el texto de identidad desconocida.
 
-Investigar muestra el exterior, `public/images/enclaves/articuno/entrada-santuario-glacial.webp`. Entrar muestra el interior, `interior-santuario-glacial.webp`. Las dos miden 1672×941. Son ilustraciones originales, estilo anime de aventura de finales de los 90, hechas con IA bajo dirección artística humana. No se modificaron. El mapa no las pide hasta que se abre la visita. En el exterior se precarga el interior. Sobre el exterior hay nieve en CSS, una aurora lenta en verde, cian y violeta, una luz que respira en la boca de la cueva y una bruma baja. El interior deja la ilustración como sala: no se redibujan altar, columnas ni cristales. Encima hay un resplandor en el altar, dos destellos sobre los cristales, motas y bruma. Con la pestaña oculta esas animaciones quedan en pausa. Con movimiento reducido no hay nieve ni movimiento ambiental, y el sprite es el PNG.
+Investigar muestra el exterior, `public/images/enclaves/articuno/entrada-santuario-glacial.webp`. Entrar muestra el interior, `interior-santuario-glacial.webp`. Las dos miden 1672×941. Son ilustraciones originales, estilo anime de aventura de finales de los 90, hechas con IA bajo dirección artística humana. No se modificaron. El mapa no las pide hasta que se abre la visita. En el exterior se precarga el interior. Sobre el exterior hay nieve en CSS, una aurora lenta en verde, cian y violeta, una luz que respira en la boca de la cueva y una bruma baja. El interior deja la ilustración como sala: no se redibujan altar, columnas ni cristales. Encima hay un resplandor en el altar, once estrellas de cuatro puntas sobre cristales, arcos, borde del altar y suelo, motas y bruma. Con la pestaña oculta esas animaciones quedan en pausa. Con movimiento reducido no hay nieve ni movimiento ambiental, y el sprite es el PNG.
 
-La ilustración y el sprite comparten un marco con la proporción 1672:941. Los pies de Articuno están al 50 % del ancho y al 55 % del alto de ese arte, en una caja del 16 % del ancho, anclada por el borde inferior. Si la ventana es baja, se desplaza la ilustración y la ficha queda entera.
+La ilustración y el sprite comparten un marco con la proporción 1672:941. En escritorio ese marco ocupa todo el ancho y, si no entra en alto, se desplaza en vertical. En una pantalla de menos de 700 px el marco se agranda y se recortan los lados: el interior centra el altar y el exterior centra la boca de la cueva. Los pies de Articuno están al 50 % del ancho y al 55 % del alto de ese arte, en una caja del 16 % del ancho, anclada por el borde inferior. La ficha queda debajo y no se recorta.
 
 Examinar, ya adentro, pide la ficha. El exterior y el aviso no la piden. Si PokéAPI responde, el altar se enciende, hay un destello y el GIF de Black & White se forma sobre la plataforma. La frase es «Presencia legendaria descubierta». Se puede omitir. El estado pasa a visto. Si falla, el texto es «PokéAPI no respondió. La señal sigue sin identificar.» y no aparece el nombre. Una respuesta que llega después de salir del interior no escribe el progreso. Volver a entrar, ya vista, muestra la criatura sin repetir el rito. Salir no recrea MapLibre.
 
@@ -93,9 +93,9 @@ No se agregaron dependencias. `npm audit` reporta 8 moderadas. La raíz es GHSA-
 
 ## Uso de inteligencia artificial
 
-Herramienta: Cursor, con el modelo Grok. Se usó para leer el brief, contrastar PokéAPI, OpenFreeMap y Natural Earth, y escribir los bloques B0, B1, B1.5, B2, B3, B4A, B4A.5, B4A.75 y B4A.9.
+Herramienta: Cursor, con el modelo Grok. Se usó para leer el brief, contrastar PokéAPI, OpenFreeMap y Natural Earth, y escribir los bloques B0, B1, B1.5, B2, B3, B4A, B4A.5, B4A.75, B4A.9 y B4A.95.
 
-Los fondos del Santuario Glacial los generó un modelo de imagen, con dirección artística humana, y se guardaron como WebP de 1672×941. El código no los vuelve a generar ni los recorta. La decisión de dónde pisa Articuno, qué anima y qué texto se muestra es humana.
+Los fondos del Santuario Glacial los generó un modelo de imagen, con dirección artística humana, y se guardaron como WebP de 1672×941. Esos archivos no se vuelven a generar ni se editan. En el teléfono la vista recorta los lados con CSS; el archivo sigue entero. La decisión de dónde pisa Articuno, qué anima y qué texto se muestra es humana.
 
 Correcciones sobre la salida del modelo:
 
@@ -123,6 +123,7 @@ Correcciones sobre la salida del modelo:
 - `System.Drawing` no pudo abrir los WebP (`Memoria insuficiente`). El tamaño y el altar se midieron con Pillow.
 - En caliente, el CSS del dev server siguió sirviendo `max-height: 42vh` en la ficha después de quitarlo. Recargar con el archivo ya compilado aplicó `flex-shrink: 0`. En una ventana de 500 px de alto los botones quedaban cortados; después del recorte, «Volver al mapa» termina en y 484.
 - Un `setState` al cambiar de exterior a interior lo marcó `react-hooks/set-state-in-effect`. El fallo de la imagen y la omisión del rito se derivan de la etapa, sin ese efecto.
+- En B4A.9 el marco se achicaba para caber en el alto y dejaba franjas negras a los lados. En B4A.95 el marco usa todo el ancho. El aviso pasó de una ficha con borde fino a un instrumento: esquinas, radar y botones de consola.
 
 ## Verificación
 
@@ -215,6 +216,19 @@ En el navegador, sobre `npm run dev`, en B4A.9, con almacenamiento vacío:
 
 No se usó un teléfono ni una tablet reales. No se ocultó la pestaña para medir `document.hidden`: la pausa está atada a `visibilitychange` y a `animation-play-state`, y no se verificó con la pestaña en segundo plano. Tab de la herramienta sigue sin ser de confianza.
 
+En el navegador, sobre `npm run dev`, en B4A.95, con almacenamiento vacío:
+
+- El aviso decía «PokéRadar · Señal anómala», «Energía extraordinaria» y «¿Querés investigar la señal?». El barrido era `radar-sweep`. No nombraba a Articuno. El foco inicial fue Investigar. Volver al mapa devolvió el foco al sello.
+- En 1440×900 el exterior ocupó x 0 y 1425×802, proporción 1.777, sin franja lateral. La diferencia hasta 1440 es la barra de desplazamiento. Entrar dejó el altar vacío, con «Examinar la señal» y 11 destellos en las coordenadas del arte.
+- Examinar escribió `seen: ["kanto-144"]`, `caught` vacío, el GIF `animated/144.gif` y los pies al 50 % / 55 %. No hubo `console.error` de la app en esa pasada.
+- Salir y volver a entrar dejó `data-rite="false"` y el GIF presente, sin «Examinar». Tras recargar, el sello decía Articuno, el almacenamiento seguía en `kanto-144` y el interior mostró el GIF sin examinar.
+- Con el aviso ya visto, el instrumento dice «Señal registrada» y que Articuno está en la bitácora.
+- Un rechazo de PokéAPI mostró el texto fijo, sin el nombre y sin guardar el visto. Se retuvo el reintento, se volvió al exterior y se soltaron las dos respuestas en 200. El almacenamiento siguió vacío y el sello siguió en «Anomalía».
+- Con movimiento reducido, los destellos quedaron en `animation-name: none` y opacidad 0.4, la nieve en `display: none` y el sprite en `144.png`.
+- En 1920×1080 el marco midió 1905×1072. En 960×600, 945×532. En 1440×500 el marco mide 1425×802 y el área visible desplaza (262 de 802); los botones terminan en y 484. En 390×844 la ventana mide 390×490, el arte mide 870×490 corrido para centrar el altar, la proporción sigue 1.777, el altar queda a la vista y los botones terminan en y 828. El exterior en ese ancho centra la boca: el foco medido fue 0.66.
+
+No se usó un teléfono real. No se volvió a abrir la Pokédex en esta pasada: el visto quedó en `localStorage` y en el sello. No se ocultó la pestaña.
+
 ## Qué queda para el bloque siguiente
 
 No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja y no se obtiene desde la interfaz. No hay cartas holográficas. Faltan cinco enclaves. Cada uno pide su exterior, su interior, su paleta y su propia revelación; no se recolorea esta nevada. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal, y Malvinas no están dibujadas dentro de Argentina. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula.
@@ -238,3 +252,4 @@ No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja 
 | Santuario en -50.7, -73, validado con Natural Earth | Está en Santa Cruz, dentro del polígono y separado de los encuentros | Usar el ancla de Moreno y tapar esos cinco puntos |
 | Aviso antes de la ilustración, y la ficha solo al examinar | El jugador descubre el lugar antes que el nombre, y salir a tiempo no marca visto | Entrar directo al interior o pedir Articuno al abrir el mapa |
 | Marco 1672:941 y pies al 50 % / 55 % | El sprite sigue al altar en escritorio, teléfono y ventana baja | Un `top` en píxeles de una sola resolución |
+| Ancho completo en escritorio y recorte lateral bajo 700 px | El escenario deja de vivir en una columna con franjas negras, y en el teléfono el altar y la boca siguen grandes | Estirar el WebP o achicarlo para que quepa en el alto |

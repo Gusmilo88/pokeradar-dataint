@@ -37,6 +37,21 @@ const MOTES = [
   { left: "48%", top: "24%", delay: "1.2s" },
 ] as const;
 
+/** Destellos sobre el arte, en porcentajes de 1672×941. Fuera del cuerpo del sprite. */
+const SPARKS = [
+  { x: 36, y: 49, size: 1.35, delay: "0s", duration: "5.6s" },
+  { x: 64, y: 49, size: 1.15, delay: "1.7s", duration: "6.2s" },
+  { x: 22, y: 36, size: 0.9, delay: "2.4s", duration: "5.2s" },
+  { x: 78, y: 36, size: 1.2, delay: "0.6s", duration: "6.4s" },
+  { x: 43, y: 58, size: 0.8, delay: "3.1s", duration: "5.8s" },
+  { x: 57, y: 58, size: 1, delay: "1.2s", duration: "6.8s" },
+  { x: 50, y: 80, size: 1.25, delay: "2.8s", duration: "5.4s" },
+  { x: 12, y: 70, size: 0.85, delay: "0.3s", duration: "7s" },
+  { x: 88, y: 68, size: 1.05, delay: "2.1s", duration: "5.9s" },
+  { x: 30, y: 58, size: 0.7, delay: "3.6s", duration: "6.1s" },
+  { x: 70, y: 57, size: 0.8, delay: "1.4s", duration: "5.5s" },
+] as const;
+
 /**
  * Visita al Santuario Glacial sobre las ilustraciones originales.
  * El sprite y los efectos comparten el marco del arte, en coordenadas relativas.
@@ -114,13 +129,15 @@ export function GlacialSanctuary({
       aria-modal="true"
       aria-labelledby={titleId}
       className="enclave-visit"
+      data-stage={stage}
       data-paused={paused ? "true" : "false"}
       data-rite={rite ? "true" : "false"}
       data-charging={loading ? "true" : "false"}
       data-skipped={skipped ? "true" : "false"}
     >
       <div className="enclave-scroll">
-        <div className="art-frame" style={{ aspectRatio: `${ART_WIDTH} / ${ART_HEIGHT}` }}>
+        <div className="art-window">
+          <div className="art-stage">
           {artFailed ? (
             <p className="art-fallback">La ilustración no cargó. La señal sigue en el lugar.</p>
           ) : (
@@ -153,6 +170,7 @@ export function GlacialSanctuary({
                 />
               </div>
             ) : null}
+          </div>
           </div>
         </div>
       </div>
@@ -304,8 +322,19 @@ function InteriorWeather({ charging, rite }: { charging: boolean; rite: boolean 
   return (
     <>
       <div className={charging || rite ? "altar-glow altar-glow-hot" : "altar-glow"} />
-      <span className="crystal-glint crystal-glint-l" />
-      <span className="crystal-glint crystal-glint-r" />
+      {SPARKS.map((spark) => (
+        <span
+          key={`${spark.x}-${spark.y}`}
+          className="ice-spark"
+          style={{
+            left: `${spark.x}%`,
+            top: `${spark.y}%`,
+            width: `${spark.size}%`,
+            animationDelay: spark.delay,
+            animationDuration: spark.duration,
+          }}
+        />
+      ))}
       <div className="cold-mist" />
       {MOTES.map((mote) => (
         <span
