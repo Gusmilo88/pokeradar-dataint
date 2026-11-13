@@ -9,7 +9,7 @@ export default function NotFound() {
         title="Esta coordenada no existe"
         description="La ruta no forma parte de la expedición."
         action={
-          <Link href="/" className="action-button">
+          <Link href="/" className="action-button inline-flex items-center justify-center">
             Volver al radar
           </Link>
         }

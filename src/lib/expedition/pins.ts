@@ -32,6 +32,7 @@ export interface FieldPin {
   latitude: number;
   shortLabel: string;
   label: string;
+  accent: string;
 }
 
 function zoneById(zones: readonly ExpeditionZone[]): Map<string, ExpeditionZone> {
@@ -50,8 +51,9 @@ export function buildZonePins(
       kind: "zone",
       longitude: zone.anchor.longitude,
       latitude: zone.anchor.latitude,
-      shortLabel: `${zone.code} ${count}`,
+      shortLabel: `${zone.stamp}\n${count}`,
       label: `${zone.name}, ${zone.region}. ${count} encuentros de ${HABITAT_LABEL[zone.habitat]}. Acercar.`,
+      accent: zone.accent,
     };
   });
 }
@@ -76,7 +78,8 @@ export function buildEncounterPins(
         longitude: sighting.longitude,
         latitude: sighting.latitude,
         shortLabel: name.split(" ")[0]?.slice(0, 9) ?? HABITAT_CODE[zone.habitat],
-        label: `${name}. ${zone.name}. ${HABITAT_LABEL[zone.habitat]}. Encuentro simulado.`,
+        label: `${name}. ${zone.name}. ${HABITAT_LABEL[zone.habitat]}. Encuentro simulado de Kanto.`,
+        accent: zone.accent,
       },
     ];
   });
@@ -113,8 +116,51 @@ export function collapsePins(
       latitude: group.pin.latitude,
       shortLabel: String(count),
       label: `${count} encuentros en este punto del mapa. Acercar para separarlos.`,
+      accent: group.pin.accent,
     };
   });
+}
+
+/**
+ * Separa sellos cuyos rectángulos se pisan. El ancla geográfica no se mueve:
+ * el valor es un desplazamiento en píxeles del marcador.
+ * `x` e `y` son el centro del sello.
+ */
+export function separateZoneOffsets(
+  points: readonly { id: string; x: number; y: number; w: number; h: number }[],
+  padding = 8,
+): ReadonlyMap<string, [number, number]> {
+  const items = points.map((point) => ({ ...point, ox: 0, oy: 0 }));
+
+  for (let pass = 0; pass < 12; pass += 1) {
+    for (let left = 0; left < items.length; left += 1) {
+      for (let right = left + 1; right < items.length; right += 1) {
+        const a = items[left];
+        const b = items[right];
+        if (!a || !b) {
+          continue;
+        }
+        const dx = b.x + b.ox - (a.x + a.ox);
+        const dy = b.y + b.oy - (a.y + a.oy);
+        const overlapX = (a.w + b.w) / 2 + padding - Math.abs(dx);
+        const overlapY = (a.h + b.h) / 2 + padding - Math.abs(dy);
+        if (overlapX <= 0 || overlapY <= 0) {
+          continue;
+        }
+        if (overlapX < overlapY) {
+          const direction = dx === 0 ? 1 : Math.sign(dx);
+          a.ox -= direction * (overlapX / 2);
+          b.ox += direction * (overlapX / 2);
+        } else {
+          const direction = dy === 0 ? 1 : Math.sign(dy);
+          a.oy -= direction * (overlapY / 2);
+          b.oy += direction * (overlapY / 2);
+        }
+      }
+    }
+  }
+
+  return new Map(items.map((item) => [item.id, [item.ox, item.oy] as [number, number]]));
 }
 
 export function findZone(zoneId: string): ExpeditionZone | undefined {

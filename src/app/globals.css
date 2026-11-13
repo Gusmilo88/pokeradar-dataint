@@ -70,9 +70,6 @@ body {
 
 @layer components {
   .action-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     min-height: 2.75rem;
     padding: 0 1rem;
     border: 1px solid rgba(142, 246, 223, 0.5);

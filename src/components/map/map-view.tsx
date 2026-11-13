@@ -19,6 +19,7 @@ import {
   collapsePins,
   INSPECT_ZOOM,
   REGIONAL_ZOOM,
+  separateZoneOffsets,
   type FieldPin,
 } from "@/lib/expedition/pins";
 import { errorMessage } from "@/lib/errors/message";
@@ -27,6 +28,8 @@ import {
   MAPLIBRE_WORKER_URL,
   OPENFREEMAP_DARK_STYLE,
 } from "@/lib/map/constants";
+import { ARGENTINA_LAND_NOTE } from "@/lib/map/argentina-land";
+import { applyExpeditionStyle } from "@/lib/map/expedition-style";
 
 setWorkerUrl(MAPLIBRE_WORKER_URL);
 
@@ -131,7 +134,7 @@ export function MapView({
         zoom: ARGENTINA_VIEW.zoom,
         minZoom: 3,
         maxZoom: 16,
-        attributionControl: { compact: true },
+        attributionControl: { compact: true, customAttribution: ARGENTINA_LAND_NOTE },
         locale: MAP_LOCALE,
         fadeDuration: reduceMotion ? 0 : 300,
         reduceMotion,
@@ -186,6 +189,7 @@ export function MapView({
       if (cancelled) {
         return;
       }
+      applyExpeditionStyle(activeMap);
       setPhase("ready");
       setDetail(null);
       publishReadout();
@@ -242,9 +246,14 @@ export function MapView({
       );
     });
 
+    const onResize = () => {
+      setLayoutTick((value) => value + 1);
+    };
+
     activeMap.on("style.load", onStyleLoad);
     activeMap.on("load", onLoad);
     activeMap.on("moveend", onMoveEnd);
+    activeMap.on("resize", onResize);
     activeMap.on("error", onError);
 
     return () => {
@@ -254,6 +263,7 @@ export function MapView({
       activeMap.off("style.load", onStyleLoad);
       activeMap.off("load", onLoad);
       activeMap.off("moveend", onMoveEnd);
+      activeMap.off("resize", onResize);
       activeMap.off("error", onError);
       activeMap.remove();
     };
@@ -268,12 +278,11 @@ export function MapView({
     const zoom = map.getZoom();
     const showEncounters = zoom >= REGIONAL_ZOOM;
     const labeled = zoom >= INSPECT_ZOOM - 0.4;
-    const pins = showEncounters
-      ? collapsePins(encounterPins, (pin) => {
-          const point = map.project([pin.longitude, pin.latitude]);
-          return { x: point.x, y: point.y };
-        })
-      : zonePins;
+    const project = (pin: FieldPin) => {
+      const point = map.project([pin.longitude, pin.latitude]);
+      return { x: point.x, y: point.y };
+    };
+    const pins = showEncounters ? collapsePins(encounterPins, project) : zonePins;
     const markers: Marker[] = [];
 
     const approach = (pin: FieldPin) => {
@@ -304,6 +313,7 @@ export function MapView({
       button.textContent = dot ? "" : pin.shortLabel;
       button.setAttribute("aria-label", pin.label);
       button.dataset.pinId = pin.id;
+      button.style.setProperty("--zone-accent", pin.accent);
       const stop = (event: Event) => {
         event.stopPropagation();
       };
@@ -334,6 +344,28 @@ export function MapView({
         .setLngLat([pin.longitude, pin.latitude])
         .addTo(map);
       markers.push(marker);
+    }
+
+    if (!showEncounters) {
+      const measured = pins.map((pin, index) => {
+        const button = markers[index]?.getElement();
+        const box = button?.getBoundingClientRect();
+        return {
+          id: pin.id,
+          x: box ? box.x + box.width / 2 : 0,
+          y: box ? box.y + box.height / 2 : 0,
+          w: box?.width ?? 0,
+          h: box?.height ?? 0,
+        };
+      });
+      const zoneOffsets = separateZoneOffsets(measured);
+      markers.forEach((marker, index) => {
+        const id = pins[index]?.id;
+        if (!id) {
+          return;
+        }
+        marker.setOffset(zoneOffsets.get(id) ?? [0, 0]);
+      });
     }
 
     return () => {
@@ -419,7 +451,7 @@ export function MapView({
             action={
               <button
                 type="button"
-                className="action-button"
+                className="action-button inline-flex items-center justify-center"
                 onClick={() => {
                   setPhase("loading");
                   setDetail(null);

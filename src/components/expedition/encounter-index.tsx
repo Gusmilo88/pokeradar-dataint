@@ -56,6 +56,9 @@ export function EncounterIndex({
           );
         })}
       </div>
+      <p className="mt-4 text-sm text-quiet">
+        Los colores del mapa son acentos de la expedición, no biomas ni provincias. Fuera del mapa quedan Articuno, Zapdos, Moltres, Aerodactyl, Mewtwo y Mew.
+      </p>
     </div>
   );
 }

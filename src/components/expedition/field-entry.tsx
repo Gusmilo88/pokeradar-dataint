@@ -13,9 +13,11 @@ function dexNumber(id: number): string {
 export function FieldEntry({
   entry,
   zone,
+  expeditionNumber,
 }: {
   entry: DossierEntry;
   zone: ExpeditionZone;
+  expeditionNumber: number | null;
 }) {
   const { species, pokemon } = entry;
   const displayName = species.spanishName ?? speciesLabel(species.name);
@@ -26,7 +28,9 @@ export function FieldEntry({
   return (
     <article aria-labelledby="ficha-titulo" className="px-5 py-4 pl-8">
       <p className="font-mono text-[10px] tracking-[0.18em] text-amber uppercase">
-        {dexNumber(species.id)} · {zone.code}
+        {dexNumber(species.id)}
+        {expeditionNumber ? ` · Exp. ${String(expeditionNumber).padStart(2, "0")}` : ""}
+        {` · ${zone.code}`}
       </p>
       <div className="mt-2 flex items-start justify-between gap-3">
         <div className="min-w-0">

@@ -59,7 +59,13 @@
 
 .field-pin-zone,
 .field-pin-stack {
-  border-radius: 999px;
+  border-radius: 0.7rem;
+}
+
+.field-pin-zone {
+  border-color: var(--zone-accent, #102029);
+  box-shadow: inset 0 -3px 0 var(--zone-accent, #102029);
+  padding: 0.35rem 0.55rem;
 }
 
 .field-pin-stack {
@@ -81,7 +87,7 @@
   height: 0.85rem;
   border: 2px solid #102029;
   border-radius: 999px;
-  background: #f4f7f8;
+  background: var(--zone-accent, #f4f7f8);
 }
 
 .field-pin.is-selected {

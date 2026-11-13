@@ -1,22 +1,15 @@
 import { RadarMark } from "@/components/expedition/radar-mark";
 
 export function HudBar({
-  status,
   count,
   notebookOpen,
   onOpen,
 }: {
-  status: "loading" | "ready" | "error";
   count: number;
   notebookOpen: boolean;
   onOpen: () => void;
 }) {
-  const label =
-    status === "ready"
-      ? `${count} encuentros`
-      : status === "error"
-        ? "Sin hábitats"
-        : "Leyendo hábitats";
+  const label = `${count} en mapa`;
 
   return (
     <header className="relative z-20 border-b border-phosphor/20 bg-abyss px-4 py-3 sm:px-6">

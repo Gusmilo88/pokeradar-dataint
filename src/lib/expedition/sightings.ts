@@ -1,9 +1,20 @@
-import type { ExpeditionHabitat, ExpeditionZone, GeoPoint, Sighting } from "@/lib/expedition/argentina";
+import {
+  EXPEDITION_ZONES,
+  type ExpeditionZone,
+  type GeoPoint,
+  type Sighting,
+} from "@/lib/expedition/argentina";
 import { containsBounds, isEastOfChile } from "@/lib/expedition/geography";
+import {
+  EXPEDITION_SIZE,
+  FIELD_ENCOUNTERS,
+  KANTO_CATALOG,
+  type CatalogEntry,
+} from "@/lib/expedition/kanto";
 import { hashString, mulberry32 } from "@/lib/expedition/seed";
 
-export const SIGHTING_SEED = "pokeradar-argentina-v2";
-export const TARGET_ENCOUNTERS = 56;
+export const SIGHTING_SEED = "pokeradar-kanto-v1";
+export const TARGET_ENCOUNTERS = FIELD_ENCOUNTERS;
 
 const KM_PER_DEGREE_LAT = 110.574;
 const KM_PER_DEGREE_LNG = 111.32;
@@ -55,76 +66,115 @@ function accept(point: GeoPoint, zone: ExpeditionZone, taken: readonly GeoPoint[
   return taken.every((other) => distanceKm(other, point) >= 0.45);
 }
 
-function placeZone(random: () => number, zone: ExpeditionZone): GeoPoint[] {
+function placeEntry(
+  zone: ExpeditionZone,
+  encounterId: string,
+  index: number,
+  taken: readonly GeoPoint[],
+  seed: string,
+): GeoPoint {
   const columns = Math.ceil(Math.sqrt(zone.quota));
   const rows = Math.ceil(zone.quota / columns);
-  const points: GeoPoint[] = [];
-
-  for (let index = 0; index < zone.quota; index += 1) {
-    const column = index % columns;
-    const row = Math.floor(index / columns);
-    let placed = cellCenter(zone, column, row, columns, rows);
-    for (let attempt = 0; attempt < 16; attempt += 1) {
-      const point = cellPoint(random, zone, column, row, columns, rows);
-      if (accept(point, zone, points)) {
-        placed = point;
-        break;
-      }
+  const column = index % columns;
+  const row = Math.floor(index / columns);
+  const random = mulberry32(hashString(`${seed}:${encounterId}`));
+  let placed = cellCenter(zone, column, row, columns, rows);
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    const point = cellPoint(random, zone, column, row, columns, rows);
+    if (accept(point, zone, taken)) {
+      placed = point;
+      break;
     }
-    points.push(placed);
   }
-
-  return points;
+  return placed;
 }
 
-export function buildSightings(
-  zones: readonly ExpeditionZone[],
-  speciesByHabitat: Readonly<Record<ExpeditionHabitat, readonly string[]>>,
+export function findSighting(
+  sightings: readonly Sighting[],
+  id: string | null,
+): Sighting | null {
+  if (!id) {
+    return null;
+  }
+  return sightings.find((sighting) => sighting.id === id) ?? null;
+}
+
+export function buildFieldSightings(
+  entries: readonly CatalogEntry[] = KANTO_CATALOG,
+  zones: readonly ExpeditionZone[] = EXPEDITION_ZONES,
   seed = SIGHTING_SEED,
 ): Sighting[] {
-  const quota = zones.reduce((sum, zone) => sum + zone.quota, 0);
-  if (quota !== TARGET_ENCOUNTERS) {
-    throw new Error(`Las cuotas suman ${quota} y el objetivo es ${TARGET_ENCOUNTERS}.`);
+  return placeCatalog(entries, zones, seed);
+}
+
+function placeCatalog(
+  entries: readonly CatalogEntry[],
+  zones: readonly ExpeditionZone[],
+  seed: string,
+): Sighting[] {
+  const resolvedZones = zones;
+  if (entries.length !== EXPEDITION_SIZE) {
+    throw new Error(`El catálogo tiene ${entries.length} fichas y la expedición pide ${EXPEDITION_SIZE}.`);
   }
 
-  const used = new Set<string>();
+  const quota = resolvedZones.reduce((sum, zone) => sum + zone.quota, 0);
+  if (quota !== FIELD_ENCOUNTERS) {
+    throw new Error(`Las cuotas suman ${quota} y el campo pide ${FIELD_ENCOUNTERS}.`);
+  }
+
+  const ids = new Set<string>();
+  const numbers = new Set<number>();
+  const species = new Set<string>();
+  const byZone = new Map<string, CatalogEntry[]>();
+
+  for (const entry of entries) {
+    if (ids.has(entry.encounterId) || numbers.has(entry.expeditionNumber) || species.has(entry.speciesName)) {
+      throw new Error(`Ficha repetida: ${entry.encounterId}.`);
+    }
+    ids.add(entry.encounterId);
+    numbers.add(entry.expeditionNumber);
+    species.add(entry.speciesName);
+    if (entry.role === "reserved") {
+      continue;
+    }
+    if (!entry.zoneId) {
+      throw new Error(`${entry.encounterId} es de campo y no tiene zona.`);
+    }
+    const group = byZone.get(entry.zoneId) ?? [];
+    group.push(entry);
+    byZone.set(entry.zoneId, group);
+  }
+
   const sightings: Sighting[] = [];
 
-  for (const zone of zones) {
-    const names = speciesByHabitat[zone.habitat];
-    if (!names) {
-      throw new Error(`Falta el listado de especies para ${zone.habitat}.`);
+  for (const zone of resolvedZones) {
+    const group = (byZone.get(zone.id) ?? [])
+      .slice()
+      .sort((left, right) => left.encounterId.localeCompare(right.encounterId));
+    if (group.length !== zone.quota) {
+      throw new Error(`${zone.id} tiene ${group.length} especies y la cuota es ${zone.quota}.`);
     }
-    const available = [...names]
-      .filter((name) => !used.has(name))
-      .sort((left, right) => left.localeCompare(right));
-    if (available.length < zone.quota) {
-      throw new Error(
-        `${zone.id} necesita ${zone.quota} especies nuevas de ${zone.habitat} y quedan ${available.length}.`,
-      );
-    }
-
-    const random = mulberry32(hashString(`${seed}:${zone.id}`));
-    const pool = [...available];
-    const points = placeZone(random, zone);
-
-    for (let index = 0; index < zone.quota; index += 1) {
-      const pick = Math.floor(random() * pool.length);
-      const speciesName = pool[pick];
-      const point = points[index];
-      if (!speciesName || !point) {
-        throw new Error(`No quedó especie o coordenada para ${zone.id}.`);
+    const taken: GeoPoint[] = [];
+    group.forEach((entry, index) => {
+      if (entry.habitat !== zone.habitat) {
+        throw new Error(`${entry.speciesName} es ${entry.habitat} y ${zone.id} pide ${zone.habitat}.`);
       }
-      pool.splice(pick, 1);
-      used.add(speciesName);
+      const point = placeEntry(zone, entry.encounterId, index, taken, seed);
+      taken.push(point);
       sightings.push({
-        id: `${zone.id}:${speciesName}:${index}`,
-        speciesName,
+        id: entry.encounterId,
+        expeditionNumber: entry.expeditionNumber,
+        nationalId: entry.nationalId,
+        speciesName: entry.speciesName,
         zoneId: zone.id,
         latitude: point.latitude,
         longitude: point.longitude,
       });
-    }
+    });
+  }
+
+  if (sightings.length !== FIELD_ENCOUNTERS) {
+    throw new Error(`Se colocaron ${sightings.length} encuentros y el campo pide ${FIELD_ENCOUNTERS}.`);
   }
 
   return sightings;

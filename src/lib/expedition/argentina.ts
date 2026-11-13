@@ -6,6 +6,16 @@ import type { PokemonHabitatName } from "@/lib/pokeapi/types";
  */
 export type ExpeditionHabitat = Exclude<PokemonHabitatName, "rare">;
 
+/** Familia visual del acento. No es un bioma ni un límite provincial. */
+export type ZoneLandscape =
+  | "selva"
+  | "litoral"
+  | "pampeana"
+  | "cordillera"
+  | "patagonia"
+  | "costa"
+  | "arida";
+
 export interface GeoPoint {
   latitude: number;
   longitude: number;
@@ -25,9 +35,16 @@ export interface ExpeditionZone {
   summary: string;
   habitat: ExpeditionHabitat;
   anchor: GeoPoint;
-  /** Encuentros simulados de esta zona. Las diez cuotas suman 56. */
+  /** Encuentros de campo de esta zona. Las diez cuotas suman 50. */
   quota: number;
   code: string;
+  /** Nombre corto del sello. */
+  stamp: string;
+  landscape: ZoneLandscape;
+  /** Color del acento y del sello. Apagado a propósito. */
+  accent: string;
+  /** Radio del acento, en kilómetros. Es una mancha, no un límite. */
+  accentKm: number;
   /**
    * Rectángulo permitido. Está del lado argentino del ancla y, en la costa,
    * del lado de tierra o del golfo previsto, no del océano abierto.
@@ -36,11 +53,13 @@ export interface ExpeditionZone {
 }
 
 /**
- * Contacto futuro. La especie se resuelve con PokéAPI;
- * la coordenada la va a producir el generador con semilla, no esta lista.
+ * Encuentro de campo. El id es estable (`kanto-025`) y no depende del orden del array.
+ * `nationalId` es la Pokédex Nacional. `expeditionNumber` es el número de esta expedición.
  */
 export interface Sighting {
   id: string;
+  expeditionNumber: number;
+  nationalId: number;
   speciesName: string;
   zoneId: string;
   latitude: number;
@@ -81,10 +100,14 @@ export const EXPEDITION_ZONES: readonly ExpeditionZone[] = [
     region: "Ciudad Autónoma de Buenos Aires",
     habitat: "urban",
     anchor: { latitude: -34.61315, longitude: -58.37723 },
-    quota: 6,
+    quota: 5,
     code: "BA",
+    stamp: "Buenos Aires",
+    landscape: "pampeana",
+    accent: "#8d7350",
+    accentKm: 26,
     bounds: { north: -34.57, south: -34.66, west: -58.5, east: -58.4 },
-    summary: "Ciudad capital. El hábitat urban se consulta en PokéAPI al generar contactos. La cuña mira al oeste, tierra adentro del Río de la Plata.",
+    summary: "Ciudad capital. Hábitat urban. El rectángulo queda tierra adentro del Río de la Plata.",
   },
   {
     id: "puerto-iguazu",
@@ -92,10 +115,14 @@ export const EXPEDITION_ZONES: readonly ExpeditionZone[] = [
     region: "Misiones",
     habitat: "forest",
     anchor: { latitude: -25.59912, longitude: -54.57355 },
-    quota: 8,
+    quota: 7,
     code: "IG",
+    stamp: "Iguazú",
+    landscape: "selva",
+    accent: "#3e6b4a",
+    accentKm: 14,
     bounds: { north: -25.61, south: -25.7, west: -54.72, east: -54.56 },
-    summary: "Selva paranaense. El ancla usa forest, el hábitat más cercano que publica la API. La cuña entra al parque, lejos del río fronterizo.",
+    summary: "Selva paranaense. Hábitat forest. El rectángulo entra al parque, lejos del río fronterizo.",
   },
   {
     id: "cataratas-iguazu",
@@ -105,8 +132,12 @@ export const EXPEDITION_ZONES: readonly ExpeditionZone[] = [
     anchor: { latitude: -25.68988, longitude: -54.44369 },
     quota: 4,
     code: "CT",
+    stamp: "Cataratas",
+    landscape: "litoral",
+    accent: "#3f6f6a",
+    accentKm: 14,
     bounds: { north: -25.688, south: -25.715, west: -54.48, east: -54.43 },
-    summary: "Agua en movimiento. El ancla usa waters-edge. La cuña queda del lado argentino de las cataratas.",
+    summary: "Agua en movimiento. Hábitat waters-edge. El rectángulo queda del lado argentino de las cataratas.",
   },
   {
     id: "ibera",
@@ -114,10 +145,14 @@ export const EXPEDITION_ZONES: readonly ExpeditionZone[] = [
     region: "Corrientes",
     habitat: "grassland",
     anchor: { latitude: -28.53603, longitude: -57.17321 },
-    quota: 6,
+    quota: 5,
     code: "IB",
+    stamp: "Iberá",
+    landscape: "litoral",
+    accent: "#5a7344",
+    accentKm: 26,
     bounds: { north: -28.51, south: -28.56, west: -57.21, east: -57.14 },
-    summary: "Portal del Iberá. PokéAPI no tiene estero; el ancla usa grassland. El radio corto se queda junto al pueblo, no en las lagunas abiertas.",
+    summary: "Portal del Iberá. PokéAPI no tiene estero; el ancla usa grassland. El rectángulo se queda junto al pueblo.",
   },
   {
     id: "aconcagua",
@@ -125,10 +160,14 @@ export const EXPEDITION_ZONES: readonly ExpeditionZone[] = [
     region: "Mendoza",
     habitat: "mountain",
     anchor: { latitude: -32.65383, longitude: -70.01141 },
-    quota: 6,
+    quota: 5,
     code: "AC",
+    stamp: "Aconcagua",
+    landscape: "cordillera",
+    accent: "#6d645c",
+    accentKm: 26,
     bounds: { north: -32.62, south: -32.69, west: -69.99, east: -69.88 },
-    summary: "Alta montaña. Hábitat mountain.",
+    summary: "Alta montaña, del lado argentino de la cumbre. Hábitat mountain.",
   },
   {
     id: "perito-moreno",
@@ -138,8 +177,12 @@ export const EXPEDITION_ZONES: readonly ExpeditionZone[] = [
     anchor: { latitude: -50.47324, longitude: -73.0481 },
     quota: 5,
     code: "PM",
+    stamp: "Moreno",
+    landscape: "patagonia",
+    accent: "#7d8e9a",
+    accentKm: 26,
     bounds: { north: -50.45, south: -50.51, west: -73.12, east: -73.03 },
-    summary: "Hielo. PokéAPI no tiene hábitat de glaciar; el ancla usa mountain. La cuña mira al glaciar, no al Lago Argentino.",
+    summary: "Hielo. PokéAPI no tiene glaciar; el ancla usa mountain. El rectángulo mira al glaciar, no al Lago Argentino.",
   },
   {
     id: "puerto-piramides",
@@ -147,10 +190,14 @@ export const EXPEDITION_ZONES: readonly ExpeditionZone[] = [
     region: "Chubut",
     habitat: "sea",
     anchor: { latitude: -42.57212, longitude: -64.28436 },
-    quota: 5,
+    quota: 4,
     code: "PP",
+    stamp: "Pirámides",
+    landscape: "costa",
+    accent: "#4d7380",
+    accentKm: 26,
     bounds: { north: -42.55, south: -42.62, west: -64.28, east: -64.16 },
-    summary: "Costa de Península Valdés. Hábitat sea. Los encuentros entran unos kilómetros al Golfo Nuevo, no al Atlántico abierto.",
+    summary: "Costa de Península Valdés. Hábitat sea. Los encuentros entran al Golfo Nuevo, no al Atlántico abierto.",
   },
   {
     id: "puna",
@@ -158,10 +205,14 @@ export const EXPEDITION_ZONES: readonly ExpeditionZone[] = [
     region: "Salta",
     habitat: "rough-terrain",
     anchor: { latitude: -24.22131, longitude: -66.32025 },
-    quota: 6,
+    quota: 5,
     code: "PU",
+    stamp: "Puna",
+    landscape: "arida",
+    accent: "#8a6844",
+    accentKm: 26,
     bounds: { north: -24.16, south: -24.28, west: -66.42, east: -66.24 },
-    summary: "Puna. Hábitat rough-terrain.",
+    summary: "Puna. Hábitat rough-terrain. Kanto solo publica ocho especies de ese hábitat.",
   },
   {
     id: "caverna-brujas",
@@ -171,6 +222,10 @@ export const EXPEDITION_ZONES: readonly ExpeditionZone[] = [
     anchor: { latitude: -35.80198, longitude: -69.81935 },
     quota: 4,
     code: "CV",
+    stamp: "Brujas",
+    landscape: "cordillera",
+    accent: "#5e5870",
+    accentKm: 22,
     bounds: { north: -35.785, south: -35.82, west: -69.845, east: -69.795 },
     summary: "Caverna en Malargüe. Hábitat cave.",
   },
@@ -182,7 +237,11 @@ export const EXPEDITION_ZONES: readonly ExpeditionZone[] = [
     anchor: { latitude: -38.00042, longitude: -57.5562 },
     quota: 6,
     code: "MP",
+    stamp: "Mar del Plata",
+    landscape: "costa",
+    accent: "#3f6678",
+    accentKm: 26,
     bounds: { north: -37.97, south: -38.05, west: -57.68, east: -57.55 },
-    summary: "Costa atlántica. Hábitat waters-edge. La cuña se queda en la ciudad, al oeste del océano.",
+    summary: "Costa atlántica. Hábitat waters-edge. El rectángulo se queda en la ciudad, al oeste del océano.",
   },
 ];

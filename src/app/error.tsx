@@ -25,7 +25,7 @@ export default function ExpeditionError({
           "Ocurrió un error inesperado al armar la pantalla.",
         )}
         action={
-          <button type="button" className="action-button" onClick={() => retry()}>
+          <button type="button" className="action-button inline-flex items-center justify-center" onClick={() => retry()}>
             Reintentar
           </button>
         }

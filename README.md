@@ -1,16 +1,24 @@
 # PokéRadar — Expedición Argentina
 
-Radar de exploración sobre el mapa real de Argentina. El terreno es OpenFreeMap. Las fichas salen de PokéAPI. Las posiciones son encuentros simulados, reproducibles, atados al hábitat de cada zona. No son apariciones reales.
+Radar de exploración sobre el mapa real de Argentina. El terreno es OpenFreeMap y el contorno del país es Natural Earth. Las fichas salen de PokéAPI. Las posiciones son encuentros simulados de Kanto, reproducibles. No son apariciones reales.
 
 La pantalla recorre tres momentos: explorar el terreno, descubrir una criatura y registrar la ficha en la bitácora.
 
 ## Qué se puede hacer
 
-Hay diez zonas ancla. Al entrar se leen los hábitats reales que esas zonas usan (`urban`, `forest`, `waters-edge`, `grassland`, `mountain`, `sea`, `rough-terrain`, `cave`) y se eligen 56 especies, sin repetir una especie entre zonas cuando el hábitat alcanza. Las cuotas son 6, 8, 4, 6, 6, 5, 5, 6, 4 y 6. La semilla `pokeradar-argentina-v2` fija la especie y la coordenada: dos generaciones seguidas dan el mismo resultado. Cada punto cae dentro del rectángulo de su zona y al este de una polilínea de la divisoria con Chile. El mar de Puerto Pirámides queda en el Golfo Nuevo, no en el Atlántico abierto. No hay un polígono de costa: un punto dentro del rectángulo puede caer en una laguna chica.
+La expedición tiene 56 especies de Kanto (Pokédex Nacional 1–151), escritas en el catálogo. Cada ficha tiene tres identidades: el número nacional, el número de expedición (1–56) y un id estable `kanto-025`. Ese id no sale de la posición en el array. Al entrar no se pide ninguna ficha: el catálogo es local. La ficha completa se pide al elegir.
 
-En el zoom del país se ven diez sellos, con el código de zona y la cantidad. Desde zoom 6.5 el mapa cambia a encuentros: puntos si todavía están lejos, y un sello agrupado si dos caen a menos de 36 px. Pulsar una zona vuela a zoom 8, donde ya se pueden descubrir criaturas. Pulsar un grupo acerca un paso más. Elegir una criatura, en el mapa o en la bitácora, vuela a zoom 12.2 y pide la ficha. Con movimiento reducido el mismo destino es un salto, no un vuelo. La ficha no se pide para las 56 al entrar.
+Cincuenta especies están en el mapa. Cada una usa el hábitat que PokéAPI publica para su zona. Las cuotas son 5, 7, 4, 5, 5, 5, 4, 5, 4 y 6. La semilla `pokeradar-kanto-v1` fija la coordenada. Dar vuelta el catálogo no mueve los puntos. Cada punto cae dentro del rectángulo de su zona y al este de una polilínea de la divisoria con Chile. El mar de Puerto Pirámides queda en el Golfo Nuevo. No hay un polígono de costa: un punto dentro del rectángulo puede caer en una laguna chica.
 
-La ficha muestra el nombre en español cuando PokéAPI lo trae, el número de Pokédex de la especie, los tipos, el artwork oficial o el sprite, las estadísticas base y una línea de zona y hábitat. Si la especie tiene más de una variedad, aclara que se muestra la variedad por defecto. Wormadam es el caso que obliga a esa distinción: `/pokemon/wormadam` responde 404 y la variedad por defecto es `wormadam-plant`.
+Seis especies quedan reservadas y no se dibujan como encuentros: Articuno, Zapdos, Moltres, Aerodactyl, Mewtwo y Mew. Cinco tienen hábitat `rare`, que no es una zona. Aerodactyl es de montaña, y aun así queda fuera del mapa. No hay escena interior ni revelación.
+
+En el zoom del país se ven diez sellos con el nombre y la cantidad. Si dos rectángulos se pisan, el sello se corre en pantalla y el ancla no se mueve: así Iguazú y Cataratas se pueden pulsar. Desde zoom 6.5 el mapa cambia a encuentros, agrupados si caen a menos de 36 px. Pulsar una zona vuela a zoom 8. Elegir una criatura vuela a zoom 12.2 y pide la ficha. Con movimiento reducido el mismo destino es un salto.
+
+La ficha muestra el nombre en español cuando PokéAPI lo trae, el número nacional, el número de expedición, los tipos, el artwork oficial o el sprite, las estadísticas base y una línea de zona y hábitat. Si la especie tiene más de una variedad, aclara que se muestra la variedad por defecto. Wormadam es el caso que obliga a esa distinción: `/pokemon/wormadam` responde 404 y la variedad por defecto es `wormadam-plant`. No está en esta expedición.
+
+Argentina lleva un relleno suave y un contorno, debajo de ríos, calles y etiquetas. Los nombres de países y de provincias del mapa base bajan de opacidad en el zoom nacional; no se borran. Alrededor de cada ancla hay una mancha de color. Es un acento de la expedición, no un bioma ni un límite provincial. No hay fronteras provinciales dibujadas por este proyecto.
+
+El contrato de progreso distingue `undiscovered`, `seen` y `caught`. No hay almacenamiento ni pantalla de captura.
 
 El índice y la ficha no comparten el panel: con una criatura elegida, Ficha e Índice alternan. Cerrar guarda la selección. En escritorio el mapa ocupa el ancho que deja el panel; un botón Bitácora lo vuelve a abrir. En el teléfono el panel es una hoja inferior, y al cerrarla el mapa crece. El momento (explorar, descubrir, registrar) es un texto de estado, no un botón.
 
@@ -46,7 +54,7 @@ La página sigue siendo un Server Component. `MapCanvas` carga `MapView` con `ne
 
 `PokemonSpecies` y `PokemonSummary` no se mezclan con `Sighting`. El encuentro guarda el nombre de la especie y la coordenada. La ficha se arma al seleccionar, pidiendo `/pokemon-species/{nombre}` y después `/pokemon/{variedad por defecto}`.
 
-La caché está en memoria de la pestaña. Una respuesta fallida no queda guardada, así el reintento puede volver a pedirla. Los marcadores no disparan una ficha por especie: en la carga inicial solo salen los hábitats (ocho, porque el hábitat `rare` no se usa).
+La caché está en memoria de la pestaña. Una respuesta fallida no queda guardada, así el reintento puede volver a pedirla. La carga inicial no pide hábitats ni fichas: las 56 especies ya están en el catálogo. La ficha se arma al elegir.
 
 ## Worker de MapLibre
 
@@ -66,7 +74,7 @@ No se agregaron dependencias. `npm audit` reporta 8 moderadas. La raíz es GHSA-
 
 ## Uso de inteligencia artificial
 
-Herramienta: Cursor, con el modelo Grok. Se usó para leer el brief, contrastar PokéAPI y OpenFreeMap, y escribir los bloques B0, B1 y B1.5.
+Herramienta: Cursor, con el modelo Grok. Se usó para leer el brief, contrastar PokéAPI, OpenFreeMap y Natural Earth, y escribir los bloques B0, B1, B1.5 y B2.
 
 Correcciones sobre la salida del modelo:
 
@@ -78,9 +86,10 @@ Correcciones sobre la salida del modelo:
 - El primer mapa se quedó en «Sintonizando el terreno» porque el worker no cargaba. La ruta que leía `node_modules` lo resolvió en local y se reemplazó por el archivo público para poder desplegar después.
 - Se asumió que el nombre de la especie servía para `/pokemon/{nombre}`. Wormadam demuestra que no. La ficha usa la variedad con `is_default`.
 - Repartir encuentros en un radio amplio los dejaba sobre agua o fuera de la zona. En B1 quedaron cuñas cortas. En B1.5 pasaron a rectángulos del lado argentino, con un control de longitud contra la divisoria con Chile. El Aconcagua empieza en longitud -69.99, al este de la cumbre. No hay un polígono de tierra: un punto puede caer en una laguna chica.
-- A zoom de país, los encuentros se pisan. Por eso el zoom bajo muestra el sello de la zona. Desde 6.5 se ven los encuentros, agrupados si se solapan en pantalla. Los sellos de Puerto Iguazú y Cataratas siguen muy cerca entre sí en la vista nacional.
+- A zoom de país, los encuentros se pisan. Por eso el zoom bajo muestra el sello de la zona. Desde 6.5 se ven los encuentros, agrupados si se solapan en pantalla. Iguazú y Cataratas se separan por el tamaño del sello, no moviendo la coordenada.
 - Los botones del mapa no respondían: el marcador de MapLibre deja subir el `mousedown` y el arrastre del mapa se queda con el clic. Cada sello corta `pointerdown`, `mousedown`, `touchstart` y `click`, y Enter y Espacio llaman a la misma acción.
-- Cerrar la bitácora no hacía nada. El panel usaba `hidden` y `lg:flex`, así que en escritorio seguía visible, y las dos grillas reservaban la columna. Además `.action-button { display: inline-flex }` estaba fuera de una capa de CSS y ganaba a `lg:hidden` de Tailwind. El botón pasó a `@layer components` y el panel cerrado deja de ocupar columna.
+- Cerrar la bitácora no hacía nada. El panel usaba `hidden` y `lg:flex`, y `.action-button` fijaba `display`. Aunque la regla estaba en `@layer components`, el CSS servido la dejaba sin capa y ganaba a `hidden`. El `display` salió de esa clase y quedó en utilidades de Tailwind.
+- Un polígono dibujado a mano no sirve de contorno. Se extrajo Argentina de Natural Earth 5.1.2, `ne_50m_admin_0_countries`, 1039 vértices, redondeados a 4 decimales. No se simplificó de nuevo. Malvinas (FLK) y Georgias del Sur (SGS) son features aparte; la fuente anota Malvinas como administradas por el Reino Unido y reclamadas por Argentina. El sector antártico no está en el polígono. No se fusionaron.
 - El estilo pide `circle-11` y el sprite tiene `circle_11`. También falta `wood-pattern`. Se dibuja un sustituto y el aviso queda en consola.
 - Las ocho moderadas de npm son de la cadena de ESLint, no de Next, React, MapLibre ni Framer Motion. No se forzó la actualización.
 - ESLint empezó a marcar el worker copiado. Se ignoró ese archivo generado, no el código de la app.
@@ -97,33 +106,32 @@ npm run build
 npx tsx scripts/verify-pokeapi.ts
 ```
 
-El script pega a PokéAPI. Comprueba Pikachu, rechaza un objeto inválido, recorre los nueve hábitats, exige que Wormadam resuelva a `wormadam-plant` con especie 413, que Pikachu conserve su variedad por defecto, y que dos generaciones de 56 encuentros coincidan, no repitan especie, respeten la cuota de cada zona y caigan dentro del rectángulo y al este de la divisoria.
+El script pega a PokéAPI. Comprueba Pikachu, rechaza un objeto inválido, recorre los nueve hábitats y exige que Wormadam resuelva a `wormadam-plant`. Para Kanto exige 56 especies, ids nacionales 1–151, sin duplicados, los seis reservados fuera del mapa, coordenadas iguales si se invierte el catálogo, puntos dentro de la zona y al este de la divisoria, cero `fetch` al colocar, y el estado inicial `undiscovered`. Después contrasta cada ficha con `/pokemon-species/{id}`: nombre, generación I y hábitat.
 
-En el navegador, sobre `npm run dev`, en este bloque:
+En el navegador, sobre `npm run dev`, en B2:
 
-- Carga y recarga: «56 encuentros» y las mismas 56 especies en el índice, de Blissey a Dragonair.
-- El sello de Buenos Aires recibe el clic: el `mousedown` no sube al documento y el zoom pasa de 3.8 a 8. En ese zoom hay sellos agrupados, no 56 puntos sueltos. Al elegir una criatura el zoom llega a 12.2 y los seis de Buenos Aires quedan separados.
-- Cerrar en 1440×900 saca el panel (el mapa pasa de 1080 a 1440 px) y Bitácora lo devuelve con la ficha de Blissey intacta.
-- Teléfono 390×844: el título «PokéRadar» no se corta. Con la hoja abierta el mapa mide 420 px; cerrada, 700. El control visible es «Abrir ficha» si hay selección.
-- Ventana 525×444 con la hoja abierta: mapa 188 px, panel 186 px, controles dentro del mapa, sin pie de página y sin scroll de documento.
-- Viewport de layout 960×600, el que deja un zoom de navegador al 150 % sobre 1440×900: sin scroll, título entero, y el centro de Cerrar es el botón.
-- Enter sobre el sello de Buenos Aires, con `prefers-reduced-motion`, llevó el zoom de 3.8 a 8.0 en menos de 81 ms. Flecha derecha sobre el lienzo movió la longitud. Framer Motion avisa en consola que el movimiento reducido está activo. Es el aviso de la librería.
-- Una ficha lenta de Gyarados no reemplazó a Snorlax, elegida después. Milotic, con `fetch` hacia PokéAPI rechazado, mostró «La ficha no llegó» y ninguna estadística. El reintento mostró `#0350`, tipo Agua, y las seis estadísticas.
+- El índice lista las 50 de campo, de Meowth a Dragonite, y nombra a las seis reservadas sin convertirlas en botones. Al cargar no hubo pedidos a PokéAPI.
+- Iguazú y Cataratas, en 1440×900, no comparten área: el centro de cada sello recibe el clic. Pulsar Iguazú pasó el zoom de 3.8 a 8.0 y aparecieron encuentros agrupados.
+- Pikachu abrió `#0025 · Exp. 06 · IG`, tipo Eléctrico, con las seis estadísticas de la API. Ese pedido fueron dos recursos, no cincuenta y seis.
+- Cerrar en 1440×900 llevó el mapa de 1080 a 1440 px. Bitácora lo devolvió con Pikachu todavía seleccionado.
+- Teléfono 390×844: el título no se corta, no hay scroll, el mapa mide 420 px con la hoja abierta y 700 px cerrada. El botón Bitácora del encabezado queda en `display: none`. El control de abajo dice «Abrir bitácora».
+- La atribución, plegada, incluye la nota de Natural Earth 5.1.2.
 
-El fallo de red se simuló rechazando `fetch` hacia PokéAPI, no cortando la red del sistema. No se usó un dispositivo táctil real: los sellos también escuchan `touchstart` para que el arrastre no se quede el toque. `documentElement.style.zoom` no equivale al zoom del navegador: en una ventana de 444 px produjo una barra de scroll porque `100dvh` se escala por encima del viewport.
+No se repitió en este bloque la prueba de movimiento reducido, la de respuestas fuera de orden ni la de fallo de red. Esas rutas no se reescribieron. No se usó un teléfono táctil real. No se volvió a medir la ventana de 525×444 ni el zoom de navegador al 150 %.
 
 ## Qué queda para el bloque siguiente
 
-No hay clima, gritos, equipo ni filtros. El índice muestra el slug de la especie hasta que esa ficha se abrió al menos una vez. Los sellos de Puerto Iguazú y Cataratas se solapan en la vista nacional. Los avisos de `circle-11` y `wood-pattern` van a seguir mientras el estilo de OpenFreeMap no los publique. La atribución de datos quedó en el control de MapLibre; el pie de una línea se quitó para no tapar el mapa.
+No hay clima, gritos, equipo, filtros, Pokédex visual ni captura. El índice muestra el slug hasta que esa ficha se abrió. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal, y Malvinas no están dibujadas dentro de Argentina. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar.
 
 ## Decisiones
 
 | Decisión | Por qué | Qué se dejó de lado |
 | --- | --- | --- |
-| Rectángulos por zona y semilla fija | Las 56 posiciones se pueden auditar, quedan al este de Chile y no cambian en cada render | Un polígono de costa como dependencia |
-| Tres bandas de zoom y agrupado en pantalla | El país muestra regiones; desde 6.5 ya hay criaturas; de cerca se leen los nombres | Pintar los 56 puntos en el zoom nacional |
-| Variedad `is_default` | El hábitat lista especies, y el slug de la especie puede no existir como Pokémon | Pedir `/pokemon/{especie}` y tragar el 404 |
-| Caché en memoria, ficha al elegir | Ocho hábitats al entrar; el resto, bajo demanda | TanStack Query o prefetch de las 56 fichas |
+| Catálogo fijo de Kanto y semilla `pokeradar-kanto-v1` | Las especies no cambian al recargar y cada encuentro tiene id propio | Elegir al azar entre el hábitat en cada visita |
+| Contorno Natural Earth 5.1.2, sin fusionar Malvinas | El límite es una fuente pública y la disputa queda documentada | Dibujar un polígono a mano o incorporar el reclamo |
+| Manchas de color, no biomas | El proyecto no tiene polígonos de ecorregión | Pintar las provincias o un hábitat científico |
+| Seis reservados fuera del mapa | No son encuentros comunes y la escena interior es otro bloque | Ponerlos en una zona con el resto |
+| Caché en memoria, ficha al elegir | Cero fichas al entrar; el detalle, bajo demanda | Prefetch de las 56 fichas |
 | Worker en `public/` | Vercel sirve el estático sin leer `node_modules` en runtime | Mantener la ruta que hacía `fs.readFile` |
 | Sustituto del icono ausente, con `console.warn` | El mapa no se cae y el hueco del sprite queda visible | `hasImage`, que dispara el error, o silenciar la consola |
 | No correr `audit fix --force` | El arreglo baja ESLint un major y no toca producción | Actualizar toda la cadena de lint |

@@ -1,22 +1,20 @@
 "use client";
 
 import { MotionConfig, motion } from "framer-motion";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { DetailDock } from "@/components/expedition/detail-dock";
 import { HudBar } from "@/components/expedition/hud-bar";
 import { useDossier, type DossierEntry } from "@/components/expedition/use-dossier";
 import { MapCanvas } from "@/components/map/map-canvas";
 import { EXPEDITION_ZONES } from "@/lib/expedition/argentina";
-import { loadEncounterCatalog } from "@/lib/expedition/catalog";
+import { loadFieldSightings } from "@/lib/expedition/catalog";
 import {
   buildEncounterPins,
   buildZonePins,
-  EMPTY_PINS,
   findZone,
   INSPECT_ZOOM,
 } from "@/lib/expedition/pins";
-import type { Sighting } from "@/lib/expedition/argentina";
-import { errorMessage } from "@/lib/errors/message";
+import { findSighting } from "@/lib/expedition/sightings";
 import { speciesLabel } from "@/lib/pokeapi/labels";
 
 interface CameraRequest {
@@ -26,14 +24,8 @@ interface CameraRequest {
   request: number;
 }
 
-type CatalogState =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; sightings: readonly Sighting[] };
-
 export function ExpeditionScreen() {
-  const [catalog, setCatalog] = useState<CatalogState>({ status: "loading" });
-  const [catalogAttempt, setCatalogAttempt] = useState(0);
+  const sightings = useMemo(() => loadFieldSightings(), []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [notebookOpen, setNotebookOpen] = useState(true);
   const [camera, setCamera] = useState<CameraRequest | null>(null);
@@ -41,28 +33,6 @@ export function ExpeditionScreen() {
     () => new Map(),
   );
   const cameraRequest = useRef(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    void loadEncounterCatalog().then(
-      (sightings) => {
-        if (!cancelled) {
-          setCatalog({ status: "ready", sightings });
-        }
-      },
-      (error: unknown) => {
-        if (!cancelled) {
-          setCatalog({
-            status: "error",
-            message: errorMessage(error, "No se pudieron leer los hábitats."),
-          });
-        }
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [catalogAttempt]);
 
   const rememberName = useCallback((entry: DossierEntry) => {
     const label = entry.species.spanishName ?? speciesLabel(entry.species.name);
@@ -76,20 +46,16 @@ export function ExpeditionScreen() {
     });
   }, []);
 
-  const sightings = catalog.status === "ready" ? catalog.sightings : EMPTY_SIGHTINGS;
-  const selected = sightings.find((sighting) => sighting.id === selectedId) ?? null;
+  const selected = findSighting(sightings, selectedId);
   const dossier = useDossier(selected?.speciesName ?? null, rememberName);
 
   const zonePins = useMemo(
-    () => (catalog.status === "ready" ? buildZonePins(EXPEDITION_ZONES, catalog.sightings) : EMPTY_PINS),
-    [catalog],
+    () => buildZonePins(EXPEDITION_ZONES, sightings),
+    [sightings],
   );
   const encounterPins = useMemo(
-    () =>
-      catalog.status === "ready"
-        ? buildEncounterPins(EXPEDITION_ZONES, catalog.sightings, knownNames)
-        : EMPTY_PINS,
-    [catalog, knownNames],
+    () => buildEncounterPins(EXPEDITION_ZONES, sightings, knownNames),
+    [knownNames, sightings],
   );
 
   function focusCamera(longitude: number, latitude: number, zoom: number) {
@@ -103,7 +69,7 @@ export function ExpeditionScreen() {
   }
 
   function selectSighting(id: string) {
-    const sighting = sightings.find((item) => item.id === id);
+    const sighting = findSighting(sightings, id);
     if (!sighting) {
       return;
     }
@@ -133,13 +99,6 @@ export function ExpeditionScreen() {
       >
         <div className="col-span-full row-start-1">
           <HudBar
-            status={
-              catalog.status === "ready"
-                ? "ready"
-                : catalog.status === "error"
-                  ? "error"
-                  : "loading"
-            }
             count={sightings.length}
             notebookOpen={notebookOpen}
             onOpen={() => setNotebookOpen(true)}
@@ -178,21 +137,15 @@ export function ExpeditionScreen() {
               message={dossier.message}
               speciesName={selected?.speciesName ?? null}
               knownNames={knownNames}
-              catalogStatus={catalog.status}
-              catalogMessage={catalog.status === "error" ? catalog.message : null}
+              expeditionNumber={selected?.expeditionNumber ?? null}
               onSelect={selectSighting}
               onRetry={dossier.retry}
-              onRetryCatalog={() => {
-                setSelectedId(null);
-                setCatalog({ status: "loading" });
-                setCatalogAttempt((value) => value + 1);
-              }}
               onClose={() => setNotebookOpen(false)}
             />
           </div>
         ) : (
           <div className="relative z-30 col-start-1 row-start-3 border-t border-phosphor/20 bg-abyss px-4 py-2 lg:hidden">
-            <button type="button" className="action-button w-full" onClick={() => setNotebookOpen(true)}>
+            <button type="button" className="action-button inline-flex w-full items-center justify-center" onClick={() => setNotebookOpen(true)}>
               {selected ? "Abrir ficha" : "Abrir bitácora"}
             </button>
           </div>
@@ -202,4 +155,3 @@ export function ExpeditionScreen() {
   );
 }
 
-const EMPTY_SIGHTINGS: readonly Sighting[] = [];

@@ -24,11 +24,9 @@ export function DetailDock({
   message,
   speciesName,
   knownNames,
-  catalogStatus,
-  catalogMessage,
+  expeditionNumber,
   onSelect,
   onRetry,
-  onRetryCatalog,
   onClose,
 }: {
   sightings: readonly Sighting[];
@@ -39,11 +37,9 @@ export function DetailDock({
   message: string | null;
   speciesName: string | null;
   knownNames: ReadonlyMap<string, string>;
-  catalogStatus: "loading" | "ready" | "error";
-  catalogMessage: string | null;
+  expeditionNumber: number | null;
   onSelect: (id: string) => void;
   onRetry: () => void;
-  onRetryCatalog: () => void;
   onClose: () => void;
 }) {
   const [pinnedView, setPinnedView] = useState<{
@@ -81,15 +77,15 @@ export function DetailDock({
             Momento: <span className="text-amber">{moment}</span>
           </p>
         </div>
-        <button type="button" className="action-button" onClick={onClose}>
+        <button type="button" className="action-button inline-flex items-center justify-center" onClick={onClose}>
           Cerrar
         </button>
       </div>
-      {catalogStatus === "ready" && phase !== "idle" ? (
+      {phase !== "idle" ? (
         <div className="flex gap-2 border-b border-phosphor/15 px-4 py-2 pl-8">
           <button
             type="button"
-            className={view === "entry" ? "action-button" : "action-button opacity-60"}
+            className={view === "entry" ? "action-button inline-flex items-center justify-center" : "action-button inline-flex items-center justify-center opacity-60"}
             aria-pressed={view === "entry"}
             onClick={showEntry}
           >
@@ -97,7 +93,7 @@ export function DetailDock({
           </button>
           <button
             type="button"
-            className={view === "index" ? "action-button" : "action-button opacity-60"}
+            className={view === "index" ? "action-button inline-flex items-center justify-center" : "action-button inline-flex items-center justify-center opacity-60"}
             aria-pressed={view === "index"}
             onClick={showIndex}
           >
@@ -106,7 +102,7 @@ export function DetailDock({
         </div>
       ) : null}
       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto" aria-live="polite">
-        {view === "index" && catalogStatus === "ready" ? (
+        {view === "index" ? (
           <EncounterIndex
             sightings={sightings}
             selectedId={selectedId}
@@ -115,23 +111,11 @@ export function DetailDock({
           />
         ) : (
           <AnimatePresence mode="wait" initial={false}>
-            {catalogStatus === "error" ? (
-              <motion.div key="catalog-error" {...panelMotion} className="px-5 py-4 pl-8">
-                <h3 className="text-lg font-semibold">Los hábitats no respondieron</h3>
-                <p className="mt-2 text-sm text-quiet">
-                  {catalogMessage ?? "PokéAPI no entregó especies. No hay encuentros inventados."}
-                </p>
-                <button type="button" className="action-button mt-3" onClick={onRetryCatalog}>
-                  Reintentar
-                </button>
-              </motion.div>
-            ) : phase === "idle" ? (
+            {phase === "idle" ? (
               <motion.div key="idle" {...panelMotion} className="px-5 py-4 pl-8">
                 <h3 className="text-lg font-semibold">Ningún encuentro abierto</h3>
                 <p className="mt-2 text-sm text-quiet">
-                  {catalogStatus === "loading"
-                    ? "Leyendo hábitats de PokéAPI."
-                    : "Elegí una región en el mapa o una especie del índice."}
+                  Elegí una región en el mapa o una especie del índice. Los colores sobre el terreno son acentos de la expedición, no biomas ni provincias.
                 </p>
               </motion.div>
             ) : phase === "loading" ? (
@@ -158,13 +142,17 @@ export function DetailDock({
                 <p className="mt-2 text-sm text-quiet">
                   {message ?? "PokéAPI falló. No se inventaron datos."}
                 </p>
-                <button type="button" className="action-button mt-3" onClick={onRetry}>
+                <button type="button" className="action-button mt-3 inline-flex items-center justify-center" onClick={onRetry}>
                   Reintentar
                 </button>
               </motion.div>
             ) : entry && zone ? (
               <motion.div key={selectedId ?? entry.speciesName} {...panelMotion}>
-                <FieldEntry entry={entry} zone={zone} />
+                <FieldEntry
+                  entry={entry}
+                  zone={zone}
+                  expeditionNumber={expeditionNumber}
+                />
               </motion.div>
             ) : null}
           </AnimatePresence>
