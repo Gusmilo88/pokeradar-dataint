@@ -661,7 +661,8 @@ body {
 }
 
 .enclave-visit[data-stage="exterior"] .art-stage {
-  transform: translate(-66%, -50%);
+  /* -66 % centra la boca. El clamp no deja pasar del sobrante: si no, el fondo queda al descubierto. */
+  transform: translate(clamp(calc(50cqw - 100%), -66%, -50cqw), -50%);
 }
 
 .art-plate {
@@ -690,19 +691,17 @@ body {
 
 .aurora-veil {
   position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 32%;
+  inset: 0;
   background: linear-gradient(
     100deg,
-    transparent,
+    rgba(125, 255, 195, 0),
     rgba(125, 255, 195, 0.22),
     rgba(90, 200, 255, 0.16),
     rgba(150, 120, 255, 0.22),
-    transparent
+    rgba(150, 120, 255, 0)
   );
   background-size: 220% 100%;
+  mask-image: linear-gradient(#000 0%, #000 10%, transparent 46%);
   animation: aurora-drift 18s ease-in-out infinite;
 }
 
@@ -723,7 +722,7 @@ body {
   bottom: 0;
   left: 0;
   height: 20%;
-  background: linear-gradient(transparent, rgba(214, 244, 255, 0.16));
+  background: linear-gradient(rgba(214, 244, 255, 0), rgba(214, 244, 255, 0.16));
 }
 
 .snow-flake {
@@ -842,7 +841,7 @@ body {
     max(1.25rem, env(safe-area-inset-right))
     max(0.85rem, env(safe-area-inset-bottom))
     max(1.25rem, env(safe-area-inset-left));
-  background: linear-gradient(transparent, rgba(4, 12, 18, 0.42) 38%, rgba(4, 12, 18, 0.62));
+  background: linear-gradient(rgba(4, 12, 18, 0), rgba(4, 12, 18, 0.42) 38%, rgba(4, 12, 18, 0.62));
   pointer-events: none;
 }
 
