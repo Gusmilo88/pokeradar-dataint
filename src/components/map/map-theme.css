@@ -1,0 +1,70 @@
+.maplibregl-map {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+.maplibregl-ctrl-group {
+  background: rgba(8, 24, 34, 0.92);
+  border: 1px solid rgba(142, 246, 223, 0.35);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid rgba(142, 246, 223, 0.2);
+}
+
+.maplibregl-ctrl-group button {
+  filter: invert(1) hue-rotate(120deg) saturate(0.7);
+}
+
+.maplibregl-ctrl-attrib.maplibregl-compact,
+.maplibregl-ctrl-attrib.maplibregl-compact-show {
+  background-color: rgba(6, 20, 28, 0.92);
+  color: #e7f6f2;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: #8ef6df;
+}
+
+.maplibregl-ctrl-scale {
+  background: rgba(6, 20, 28, 0.82);
+  color: #e7f6f2;
+  border-color: rgba(142, 246, 223, 0.45);
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+.field-pin {
+  display: grid;
+  place-items: center;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0 0.35rem;
+  border: 1px solid rgba(142, 246, 223, 0.7);
+  background: #0b1e29;
+  color: #e7f6f2;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.field-pin-zone {
+  border-radius: 999px;
+}
+
+.field-pin-encounter {
+  border-radius: 0.35rem;
+}
+
+.field-pin.is-selected {
+  border-color: #f2c14e;
+  color: #f2c14e;
+  outline: 2px solid #f2c14e;
+  outline-offset: 2px;
+}
+
+.field-pin:focus-visible {
+  outline: 2px solid #8ef6df;
+  outline-offset: 3px;
+}
