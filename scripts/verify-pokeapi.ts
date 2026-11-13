@@ -1,10 +1,6 @@
 import { EXPEDITION_ZONES, type ExpeditionHabitat } from "../src/lib/expedition/argentina";
-import {
-  angleDelta,
-  bearingDegrees,
-  buildSightings,
-  distanceKm,
-} from "../src/lib/expedition/sightings";
+import { containsBounds, isEastOfChile } from "../src/lib/expedition/geography";
+import { buildSightings, TARGET_ENCOUNTERS } from "../src/lib/expedition/sightings";
 import { getHabitat, getPokemon, getPokemonForSpecies } from "../src/lib/pokeapi/client";
 import { parsePokemon } from "../src/lib/pokeapi/parse";
 import { POKEMON_HABITATS, type PokemonHabitatName } from "../src/lib/pokeapi/types";
@@ -92,55 +88,40 @@ async function main(): Promise<void> {
     }
   }
 
+  const quota = EXPEDITION_ZONES.reduce((sum, zone) => sum + zone.quota, 0);
+  if (quota !== TARGET_ENCOUNTERS) {
+    throw new Error(`Las cuotas suman ${quota}, no ${TARGET_ENCOUNTERS}.`);
+  }
+
   const first = buildSightings(EXPEDITION_ZONES, speciesByHabitat);
   const second = buildSightings(EXPEDITION_ZONES, speciesByHabitat);
   if (JSON.stringify(first) !== JSON.stringify(second)) {
     throw new Error("Los encuentros cambiaron entre dos generaciones con la misma semilla.");
   }
-  if (first.length !== EXPEDITION_ZONES.length * 2) {
-    throw new Error(`Se esperaban ${EXPEDITION_ZONES.length * 2} encuentros y hay ${first.length}.`);
+  if (first.length !== TARGET_ENCOUNTERS) {
+    throw new Error(`Se esperaban ${TARGET_ENCOUNTERS} encuentros y hay ${first.length}.`);
   }
 
+  const seen = new Set<string>();
   for (const zone of EXPEDITION_ZONES) {
     const group = first.filter((sighting) => sighting.zoneId === zone.id);
-    const names = new Set<string>();
+    if (group.length !== zone.quota) {
+      throw new Error(`${zone.id} tiene ${group.length} encuentros y la cuota es ${zone.quota}.`);
+    }
     for (const sighting of group) {
       if (!speciesByHabitat[zone.habitat].includes(sighting.speciesName)) {
         throw new Error(`${sighting.speciesName} no pertenece al hábitat ${zone.habitat}.`);
       }
-      if (names.has(sighting.speciesName)) {
-        throw new Error(`La zona ${zone.id} repite ${sighting.speciesName}.`);
+      if (seen.has(sighting.speciesName)) {
+        throw new Error(`La especie ${sighting.speciesName} está repetida.`);
       }
-      names.add(sighting.speciesName);
+      seen.add(sighting.speciesName);
       const point = { latitude: sighting.latitude, longitude: sighting.longitude };
-      const distance = distanceKm(zone.anchor, point);
-      if (distance > zone.placement.spreadKm + 0.05) {
-        throw new Error(
-          `${sighting.id} quedó a ${distance.toFixed(2)} km, fuera de ${zone.placement.spreadKm} km.`,
-        );
+      if (!containsBounds(zone.bounds, point)) {
+        throw new Error(`${sighting.id} quedó fuera del recuadro de ${zone.name}.`);
       }
-      if (zone.placement.bearingSpanDeg < 360) {
-        const delta = angleDelta(bearingDegrees(zone.anchor, point), zone.placement.bearingDeg);
-        if (delta > zone.placement.bearingSpanDeg / 2 + 0.5) {
-          throw new Error(`${sighting.id} salió de la cuña de ${zone.name}.`);
-        }
-      }
-    }
-    const minimum = Math.min(0.8, zone.placement.spreadKm * 0.4);
-    if (group.length === 2) {
-      const left = group[0];
-      const right = group[1];
-      if (!left || !right) {
-        throw new Error(`La zona ${zone.id} no tiene el par de encuentros.`);
-      }
-      const separation = distanceKm(
-        { latitude: left.latitude, longitude: left.longitude },
-        { latitude: right.latitude, longitude: right.longitude },
-      );
-      if (separation + 0.02 < minimum) {
-        throw new Error(
-          `Los encuentros de ${zone.id} quedaron a ${separation.toFixed(2)} km (mínimo ${minimum.toFixed(2)}).`,
-        );
+      if (!isEastOfChile(point)) {
+        throw new Error(`${sighting.id} quedó al oeste de la divisoria con Chile.`);
       }
     }
   }

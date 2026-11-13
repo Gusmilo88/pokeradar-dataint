@@ -7,8 +7,9 @@ import {
 } from "@/lib/expedition/argentina";
 import { speciesLabel } from "@/lib/pokeapi/labels";
 
-export const ENCOUNTER_ZOOM = 12.2;
-export const FOCUS_ZOOM = 13.2;
+export const REGIONAL_ZOOM = 6.5;
+export const INSPECT_ZOOM = 12.2;
+export const STACK_GAP_PX = 36;
 
 export const EMPTY_PINS: readonly FieldPin[] = [];
 
@@ -26,7 +27,7 @@ const HABITAT_CODE: Record<ExpeditionHabitat, string> = {
 export interface FieldPin {
   id: string;
   zoneId: string;
-  kind: "zone" | "encounter";
+  kind: "zone" | "encounter" | "stack";
   longitude: number;
   latitude: number;
   shortLabel: string;
@@ -49,8 +50,8 @@ export function buildZonePins(
       kind: "zone",
       longitude: zone.anchor.longitude,
       latitude: zone.anchor.latitude,
-      shortLabel: String(count),
-      label: `Zona ${zone.name}, ${zone.region}. ${count} encuentros simulados de hábitat ${HABITAT_LABEL[zone.habitat]}. Acercar el mapa.`,
+      shortLabel: `${zone.code} ${count}`,
+      label: `${zone.name}, ${zone.region}. ${count} encuentros de ${HABITAT_LABEL[zone.habitat]}. Acercar.`,
     };
   });
 }
@@ -74,10 +75,45 @@ export function buildEncounterPins(
         kind: "encounter" as const,
         longitude: sighting.longitude,
         latitude: sighting.latitude,
-        shortLabel: HABITAT_CODE[zone.habitat],
-        label: `Encuentro simulado de ${name} en ${zone.name}. Hábitat ${HABITAT_LABEL[zone.habitat]}.`,
+        shortLabel: name.split(" ")[0]?.slice(0, 9) ?? HABITAT_CODE[zone.habitat],
+        label: `${name}. ${zone.name}. ${HABITAT_LABEL[zone.habitat]}. Encuentro simulado.`,
       },
     ];
+  });
+}
+
+export function collapsePins(
+  pins: readonly FieldPin[],
+  project: (pin: FieldPin) => { x: number; y: number },
+  gap = STACK_GAP_PX,
+): FieldPin[] {
+  const groups: { pin: FieldPin; x: number; y: number; members: FieldPin[] }[] = [];
+  for (const pin of pins) {
+    const point = project(pin);
+    const group = groups.find(
+      (item) => Math.hypot(item.x - point.x, item.y - point.y) < gap,
+    );
+    if (group) {
+      group.members.push(pin);
+    } else {
+      groups.push({ pin, x: point.x, y: point.y, members: [pin] });
+    }
+  }
+
+  return groups.map((group) => {
+    if (group.members.length === 1) {
+      return group.pin;
+    }
+    const count = group.members.length;
+    return {
+      id: `stack:${group.pin.id}`,
+      zoneId: group.pin.zoneId,
+      kind: "stack" as const,
+      longitude: group.pin.longitude,
+      latitude: group.pin.latitude,
+      shortLabel: String(count),
+      label: `${count} encuentros en este punto del mapa. Acercar para separarlos.`,
+    };
   });
 }
 

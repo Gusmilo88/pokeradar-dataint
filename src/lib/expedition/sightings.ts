@@ -1,8 +1,9 @@
 import type { ExpeditionHabitat, ExpeditionZone, GeoPoint, Sighting } from "@/lib/expedition/argentina";
+import { containsBounds, isEastOfChile } from "@/lib/expedition/geography";
 import { hashString, mulberry32 } from "@/lib/expedition/seed";
 
-export const ENCOUNTERS_PER_ZONE = 2;
-export const SIGHTING_SEED = "pokeradar-argentina-v1";
+export const SIGHTING_SEED = "pokeradar-argentina-v2";
+export const TARGET_ENCOUNTERS = 56;
 
 const KM_PER_DEGREE_LAT = 110.574;
 const KM_PER_DEGREE_LNG = 111.32;
@@ -16,53 +17,64 @@ export function distanceKm(from: GeoPoint, to: GeoPoint): number {
   return Math.hypot(north, east);
 }
 
-export function bearingDegrees(from: GeoPoint, to: GeoPoint): number {
-  const north = (to.latitude - from.latitude) * KM_PER_DEGREE_LAT;
-  const east =
-    (to.longitude - from.longitude) *
-    KM_PER_DEGREE_LNG *
-    Math.cos((from.latitude * Math.PI) / 180);
-  const degrees = (Math.atan2(east, north) * 180) / Math.PI;
-  return (degrees + 360) % 360;
-}
-
-export function angleDelta(left: number, right: number): number {
-  const diff = Math.abs(left - right) % 360;
-  return diff > 180 ? 360 - diff : diff;
-}
-
-function move(anchor: GeoPoint, distance: number, bearing: number): GeoPoint {
-  const radians = (bearing * Math.PI) / 180;
-  const north = distance * Math.cos(radians);
-  const east = distance * Math.sin(radians);
-  const latitude = anchor.latitude + north / KM_PER_DEGREE_LAT;
-  const cosine = Math.cos((anchor.latitude * Math.PI) / 180);
-  const longitude =
-    cosine === 0 ? anchor.longitude : anchor.longitude + east / (KM_PER_DEGREE_LNG * cosine);
-  return { latitude, longitude };
-}
-
-function placeEncounter(
+function cellPoint(
   random: () => number,
   zone: ExpeditionZone,
-  taken: readonly GeoPoint[],
+  column: number,
+  row: number,
+  columns: number,
+  rows: number,
 ): GeoPoint {
-  const { spreadKm, bearingDeg, bearingSpanDeg } = zone.placement;
-  const minimum = Math.min(0.8, spreadKm * 0.4);
-  let chosen = zone.anchor;
+  const { west, east, south, north } = zone.bounds;
+  const width = (east - west) / columns;
+  const height = (north - south) / rows;
+  return {
+    longitude: west + width * (column + 0.18 + random() * 0.64),
+    latitude: south + height * (row + 0.18 + random() * 0.64),
+  };
+}
 
-  for (let attempt = 0; attempt < 18; attempt += 1) {
-    const distance = spreadKm * (0.4 + 0.6 * Math.sqrt(random()));
-    const bearing = bearingDeg + (random() - 0.5) * bearingSpanDeg;
-    const point = move(zone.anchor, distance, bearing);
-    chosen = point;
-    const clear = taken.every((other) => distanceKm(other, point) >= minimum);
-    if (clear) {
-      return point;
+function cellCenter(
+  zone: ExpeditionZone,
+  column: number,
+  row: number,
+  columns: number,
+  rows: number,
+): GeoPoint {
+  const { west, east, south, north } = zone.bounds;
+  return {
+    longitude: west + ((east - west) / columns) * (column + 0.5),
+    latitude: south + ((north - south) / rows) * (row + 0.5),
+  };
+}
+
+function accept(point: GeoPoint, zone: ExpeditionZone, taken: readonly GeoPoint[]): boolean {
+  if (!containsBounds(zone.bounds, point) || !isEastOfChile(point)) {
+    return false;
+  }
+  return taken.every((other) => distanceKm(other, point) >= 0.45);
+}
+
+function placeZone(random: () => number, zone: ExpeditionZone): GeoPoint[] {
+  const columns = Math.ceil(Math.sqrt(zone.quota));
+  const rows = Math.ceil(zone.quota / columns);
+  const points: GeoPoint[] = [];
+
+  for (let index = 0; index < zone.quota; index += 1) {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    let placed = cellCenter(zone, column, row, columns, rows);
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      const point = cellPoint(random, zone, column, row, columns, rows);
+      if (accept(point, zone, points)) {
+        placed = point;
+        break;
+      }
     }
+    points.push(placed);
   }
 
-  return chosen;
+  return points;
 }
 
 export function buildSightings(
@@ -70,7 +82,12 @@ export function buildSightings(
   speciesByHabitat: Readonly<Record<ExpeditionHabitat, readonly string[]>>,
   seed = SIGHTING_SEED,
 ): Sighting[] {
-  const taken: GeoPoint[] = [];
+  const quota = zones.reduce((sum, zone) => sum + zone.quota, 0);
+  if (quota !== TARGET_ENCOUNTERS) {
+    throw new Error(`Las cuotas suman ${quota} y el objetivo es ${TARGET_ENCOUNTERS}.`);
+  }
+
+  const used = new Set<string>();
   const sightings: Sighting[] = [];
 
   for (const zone of zones) {
@@ -78,20 +95,28 @@ export function buildSightings(
     if (!names) {
       throw new Error(`Falta el listado de especies para ${zone.habitat}.`);
     }
+    const available = [...names]
+      .filter((name) => !used.has(name))
+      .sort((left, right) => left.localeCompare(right));
+    if (available.length < zone.quota) {
+      throw new Error(
+        `${zone.id} necesita ${zone.quota} especies nuevas de ${zone.habitat} y quedan ${available.length}.`,
+      );
+    }
 
-    const pool = [...names].sort((left, right) => left.localeCompare(right));
     const random = mulberry32(hashString(`${seed}:${zone.id}`));
-    const count = Math.min(ENCOUNTERS_PER_ZONE, pool.length);
+    const pool = [...available];
+    const points = placeZone(random, zone);
 
-    for (let index = 0; index < count; index += 1) {
+    for (let index = 0; index < zone.quota; index += 1) {
       const pick = Math.floor(random() * pool.length);
       const speciesName = pool[pick];
-      if (!speciesName) {
-        throw new Error(`No quedó especie para ${zone.id}.`);
+      const point = points[index];
+      if (!speciesName || !point) {
+        throw new Error(`No quedó especie o coordenada para ${zone.id}.`);
       }
       pool.splice(pick, 1);
-      const point = placeEncounter(random, zone, taken);
-      taken.push(point);
+      used.add(speciesName);
       sightings.push({
         id: `${zone.id}:${speciesName}:${index}`,
         speciesName,

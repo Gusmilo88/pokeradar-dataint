@@ -3,9 +3,13 @@ import { RadarMark } from "@/components/expedition/radar-mark";
 export function HudBar({
   status,
   count,
+  notebookOpen,
+  onOpen,
 }: {
   status: "loading" | "ready" | "error";
   count: number;
+  notebookOpen: boolean;
+  onOpen: () => void;
 }) {
   const label =
     status === "ready"
@@ -17,21 +21,25 @@ export function HudBar({
   return (
     <header className="relative z-20 border-b border-phosphor/20 bg-abyss px-4 py-3 sm:px-6">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex items-center gap-3">
           <RadarMark />
-          <div className="min-w-0">
-            <p className="truncate font-mono text-[10px] tracking-[0.22em] text-phosphor uppercase">
-              DataInt · Expedición
+          <div>
+            <p className="font-mono text-[10px] tracking-[0.18em] text-phosphor uppercase">
+              DataInt · Argentina
             </p>
-            <h1 className="truncate text-lg font-semibold tracking-tight sm:text-2xl">
-              PokéRadar
-              <span className="ml-2 font-normal text-quiet">Argentina</span>
-            </h1>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">PokéRadar</h1>
           </div>
         </div>
-        <p className="shrink-0 rounded-full border border-amber/40 px-3 py-1 font-mono text-[10px] tracking-[0.16em] text-amber uppercase">
-          {label}
-        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          <p className="rounded-full border border-amber/40 px-3 py-1 font-mono text-[10px] tracking-[0.14em] text-amber uppercase">
+            {label}
+          </p>
+          {notebookOpen ? null : (
+            <button type="button" className="action-button hidden lg:inline-flex" onClick={onOpen}>
+              Bitácora
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );

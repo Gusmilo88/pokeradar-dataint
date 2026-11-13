@@ -65,23 +65,25 @@ body {
 }
 
 .map-stage {
-  box-shadow: inset 0 0 90px rgba(4, 14, 20, 0.55);
+  overflow: hidden;
 }
 
-.action-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.75rem;
-  padding: 0 1rem;
-  border: 1px solid rgba(142, 246, 223, 0.5);
-  border-radius: 999px;
-  background: rgba(142, 246, 223, 0.12);
-  color: var(--radar-phosphor-strong);
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+@layer components {
+  .action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border: 1px solid rgba(142, 246, 223, 0.5);
+    border-radius: 999px;
+    background: rgba(142, 246, 223, 0.12);
+    color: var(--radar-phosphor-strong);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
 }
 
 .action-button:hover {

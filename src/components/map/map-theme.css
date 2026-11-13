@@ -34,34 +34,63 @@
   font-family: var(--font-plex-mono), ui-monospace, monospace;
 }
 
+.maplibregl-canvas {
+  filter: contrast(1.16) brightness(1.2);
+}
+
 .field-pin {
   display: grid;
   place-items: center;
-  min-width: 2.25rem;
-  min-height: 2.25rem;
-  padding: 0 0.35rem;
-  border: 1px solid rgba(142, 246, 223, 0.7);
-  background: #0b1e29;
-  color: #e7f6f2;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 0.4rem;
+  border: 2px solid #102029;
+  background: #f4f7f8;
+  color: #102029;
   font-family: var(--font-plex-mono), ui-monospace, monospace;
   font-size: 0.68rem;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+  white-space: pre;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
-.field-pin-zone {
+.field-pin-zone,
+.field-pin-stack {
   border-radius: 999px;
+}
+
+.field-pin-stack {
+  background: #f2c14e;
 }
 
 .field-pin-encounter {
   border-radius: 0.35rem;
 }
 
+.field-pin-dot {
+  background: transparent;
+  border-color: transparent;
+}
+
+.field-pin-dot::before {
+  content: "";
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid #102029;
+  border-radius: 999px;
+  background: #f4f7f8;
+}
+
 .field-pin.is-selected {
-  border-color: #f2c14e;
-  color: #f2c14e;
-  outline: 2px solid #f2c14e;
-  outline-offset: 2px;
+  background: #f2c14e;
+  color: #1a1404;
+}
+
+.field-pin-dot.is-selected::before {
+  background: #f2c14e;
 }
 
 .field-pin:focus-visible {

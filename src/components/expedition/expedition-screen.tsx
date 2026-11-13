@@ -13,6 +13,7 @@ import {
   buildZonePins,
   EMPTY_PINS,
   findZone,
+  INSPECT_ZOOM,
 } from "@/lib/expedition/pins";
 import type { Sighting } from "@/lib/expedition/argentina";
 import { errorMessage } from "@/lib/errors/message";
@@ -21,6 +22,7 @@ import { speciesLabel } from "@/lib/pokeapi/labels";
 interface CameraRequest {
   longitude: number;
   latitude: number;
+  zoom: number;
   request: number;
 }
 
@@ -90,11 +92,12 @@ export function ExpeditionScreen() {
     [catalog, knownNames],
   );
 
-  function focusCamera(longitude: number, latitude: number) {
+  function focusCamera(longitude: number, latitude: number, zoom: number) {
     cameraRequest.current += 1;
     setCamera({
       longitude,
       latitude,
+      zoom,
       request: cameraRequest.current,
     });
   }
@@ -106,7 +109,7 @@ export function ExpeditionScreen() {
     }
     setSelectedId(id);
     setNotebookOpen(true);
-    focusCamera(sighting.longitude, sighting.latitude);
+    focusCamera(sighting.longitude, sighting.latitude, INSPECT_ZOOM);
   }
 
   function focusZone(zoneId: string) {
@@ -114,7 +117,7 @@ export function ExpeditionScreen() {
     if (!zone) {
       return;
     }
-    focusCamera(zone.anchor.longitude, zone.anchor.latitude);
+    focusCamera(zone.anchor.longitude, zone.anchor.latitude, 8);
   }
 
   const zone = selected ? (findZone(selected.zoneId) ?? null) : null;
@@ -124,11 +127,11 @@ export function ExpeditionScreen() {
       <div
         className={
           notebookOpen
-            ? "grid h-dvh grid-cols-1 grid-rows-[auto_minmax(9.5rem,1.2fr)_minmax(7.5rem,1fr)_auto] overflow-hidden lg:grid-cols-[minmax(0,1fr)_22.5rem] lg:grid-rows-[auto_minmax(0,1fr)_auto]"
-            : "grid h-dvh grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto_auto] overflow-hidden lg:grid-cols-[minmax(0,1fr)_22.5rem] lg:grid-rows-[auto_minmax(0,1fr)_auto]"
+            ? "grid h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(10rem,1fr)_minmax(8.5rem,42dvh)] overflow-hidden lg:grid-cols-[minmax(0,1fr)_22.5rem] lg:grid-rows-[auto_minmax(0,1fr)]"
+            : "grid h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden lg:grid-rows-[auto_minmax(0,1fr)]"
         }
       >
-        <div className="col-start-1 row-start-1 lg:col-span-2">
+        <div className="col-span-full row-start-1">
           <HudBar
             status={
               catalog.status === "ready"
@@ -138,6 +141,8 @@ export function ExpeditionScreen() {
                   : "loading"
             }
             count={sightings.length}
+            notebookOpen={notebookOpen}
+            onOpen={() => setNotebookOpen(true)}
           />
           <motion.div
             aria-hidden="true"
@@ -162,39 +167,36 @@ export function ExpeditionScreen() {
             onFocusZone={focusZone}
           />
         </main>
-        <div
-          className={
-            notebookOpen
-              ? "col-start-1 row-start-3 h-full min-h-0 border-t border-phosphor/20 lg:col-start-2 lg:row-start-2 lg:border-t-0"
-              : "col-start-1 row-start-3 min-h-0 border-t border-phosphor/20 lg:col-start-2 lg:row-start-2 lg:h-full lg:border-t-0"
-          }
-        >
-          <DetailDock
-            sightings={sightings}
-            selectedId={selectedId}
-            zone={zone}
-            phase={dossier.phase}
-            entry={dossier.entry}
-            message={dossier.message}
-            speciesName={selected?.speciesName ?? null}
-            knownNames={knownNames}
-            notebookOpen={notebookOpen}
-            catalogStatus={catalog.status}
-            catalogMessage={catalog.status === "error" ? catalog.message : null}
-            onSelect={selectSighting}
-            onRetry={dossier.retry}
-            onRetryCatalog={() => {
-              setSelectedId(null);
-              setCatalog({ status: "loading" });
-              setCatalogAttempt((value) => value + 1);
-            }}
-            onToggleNotebook={() => setNotebookOpen((open) => !open)}
-          />
-        </div>
-        <footer className="col-start-1 row-start-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-phosphor/20 bg-abyss px-4 py-2 font-mono text-[11px] leading-5 text-quiet lg:col-span-2 lg:row-start-3">
-          <p>Encuentros simulados por hábitat · fichas PokéAPI · terreno OpenFreeMap</p>
-          <p>Tab llega a los sellos · flechas mueven el mapa</p>
-        </footer>
+        {notebookOpen ? (
+          <div className="relative z-30 col-start-1 row-start-3 h-full min-h-0 border-t border-phosphor/20 bg-abyss lg:col-start-2 lg:row-start-2 lg:border-t-0 lg:border-l">
+            <DetailDock
+              sightings={sightings}
+              selectedId={selectedId}
+              zone={zone}
+              phase={dossier.phase}
+              entry={dossier.entry}
+              message={dossier.message}
+              speciesName={selected?.speciesName ?? null}
+              knownNames={knownNames}
+              catalogStatus={catalog.status}
+              catalogMessage={catalog.status === "error" ? catalog.message : null}
+              onSelect={selectSighting}
+              onRetry={dossier.retry}
+              onRetryCatalog={() => {
+                setSelectedId(null);
+                setCatalog({ status: "loading" });
+                setCatalogAttempt((value) => value + 1);
+              }}
+              onClose={() => setNotebookOpen(false)}
+            />
+          </div>
+        ) : (
+          <div className="relative z-30 col-start-1 row-start-3 border-t border-phosphor/20 bg-abyss px-4 py-2 lg:hidden">
+            <button type="button" className="action-button w-full" onClick={() => setNotebookOpen(true)}>
+              {selected ? "Abrir ficha" : "Abrir bitácora"}
+            </button>
+          </div>
+        )}
       </div>
     </MotionConfig>
   );

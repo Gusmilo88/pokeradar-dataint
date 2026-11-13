@@ -15,7 +15,12 @@ import { StatusPanel } from "@/components/states/status-panel";
 import { prefersReducedMotion } from "@/lib/a11y/motion";
 import { formatLatitude, formatLongitude } from "@/lib/expedition/format";
 import { ARGENTINA_VIEW } from "@/lib/expedition/argentina";
-import { ENCOUNTER_ZOOM, FOCUS_ZOOM, type FieldPin } from "@/lib/expedition/pins";
+import {
+  collapsePins,
+  INSPECT_ZOOM,
+  REGIONAL_ZOOM,
+  type FieldPin,
+} from "@/lib/expedition/pins";
 import { errorMessage } from "@/lib/errors/message";
 import {
   MAP_LOCALE,
@@ -34,6 +39,7 @@ interface MapReadout {
 export interface MapCamera {
   longitude: number;
   latitude: number;
+  zoom: number;
   request: number;
 }
 
@@ -97,7 +103,7 @@ export function MapView({
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
   const [detail, setDetail] = useState<string | null>(null);
   const [readout, setReadout] = useState<MapReadout>(initialReadout);
-  const [showEncounters, setShowEncounters] = useState(false);
+  const [layoutTick, setLayoutTick] = useState(0);
 
   useEffect(() => {
     selectRef.current = onSelectSighting;
@@ -172,11 +178,6 @@ export function MapView({
       });
     };
 
-    const publishZoomMode = () => {
-      const next = activeMap.getZoom() >= ENCOUNTER_ZOOM;
-      setShowEncounters((current) => (current === next ? current : next));
-    };
-
     const onStyleLoad = () => {
       styleLoaded = true;
     };
@@ -188,7 +189,7 @@ export function MapView({
       setPhase("ready");
       setDetail(null);
       publishReadout();
-      publishZoomMode();
+      setLayoutTick((value) => value + 1);
       const attribution = activeMap.getContainer().querySelector(".maplibregl-ctrl-attrib");
       if (attribution?.classList.contains("maplibregl-compact-show")) {
         attribution.querySelector<HTMLElement>(".maplibregl-ctrl-attrib-button")?.click();
@@ -197,6 +198,7 @@ export function MapView({
 
     const onMoveEnd = () => {
       publishReadout();
+      setLayoutTick((value) => value + 1);
     };
 
     const onError = (event: ErrorEvent) => {
@@ -243,7 +245,6 @@ export function MapView({
     activeMap.on("style.load", onStyleLoad);
     activeMap.on("load", onLoad);
     activeMap.on("moveend", onMoveEnd);
-    activeMap.on("zoom", publishZoomMode);
     activeMap.on("error", onError);
 
     return () => {
@@ -253,7 +254,6 @@ export function MapView({
       activeMap.off("style.load", onStyleLoad);
       activeMap.off("load", onLoad);
       activeMap.off("moveend", onMoveEnd);
-      activeMap.off("zoom", publishZoomMode);
       activeMap.off("error", onError);
       activeMap.remove();
     };
@@ -265,20 +265,54 @@ export function MapView({
       return;
     }
 
-    const pins = showEncounters ? encounterPins : zonePins;
+    const zoom = map.getZoom();
+    const showEncounters = zoom >= REGIONAL_ZOOM;
+    const labeled = zoom >= INSPECT_ZOOM - 0.4;
+    const pins = showEncounters
+      ? collapsePins(encounterPins, (pin) => {
+          const point = map.project([pin.longitude, pin.latitude]);
+          return { x: point.x, y: point.y };
+        })
+      : zonePins;
     const markers: Marker[] = [];
+
+    const approach = (pin: FieldPin) => {
+      const nextZoom = Math.min(14, Math.max(map.getZoom() + 2, REGIONAL_ZOOM + 1.5));
+      const target = {
+        center: [pin.longitude, pin.latitude] as [number, number],
+        zoom: nextZoom,
+      };
+      if (prefersReducedMotion()) {
+        map.jumpTo(target);
+      } else {
+        map.flyTo({ ...target, duration: 700, essential: true });
+      }
+    };
 
     for (const pin of pins) {
       const button = document.createElement("button");
       button.type = "button";
+      const dot = pin.kind === "encounter" && !labeled;
       button.className =
-        pin.kind === "zone" ? "field-pin field-pin-zone" : "field-pin field-pin-encounter";
-      button.textContent = pin.shortLabel;
+        pin.kind === "zone"
+          ? "field-pin field-pin-zone"
+          : pin.kind === "stack"
+            ? "field-pin field-pin-stack"
+            : dot
+              ? "field-pin field-pin-dot"
+              : "field-pin field-pin-encounter";
+      button.textContent = dot ? "" : pin.shortLabel;
       button.setAttribute("aria-label", pin.label);
       button.dataset.pinId = pin.id;
-      const onClick = () => {
+      const stop = (event: Event) => {
+        event.stopPropagation();
+      };
+      const onClick = (event: Event) => {
+        event.stopPropagation();
         if (pin.kind === "zone") {
           zoneRef.current(pin.zoneId);
+        } else if (pin.kind === "stack") {
+          approach(pin);
         } else {
           selectRef.current(pin.id);
         }
@@ -288,8 +322,12 @@ export function MapView({
           return;
         }
         event.preventDefault();
-        onClick();
+        event.stopPropagation();
+        onClick(event);
       };
+      button.addEventListener("pointerdown", stop);
+      button.addEventListener("mousedown", stop);
+      button.addEventListener("touchstart", stop, { passive: true });
       button.addEventListener("click", onClick);
       button.addEventListener("keydown", onKeyDown);
       const marker = new Marker({ element: button, anchor: "center" })
@@ -303,29 +341,32 @@ export function MapView({
         marker.remove();
       }
     };
-  }, [attempt, encounterPins, phase, showEncounters, zonePins]);
+  }, [attempt, encounterPins, layoutTick, phase, zonePins]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) {
       return;
     }
+    const showEncounters = map.getZoom() >= REGIONAL_ZOOM;
     const buttons = map.getContainer().querySelectorAll<HTMLButtonElement>(".field-pin");
     buttons.forEach((button) => {
       const id = button.dataset.pinId ?? "";
-      const selected = showEncounters ? id === selectedId : id === `zone:${selectedZoneId ?? ""}`;
+      const selected = showEncounters
+        ? id === selectedId
+        : id === `zone:${selectedZoneId ?? ""}`;
       button.classList.toggle("is-selected", selected);
       button.setAttribute("aria-pressed", selected ? "true" : "false");
       button.style.zIndex = selected ? "2" : "1";
     });
-  }, [encounterPins, phase, selectedId, selectedZoneId, showEncounters, zonePins]);
+  }, [encounterPins, layoutTick, phase, selectedId, selectedZoneId, zonePins]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !camera || phase !== "ready") {
       return;
     }
-    const zoom = Math.max(map.getZoom(), FOCUS_ZOOM);
+    const zoom = Math.max(map.getZoom(), camera.zoom);
     const target = {
       center: [camera.longitude, camera.latitude] as [number, number],
       zoom,
@@ -382,7 +423,6 @@ export function MapView({
                 onClick={() => {
                   setPhase("loading");
                   setDetail(null);
-                  setShowEncounters(false);
                   setAttempt((value) => value + 1);
                 }}
               >
