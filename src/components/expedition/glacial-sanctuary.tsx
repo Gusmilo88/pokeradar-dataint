@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type CSSProperties } from "react";
 import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import type { DossierEntry, DossierPhase } from "@/components/expedition/use-dossier";
 import type { Enclave } from "@/lib/expedition/enclaves";
@@ -8,11 +8,23 @@ import { statLabel, STAT_SCALE, typeLabel } from "@/lib/pokeapi/labels";
 
 const ART_WIDTH = 1672;
 const ART_HEIGHT = 941;
-const EXTERIOR_SRC = "/images/enclaves/articuno/entrada-santuario-glacial.webp";
-const INTERIOR_SRC = "/images/enclaves/articuno/interior-santuario-glacial.webp";
 
-/** Pies de la criatura, en fracciones del arte original 1672×941. */
-const PERCH = { x: 50, y: 55, size: 16 };
+const SCENE = {
+  glacial: {
+    exterior: "/images/enclaves/articuno/entrada-santuario-glacial.webp",
+    interior: "/images/enclaves/articuno/interior-santuario-glacial.webp",
+    bias: "-66%",
+    pulse: "51%",
+    perch: { x: 50, y: 55, size: 16 },
+  },
+  storm: {
+    exterior: "/images/enclaves/zapdos/entrada-central-electrica-abandonad.webp",
+    interior: "/images/enclaves/zapdos/interior-central-electrica-abandonada.webp",
+    bias: "-76%",
+    pulse: "54%",
+    perch: { x: 50, y: 58, size: 16 },
+  },
+} as const;
 
 const SNOW = [
   { left: "6%", delay: "0s", duration: "9s", size: "3px" },
@@ -86,7 +98,8 @@ export function GlacialSanctuary({
   onLeave: () => void;
 }) {
   const titleId = useId();
-  const src = stage === "exterior" ? EXTERIOR_SRC : INTERIOR_SRC;
+  const art = SCENE[enclave.scene];
+  const src = stage === "exterior" ? art.exterior : art.interior;
   const [skipStage, setSkipStage] = useState<"exterior" | "interior" | null>(null);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const [sheetStage, setSheetStage] = useState<"exterior" | "interior" | null>(null);
@@ -105,8 +118,8 @@ export function GlacialSanctuary({
       return;
     }
     const preload = new Image();
-    preload.src = INTERIOR_SRC;
-  }, [stage]);
+    preload.src = art.interior;
+  }, [stage, art.interior]);
 
   useEffect(() => {
     function onHide() {
@@ -132,7 +145,9 @@ export function GlacialSanctuary({
       aria-modal="true"
       aria-labelledby={titleId}
       className="enclave-visit"
+      data-scene={enclave.scene}
       data-stage={stage}
+      style={{ "--cover-bias": art.bias } as CSSProperties}
       data-paused={paused ? "true" : "false"}
       data-rite={rite ? "true" : "false"}
       data-charging={loading ? "true" : "false"}
@@ -157,11 +172,17 @@ export function GlacialSanctuary({
             />
           )}
           <div className="art-layer" aria-hidden="true">
-            {stage === "exterior" ? <ExteriorWeather /> : <InteriorWeather charging={loading} rite={rite} />}
+            {stage === "exterior" ? (
+              enclave.scene === "storm" ? <StormExterior /> : <ExteriorWeather />
+            ) : enclave.scene === "storm" ? (
+              <StormInterior charging={loading} rite={rite} />
+            ) : (
+              <InteriorWeather charging={loading} rite={rite} />
+            )}
             {stage === "interior" && spriteId && label ? (
               <div
                 className={rite ? "perch perch-rite" : "perch"}
-                style={{ left: `${PERCH.x}%`, top: `${PERCH.y}%`, width: `${PERCH.size}%` }}
+                style={{ left: `${art.perch.x}%`, top: `${art.perch.y}%`, width: `${art.perch.size}%` }}
               >
                 <CreatureSprite
                   nationalId={spriteId}
@@ -177,7 +198,7 @@ export function GlacialSanctuary({
             <button
               type="button"
               className="altar-pulse"
-              style={{ left: "50%", top: "51%" }}
+              style={{ left: "50%", top: art.pulse }}
               onClick={onExamine}
               disabled={loading}
               aria-busy={loading}
@@ -192,7 +213,7 @@ export function GlacialSanctuary({
       </div>
       <div className="scene-ui">
         <div className="scene-caption" key={rite ? "rite" : stage}>
-          <p className="scene-kicker">Santa Cruz · Patagonia</p>
+          <p className="scene-kicker">{enclave.kicker}</p>
           <h2 id={titleId} className="scene-title">
             {rite ? "¡Una presencia legendaria se ha manifestado!" : stage === "interior" && discovered && label ? label : enclave.place}
           </h2>
@@ -203,7 +224,7 @@ export function GlacialSanctuary({
               {stage === "exterior"
                 ? discovered && label
                   ? `${label} ya está en la bitácora. La entrada sigue abierta.`
-                  : "Una luz desconocida emerge desde las profundidades del hielo. Algo parece aguardar en su interior."
+                  : enclave.exterior
                 : loading
                   ? "La señal responde. Consultando PokéAPI."
                   : failed
@@ -212,7 +233,7 @@ export function GlacialSanctuary({
                       ? "La ficha no llegó. Sigue registrada como vista."
                       : discovered && label
                         ? `${label} permanece sobre el altar.`
-                        : "El aire se vuelve helado. Una energía desconocida parece concentrarse sobre el altar..."}
+                        : enclave.interior}
             </p>
           )}
           {sheet && entry ? <DossierSheet entry={entry} /> : null}
@@ -304,6 +325,70 @@ function ExteriorWeather() {
           }}
         />
       ))}
+    </>
+  );
+}
+
+const RAIN = [
+  { left: "8%", delay: "0s", duration: "1.6s" },
+  { left: "17%", delay: "0.4s", duration: "1.9s" },
+  { left: "28%", delay: "0.2s", duration: "1.5s" },
+  { left: "39%", delay: "0.8s", duration: "1.8s" },
+  { left: "51%", delay: "0.1s", duration: "1.7s" },
+  { left: "63%", delay: "0.6s", duration: "1.4s" },
+  { left: "74%", delay: "0.3s", duration: "1.9s" },
+  { left: "86%", delay: "0.9s", duration: "1.6s" },
+] as const;
+
+const STORM_SPARKS = [
+  { x: 22, y: 40, size: 1.1, delay: "0s", duration: "4.8s" },
+  { x: 78, y: 40, size: 1.2, delay: "1.4s", duration: "5.4s" },
+  { x: 30, y: 62, size: 0.9, delay: "0.7s", duration: "5.1s" },
+  { x: 70, y: 62, size: 1, delay: "2.1s", duration: "4.6s" },
+  { x: 14, y: 55, size: 0.8, delay: "1.8s", duration: "5.6s" },
+  { x: 86, y: 54, size: 0.85, delay: "0.5s", duration: "5s" },
+  { x: 40, y: 72, size: 0.7, delay: "2.6s", duration: "4.4s" },
+  { x: 60, y: 72, size: 0.75, delay: "1.1s", duration: "5.2s" },
+] as const;
+
+function StormExterior() {
+  return (
+    <>
+      <div className="storm-veil" />
+      <div className="mouth-glow" />
+      <span className="storm-bolt" style={{ left: "22%", top: "6%" }} />
+      <span className="storm-bolt storm-bolt-late" style={{ left: "68%", top: "4%" }} />
+      {RAIN.map((drop) => (
+        <span
+          key={drop.left}
+          className="rain-drop"
+          style={{ left: drop.left, animationDelay: drop.delay, animationDuration: drop.duration }}
+        />
+      ))}
+    </>
+  );
+}
+
+function StormInterior({ charging, rite }: { charging: boolean; rite: boolean }) {
+  return (
+    <>
+      <div className={charging || rite ? "altar-glow altar-glow-hot" : "altar-glow"} />
+      {STORM_SPARKS.map((spark) => (
+        <span
+          key={`${spark.x}-${spark.y}`}
+          className="ice-spark"
+          style={{
+            left: `${spark.x}%`,
+            top: `${spark.y}%`,
+            width: `${spark.size}%`,
+            animationDelay: spark.delay,
+            animationDuration: spark.duration,
+          }}
+        />
+      ))}
+      <span className="storm-bolt" style={{ left: "34%", top: "8%" }} />
+      <span className="storm-bolt storm-bolt-late" style={{ left: "66%", top: "10%" }} />
+      {rite ? <div className="rite-flash" /> : null}
     </>
   );
 }

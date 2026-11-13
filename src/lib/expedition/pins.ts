@@ -35,6 +35,7 @@ export interface FieldPin {
   shortLabel: string;
   label: string;
   accent: string;
+  tone?: "storm";
 }
 
 function zoneById(zones: readonly ExpeditionZone[]): Map<string, ExpeditionZone> {
@@ -113,8 +114,9 @@ export function buildEnclavePins(
       shortLabel: revealed ? name.slice(0, 9) : "Anomalía",
       label: revealed
         ? `${name}. ${enclave.place}. ${enclave.region}.`
-        : `Anomalía sin identificar. Señal glacial en ${enclave.region}.`,
-      accent: "#7ec8d6",
+        : `Anomalía sin identificar. ${enclave.signal} en ${enclave.region}.`,
+      accent: enclave.accent,
+      ...(enclave.scene === "storm" ? { tone: "storm" as const } : {}),
     };
   });
 }

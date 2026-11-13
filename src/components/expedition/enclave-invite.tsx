@@ -40,7 +40,7 @@ export function EnclaveInvite({
       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto px-5 py-4 pl-8">
         <p className="text-sm leading-6 text-quiet">
           {revealedName
-            ? `${revealedName} ya está en la bitácora. El santuario sigue en el hielo.`
+            ? `${revealedName} ya está en la bitácora. ${enclave.remains}`
             : enclave.anomaly}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">

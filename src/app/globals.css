@@ -661,8 +661,8 @@ body {
 }
 
 .enclave-visit[data-stage="exterior"] .art-stage {
-  /* -66 % centra la boca. El clamp no deja pasar del sobrante: si no, el fondo queda al descubierto. */
-  transform: translate(clamp(calc(50cqw - 100%), -66%, -50cqw), -50%);
+  /* El sesgo acerca la entrada. El clamp no deja pasar del sobrante. */
+  transform: translate(clamp(calc(50cqw - 100%), var(--cover-bias, -66%), -50cqw), -50%);
 }
 
 .art-plate {
@@ -714,6 +714,51 @@ body {
   transform: translate(-50%, -50%);
   background: radial-gradient(circle, rgba(210, 255, 248, 0.55), rgba(80, 210, 255, 0.12) 46%, transparent 72%);
   animation: mouth-breathe 4.8s ease-in-out infinite;
+}
+
+.enclave-visit[data-scene="storm"] .mouth-glow {
+  top: 57%;
+  left: 76%;
+  background: radial-gradient(circle, rgba(255, 244, 180, 0.62), rgba(255, 186, 40, 0.14) 46%, transparent 72%);
+}
+
+.enclave-visit[data-scene="storm"] .altar-glow {
+  background: radial-gradient(ellipse, rgba(255, 236, 160, 0.55), rgba(255, 190, 40, 0.14) 52%, transparent 74%);
+}
+
+.enclave-visit[data-scene="storm"] .ice-spark {
+  background: #fff4c2;
+}
+
+.storm-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(40, 48, 90, 0.28), rgba(255, 210, 80, 0.05) 28%, rgba(40, 48, 90, 0) 52%);
+}
+
+.rain-drop {
+  position: absolute;
+  top: -10%;
+  width: 1px;
+  height: 18px;
+  background: linear-gradient(rgba(214, 226, 255, 0), rgba(214, 226, 255, 0.75));
+  animation: snow-fall linear infinite;
+}
+
+.storm-bolt {
+  position: absolute;
+  width: 2px;
+  height: 16%;
+  background: linear-gradient(rgba(255, 250, 220, 0), #fff6c8, rgba(255, 250, 220, 0));
+  opacity: 0;
+  transform: rotate(16deg);
+  filter: drop-shadow(0 0 6px rgba(255, 214, 80, 0.85));
+  animation: bolt-flash 6.4s ease-in-out infinite;
+}
+
+.storm-bolt-late {
+  animation-delay: 3.1s;
+  transform: rotate(-12deg);
 }
 
 .cold-mist {
@@ -1002,6 +1047,8 @@ body {
 }
 
 .enclave-visit[data-paused="true"] .snow-flake,
+.enclave-visit[data-paused="true"] .rain-drop,
+.enclave-visit[data-paused="true"] .storm-bolt,
 .enclave-visit[data-paused="true"] .aurora-veil,
 .enclave-visit[data-paused="true"] .mouth-glow,
 .enclave-visit[data-paused="true"] .altar-glow,
@@ -1027,6 +1074,26 @@ body {
 @keyframes mouth-breathe {
   50% {
     opacity: 0.45;
+  }
+}
+
+@keyframes bolt-flash {
+  0%,
+  84%,
+  100% {
+    opacity: 0;
+  }
+
+  86% {
+    opacity: 0.9;
+  }
+
+  89% {
+    opacity: 0.1;
+  }
+
+  91% {
+    opacity: 0.65;
   }
 }
 
@@ -1158,6 +1225,9 @@ body {
   .aurora-veil,
   .mouth-glow,
   .snow-flake,
+  .rain-drop,
+  .storm-bolt,
+  .storm-veil,
   .altar-glow,
   .altar-glow-hot,
   .ice-spark,
@@ -1170,7 +1240,9 @@ body {
     animation: none;
   }
 
-  .snow-flake {
+  .snow-flake,
+  .rain-drop,
+  .storm-bolt {
     display: none;
   }
 

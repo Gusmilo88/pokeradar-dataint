@@ -303,11 +303,12 @@ export function ExpeditionScreen() {
                 ? (knownNames.get(enclaveCard.speciesName) ?? speciesLabel(enclaveCard.speciesName))
                 : null
             }
+            remains={enclave.remains}
             onInvestigate={() => setVisit("exterior")}
             onClose={leaveEnclave}
           />
         ) : null}
-        {(visit === "exterior" || visit === "interior") && enclave?.scene === "glacial" ? (
+        {(visit === "exterior" || visit === "interior") && enclave ? (
           <GlacialSanctuary
             stage={visit}
             enclave={enclave}

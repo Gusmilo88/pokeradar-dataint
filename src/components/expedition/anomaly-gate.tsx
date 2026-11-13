@@ -8,10 +8,12 @@ import { useEffect, useId, useRef, useState } from "react";
  */
 export function AnomalyGate({
   knownName,
+  remains,
   onInvestigate,
   onClose,
 }: {
   knownName: string | null;
+  remains: string;
   onInvestigate: () => void;
   onClose: () => void;
 }) {
@@ -81,7 +83,7 @@ export function AnomalyGate({
         <p className="gate-meter">{knownName ? "Señal registrada" : "Energía extraordinaria"}</p>
         <div id={bodyId} className="gate-copy">
           {knownName ? (
-            <p>{knownName} ya figura en la bitácora. El santuario sigue en el hielo.</p>
+            <p>{knownName} ya figura en la bitácora. {remains}</p>
           ) : (
             <p>
               Detectamos una presencia de energía extraordinaria en esta región. Su identidad es

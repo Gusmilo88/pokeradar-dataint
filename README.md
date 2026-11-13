@@ -10,7 +10,7 @@ La expedición tiene 56 especies de Kanto (Pokédex Nacional 1–151), escritas 
 
 Cincuenta especies están en el mapa. Cada una usa el hábitat que PokéAPI publica para su zona. Las cuotas son 5, 7, 4, 5, 5, 5, 4, 5, 4 y 6. La semilla `pokeradar-kanto-v1` fija la coordenada. Dar vuelta el catálogo no mueve los puntos. Cada punto cae dentro del rectángulo de su zona y al este de una polilínea de la divisoria con Chile. El mar de Puerto Pirámides queda en el Golfo Nuevo. No hay un polígono de costa: un punto dentro del rectángulo puede caer en una laguna chica.
 
-Seis especies quedan reservadas y no se dibujan como encuentros de campo: Articuno, Zapdos, Moltres, Aerodactyl, Mewtwo y Mew. Cinco tienen hábitat `rare`, que no es una zona. Aerodactyl es de montaña, y aun así queda fuera de esos encuentros. El álbum las muestra como `???` hasta descubrirlas. Solo Articuno tiene enclave: el Santuario Glacial. Las otras cinco siguen sin escena.
+Seis especies quedan reservadas y no se dibujan como encuentros de campo: Articuno, Zapdos, Moltres, Aerodactyl, Mewtwo y Mew. Cinco tienen hábitat `rare`, que no es una zona. Aerodactyl es de montaña, y aun así queda fuera de esos encuentros. El álbum las muestra como `???` hasta descubrirlas. Articuno tiene el Santuario Glacial y Zapdos la Central Eléctrica Abandonada, en Neuquén. Las otras cuatro siguen sin escena.
 
 En el zoom del país se ven diez sellos con el nombre y la cantidad, y un sello alargado «Anomalía», en verdes fríos, cian y violeta, con un halo. Si dos rectángulos se pisan, el sello se corre en pantalla y el ancla no se mueve: así Iguazú y Cataratas se pueden pulsar, y el santuario no tapa a Moreno. Desde zoom 6.5 el mapa cambia a encuentros, agrupados si caen a menos de 36 px. El sello del santuario sigue visible. Pulsar una zona, o el santuario, vuela a zoom 8. Elegir una criatura de campo vuela a zoom 12.2 y pide la ficha. Con movimiento reducido el mismo destino es un salto.
 
@@ -24,7 +24,7 @@ La visita es `position: fixed; inset: 0`. La ilustración, el sprite, los destel
 
 Antes de descubrir, el altar es un botón. El nombre accesible es «Examinar la señal del altar». El pulso visual es chico y el área táctil mide al menos 48 px. Activarlo pide la ficha. El exterior y el aviso no la piden. Si PokéAPI responde, el altar se enciende, hay un destello y el GIF de Black & White se forma sobre la plataforma. El título pasa a «¡Una presencia legendaria se ha manifestado!» y la línea siguiente dice que esa criatura fue registrada en la Pokédex. Se puede omitir. El estado pasa a visto. Las estadísticas no se abren solas: «Ver ficha» las muestra y «Cerrar ficha» las oculta. Si falla, el texto es «PokéAPI no respondió. La señal sigue sin identificar.» y no aparece el nombre. Una respuesta que llega después de salir del interior no escribe el progreso. Volver a entrar, ya vista, muestra la criatura sin pulso y sin repetir el rito. Salir no recrea MapLibre.
 
-Los cinco enclaves que faltan siguen sin escena. Cada uno tendrá su exterior, su interior, su paleta y sus animaciones. No se reutiliza esta nevada cambiando el color.
+Faltan cuatro enclaves. Cada uno tendrá su exterior, su interior, su paleta y sus animaciones. La central no reutiliza la nevada del santuario.
 
 Una especie empieza sin descubrir. El sello y el índice dicen `???`. La silueta usa el PNG frontal de Black & White, generación V, con el color apagado: se conserva la forma y no el color. El `alt` queda vacío. Al elegirla aparece «Señal nueva» y se pide la ficha. Si PokéAPI responde, pasa a vista, se guarda y se muestran el nombre, el número nacional, los tipos, las estadísticas y el hábitat. Si falla, sigue sin descubrir y se puede reintentar. Si ya estaba vista, la ficha se abre directo.
 
@@ -244,7 +244,7 @@ No se usó un teléfono real. No se abrió la Pokédex en esta pasada. No se ocu
 
 ## Qué queda para el bloque siguiente
 
-No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja y no se obtiene desde la interfaz. No hay cartas holográficas. Faltan cinco enclaves. Cada uno pide su exterior, su interior, su paleta y su propia revelación; no se recolorea esta nevada. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal, y Malvinas no están dibujadas dentro de Argentina. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula.
+No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja y no se obtiene desde la interfaz. No hay cartas holográficas. Faltan cuatro enclaves. Cada uno pide su exterior, su interior, su paleta y su propia revelación; la central eléctrica no recolorea la nevada. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal, y Malvinas no están dibujadas dentro de Argentina. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula.
 
 ## Decisiones
 
@@ -254,7 +254,7 @@ No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja 
 | Contorno Natural Earth 5.1.2, sin fusionar Malvinas | El límite es una fuente pública y la disputa queda documentada | Dibujar un polígono a mano o incorporar el reclamo |
 | Manchas de color, no biomas | El proyecto no tiene polígonos de ecorregión | Pintar las provincias o un hábitat científico |
 | Seis reservados fuera de los encuentros de campo | No son avistamientos comunes | Ponerlos en una zona con los otros cincuenta |
-| Un enclave, escena `glacial`, encima del mapa | Articuno se descubre en un lugar distinto sin recrear MapLibre | Seis pantallas genéricas o una ruta nueva |
+| Dos enclaves, `glacial` y `storm`, encima del mapa | Articuno y Zapdos se descubren en su lugar sin recrear MapLibre | Seis pantallas genéricas o una ruta nueva |
 | Caché en memoria, ficha al elegir | Cero fichas al entrar; el detalle, bajo demanda | Prefetch de las 56 fichas |
 | Worker en `public/` | Vercel sirve el estático sin leer `node_modules` en runtime | Mantener la ruta que hacía `fs.readFile` |
 | Sustituto del icono ausente, con `console.warn` | El mapa no se cae y el hueco del sprite queda visible | `hasImage`, que dispara el error, o silenciar la consola |
