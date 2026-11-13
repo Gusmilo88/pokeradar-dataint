@@ -77,21 +77,20 @@
 }
 
 .field-pin-enclave {
-  min-width: 3.25rem;
-  min-height: 3.25rem;
+  min-width: 5.5rem;
+  min-height: 2.75rem;
+  padding: 0 0.7rem;
   border-radius: 999px;
-  border-color: #08202c;
-  background: #e7f8ff;
-  color: #08202c;
-  letter-spacing: 0.12em;
+  border: 1px solid #d9fff4;
+  background: radial-gradient(circle at 30% 18%, #f3fffb, #8ef6df 36%, #3aa0ff 72%, #7a6cff);
+  color: #04141c;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  box-shadow: 0 0 0 3px #7ec8d6;
-}
-
-.field-pin-enclave.is-selected {
-  background: #f2c14e;
-  color: #1a1404;
-  box-shadow: 0 0 0 3px #f2c14e;
+  box-shadow:
+    0 0 0 2px rgba(125, 255, 195, 0.7),
+    0 0 16px 3px rgba(90, 150, 255, 0.55);
+  animation: enclave-pulse 2.8s ease-in-out infinite;
 }
 
 .field-pin-dot {
@@ -120,4 +119,26 @@
 .field-pin:focus-visible {
   outline: 2px solid #8ef6df;
   outline-offset: 3px;
+}
+
+.field-pin.field-pin-enclave.is-selected {
+  background: radial-gradient(circle at 30% 18%, #f3fffb, #b8ffe8 34%, #49b4ff 70%, #8d78ff);
+  color: #04141c;
+  box-shadow:
+    0 0 0 3px #e7fff8,
+    0 0 20px 6px rgba(139, 124, 255, 0.62);
+}
+
+@keyframes enclave-pulse {
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(125, 255, 195, 0.22),
+      0 0 20px 6px rgba(90, 208, 255, 0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field-pin-enclave {
+    animation: none;
+  }
 }

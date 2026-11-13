@@ -12,11 +12,11 @@ Cincuenta especies están en el mapa. Cada una usa el hábitat que PokéAPI publ
 
 Seis especies quedan reservadas y no se dibujan como encuentros de campo: Articuno, Zapdos, Moltres, Aerodactyl, Mewtwo y Mew. Cinco tienen hábitat `rare`, que no es una zona. Aerodactyl es de montaña, y aun así queda fuera de esos encuentros. El álbum las muestra como `???` hasta descubrirlas. Solo Articuno tiene enclave: el Santuario Glacial. Las otras cinco siguen sin escena.
 
-En el zoom del país se ven diez sellos con el nombre y la cantidad, y un sello redondo «Hielo». Si dos rectángulos se pisan, el sello se corre en pantalla y el ancla no se mueve: así Iguazú y Cataratas se pueden pulsar, y el santuario no tapa a Moreno. Desde zoom 6.5 el mapa cambia a encuentros, agrupados si caen a menos de 36 px. El sello del santuario sigue visible. Pulsar una zona, o el santuario, vuela a zoom 8. Elegir una criatura de campo vuela a zoom 12.2 y pide la ficha. Con movimiento reducido el mismo destino es un salto.
+En el zoom del país se ven diez sellos con el nombre y la cantidad, y un sello alargado «Anomalía», en verdes fríos, cian y violeta, con un halo. Si dos rectángulos se pisan, el sello se corre en pantalla y el ancla no se mueve: así Iguazú y Cataratas se pueden pulsar, y el santuario no tapa a Moreno. Desde zoom 6.5 el mapa cambia a encuentros, agrupados si caen a menos de 36 px. El sello del santuario sigue visible. Pulsar una zona, o el santuario, vuela a zoom 8. Elegir una criatura de campo vuela a zoom 12.2 y pide la ficha. Con movimiento reducido el mismo destino es un salto.
 
 El santuario está en Santa Cruz, latitud -50.7 y longitud -73. Cae dentro del polígono ARG de Natural Earth y al este de la divisoria con Chile, fuera del rectángulo de los cinco encuentros de Perito Moreno. El punto no es un frente de glaciar medido: la escala 1:50.000.000 no alcanza para eso. Antes de entrar, el sello no dice el nombre de la criatura. La bitácora muestra la anomalía y el botón Entrar.
 
-Adentro hay una escena propia, dibujada con SVG y CSS. No copia un mapa de un juego y no usa imágenes generadas. El campo `scene: "glacial"` es el lugar donde un bloque posterior puede cambiar ese dibujo por un asset pixel art elegido a mano. Examinar el sello pide la ficha real. Si PokéAPI responde, hay una revelación, el sprite animado de Black & White y el estado visto. Si falla, sigue sin descubrir. Salir no recrea MapLibre: el mapa queda montado debajo, con el mismo tamaño y el mismo zoom. Volver a entrar, ya vista, muestra la criatura sin repetir el examen. Escape sale de la escena. Con movimiento reducido, el haz de luz no se anima y el sprite es el PNG.
+Adentro hay una escena propia, armada con CSS: muro de hielo, columnas, piso en perspectiva, cristales y un altar con sello. No copia un mapa de un juego y no usa imágenes generadas. El campo `scene: "glacial"` es el lugar donde un bloque posterior puede cambiar ese dibujo por un asset pixel art elegido a mano. Examinar el sello pide la ficha real. Si PokéAPI responde, la luz del centro marca la entrada, aparece el sprite animado de Black & White y el estado pasa a visto. La ficha queda debajo de la escena: nombre, visto, tipos y estadísticas, sin el formato de una ficha de campo. Si falla, sigue sin descubrir. Salir no recrea MapLibre: el mapa queda montado debajo, con el mismo tamaño y el mismo zoom. Volver a entrar, ya vista, muestra la criatura sin repetir el examen ni la entrada. Escape sale de la escena. Con movimiento reducido se apagan el halo del sello, el haz, el pulso y las partículas, y el sprite es el PNG.
 
 Una especie empieza sin descubrir. El sello y el índice dicen `???`. La silueta usa el PNG frontal de Black & White, generación V, con el color apagado: se conserva la forma y no el color. El `alt` queda vacío. Al elegirla aparece «Señal nueva» y se pide la ficha. Si PokéAPI responde, pasa a vista, se guarda y se muestran el nombre, el número nacional, los tipos, las estadísticas y el hábitat. Si falla, sigue sin descubrir y se puede reintentar. Si ya estaba vista, la ficha se abre directo.
 
@@ -85,7 +85,7 @@ No se agregaron dependencias. `npm audit` reporta 8 moderadas. La raíz es GHSA-
 
 ## Uso de inteligencia artificial
 
-Herramienta: Cursor, con el modelo Grok. Se usó para leer el brief, contrastar PokéAPI, OpenFreeMap y Natural Earth, y escribir los bloques B0, B1, B1.5, B2, B3 y B4A.
+Herramienta: Cursor, con el modelo Grok. Se usó para leer el brief, contrastar PokéAPI, OpenFreeMap y Natural Earth, y escribir los bloques B0, B1, B1.5, B2, B3, B4A y B4A.5.
 
 Correcciones sobre la salida del modelo:
 
@@ -109,7 +109,7 @@ Correcciones sobre la salida del modelo:
 - Enter sobre un sello propio no lo activaba solo con el comportamiento nativo bajo el evento de prueba. El sello escucha Enter y Espacio. Las flechas siguen yendo al lienzo de MapLibre.
 - En B3 el CSS de desarrollo no incorporó `.pixel-sprite` ni `.creature-silhouette` aunque el archivo fuente sí las tiene. El sprite lleva el mismo recorte de color y `image-rendering: pixelated` en el atributo `style`, que es lo que se midió en el navegador.
 - La automatización del navegador manda teclas con `isTrusted: false`. Tab no mueve el foco. Escape sí cerró la Pokédex y el santuario, porque el cierre está en un listener propio. Enter y Espacio de un usuario real los resuelven los botones nativos; esa pulsación de confianza no se pudo reproducir con la herramienta.
-- El primer dibujo del santuario, con `slice` y columnas altas, se leía como franjas. El segundo, con `meet` en un teléfono vertical, dejaba la escena en una banda chica. Quedó `xMidYMax slice`: el piso y el sello se apoyan sobre el panel. Sigue siendo un boceto en SVG, no el pixel art definitivo.
+- El primer dibujo del santuario, con `slice` y columnas altas, se leía como franjas. El segundo, con `meet` en un teléfono vertical, dejaba la escena en una banda chica. En B4A.5 ese SVG salió: la sala es CSS, con el piso recortado para que la perspectiva no se aplaste en una línea. Sigue sin ser el pixel art definitivo.
 
 ## Verificación
 
@@ -168,9 +168,20 @@ En el navegador, sobre `npm run dev`, en B4A, con almacenamiento vacío:
 
 No se usó un teléfono táctil real. Tab sigue sin poder recorrer la escena con la herramienta, porque sus teclas no son de confianza.
 
+En el navegador, sobre `npm run dev`, en B4A.5, partiendo de almacenamiento vacío:
+
+- En 1440×900 el sello decía «Anomalía», con degradado aurora y animación `enclave-pulse`. El texto accesible seguía siendo «Anomalía sin identificar. Señal glacial en Santa Cruz.» No decía Articuno. Moreno y el sello no compartían área.
+- Entrar mostró el altar, el piso y «Examinar la señal», sin el nombre. Examinar escribió `seen: ["kanto-144"]`, `caught` vacío, tipos Hielo y Volador, estadísticas PS 90, Ataque 85, Defensa 100, Ataque esp. 95, Defensa esp. 125 y Velocidad 85, y el GIF `black-white/animated/144.gif`. El sello del altar desapareció.
+- Volver al mapa dejó el canvas en 1080×827 y el zoom en 8.0. El sello pasó a decir Articuno. Reingresar mostró la criatura con `data-ceremony="false"`, sin «Examinar la señal». Escape cerró la escena.
+- La Pokédex listó 51 Articuno como Visto, 1 vista y 0 capturadas. Las entradas 50 y 52–56 seguían bloqueadas.
+- Con `prefers-reduced-motion: reduce`, el haz y las partículas quedaron en `animation-name: none`, el sello del mapa también, y el sprite fue `black-white/144.png`.
+- En 390×844 la escena ocupaba 390×567, sin scroll horizontal. El altar quedaba dentro de la sala y «Volver al mapa» dentro de la ventana (y 788–832).
+
+En esta pasada no se repitió el 503 ni la respuesta tardía: esa lógica no se tocó. Salir ahora también apaga la ceremonia, para que la entrada no se repita.
+
 ## Qué queda para el bloque siguiente
 
-No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja y no se obtiene desde la interfaz. No hay cartas holográficas. Faltan cinco enclaves. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal, y Malvinas no están dibujadas dentro de Argentina. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula. El santuario es un boceto SVG: el pixel art definitivo entra cuando haya un asset elegido a mano.
+No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja y no se obtiene desde la interfaz. No hay cartas holográficas. Faltan cinco enclaves. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal, y Malvinas no están dibujadas dentro de Argentina. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula. La sala del santuario es CSS original. El pixel art definitivo entra cuando haya un asset elegido a mano, en el campo `scene` de ese enclave.
 
 ## Decisiones
 

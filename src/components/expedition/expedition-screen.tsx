@@ -152,6 +152,7 @@ export function ExpeditionScreen() {
   function leaveEnclave() {
     setInside(false);
     setExamining(false);
+    setCeremony(false);
   }
 
   function focusZone(zoneId: string) {

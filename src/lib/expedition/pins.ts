@@ -110,7 +110,7 @@ export function buildEnclavePins(
       kind: "enclave" as const,
       longitude: enclave.point.longitude,
       latitude: enclave.point.latitude,
-      shortLabel: revealed ? name.slice(0, 9) : "Hielo",
+      shortLabel: revealed ? name.slice(0, 9) : "Anomalía",
       label: revealed
         ? `${name}. ${enclave.place}. ${enclave.region}.`
         : `Anomalía sin identificar. Señal glacial en ${enclave.region}.`,
