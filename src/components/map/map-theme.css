@@ -81,15 +81,21 @@
   min-height: 2.75rem;
   padding: 0 0.7rem;
   border-radius: 999px;
-  border: 1px solid #d9fff4;
-  background: radial-gradient(circle at 30% 18%, #f3fffb, #8ef6df 36%, #3aa0ff 72%, #7a6cff);
-  color: #04141c;
+  border: 1px solid var(--pin-line, #d9fff4);
+  background: radial-gradient(
+    circle at 30% 18%,
+    var(--pin-hi, #f3fffb),
+    var(--pin-mid, #8ef6df) 36%,
+    var(--pin-deep, #3aa0ff) 72%,
+    var(--pin-edge, #7a6cff)
+  );
+  color: var(--pin-ink, #04141c);
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   box-shadow:
-    0 0 0 2px rgba(125, 255, 195, 0.7),
-    0 0 16px 3px rgba(90, 150, 255, 0.55);
+    0 0 0 2px var(--pin-ring, rgba(125, 255, 195, 0.7)),
+    0 0 16px 3px var(--pin-glow, rgba(90, 150, 255, 0.55));
   animation: enclave-pulse 2.8s ease-in-out infinite;
 }
 
@@ -121,45 +127,29 @@
   outline-offset: 3px;
 }
 
-.field-pin-enclave[data-tone="storm"] {
-  border-color: #fff1b0;
-  background: radial-gradient(circle at 30% 18%, #fff8dc, #ffe08a 36%, #f0b429 70%, #c47a12);
-  color: #1a1204;
-  box-shadow:
-    0 0 0 2px rgba(255, 214, 90, 0.75),
-    0 0 16px 3px rgba(255, 176, 40, 0.5);
-  animation-name: enclave-pulse-storm;
+.field-pin-enclave:focus-visible {
+  outline-color: var(--pulse-hot, #8ef6df);
 }
 
 .field-pin.field-pin-enclave.is-selected {
-  background: radial-gradient(circle at 30% 18%, #f3fffb, #b8ffe8 34%, #49b4ff 70%, #8d78ff);
-  color: #04141c;
+  background: radial-gradient(
+    circle at 30% 18%,
+    var(--pin-hi, #f3fffb),
+    var(--pin-mid, #8ef6df) 36%,
+    var(--pin-deep, #3aa0ff) 72%,
+    var(--pin-edge, #7a6cff)
+  );
+  color: var(--pin-ink, #04141c);
   box-shadow:
-    0 0 0 3px #e7fff8,
-    0 0 20px 6px rgba(139, 124, 255, 0.62);
-}
-
-.field-pin.field-pin-enclave[data-tone="storm"].is-selected {
-  background: radial-gradient(circle at 30% 18%, #fff8dc, #ffe7a0 34%, #f0b429 70%, #a86a10);
-  color: #1a1204;
-  box-shadow:
-    0 0 0 3px #fff4c8,
-    0 0 20px 6px rgba(240, 180, 40, 0.6);
-}
-
-@keyframes enclave-pulse-storm {
-  50% {
-    box-shadow:
-      0 0 0 6px rgba(255, 214, 90, 0.22),
-      0 0 20px 6px rgba(255, 176, 40, 0.45);
-  }
+    0 0 0 3px var(--pulse-core, #e7fff8),
+    0 0 20px 6px var(--pin-glow, rgba(139, 124, 255, 0.62));
 }
 
 @keyframes enclave-pulse {
   50% {
     box-shadow:
-      0 0 0 6px rgba(125, 255, 195, 0.22),
-      0 0 20px 6px rgba(90, 208, 255, 0.4);
+      0 0 0 6px var(--pin-glow-soft, rgba(125, 255, 195, 0.22)),
+      0 0 20px 6px var(--pin-glow, rgba(90, 208, 255, 0.4));
   }
 }
 

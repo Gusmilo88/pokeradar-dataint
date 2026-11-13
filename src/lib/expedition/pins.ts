@@ -5,7 +5,7 @@ import {
   type ExpeditionZone,
   type Sighting,
 } from "@/lib/expedition/argentina";
-import type { Enclave } from "@/lib/expedition/enclaves";
+import type { Enclave, EnclavePalette } from "@/lib/expedition/enclaves";
 import { KANTO_CATALOG } from "@/lib/expedition/kanto";
 import { speciesLabel } from "@/lib/pokeapi/labels";
 
@@ -35,7 +35,7 @@ export interface FieldPin {
   shortLabel: string;
   label: string;
   accent: string;
-  tone?: "storm";
+  palette?: EnclavePalette;
 }
 
 function zoneById(zones: readonly ExpeditionZone[]): Map<string, ExpeditionZone> {
@@ -116,7 +116,7 @@ export function buildEnclavePins(
         ? `${name}. ${enclave.place}. ${enclave.region}.`
         : `Anomalía sin identificar. ${enclave.signal} en ${enclave.region}.`,
       accent: enclave.accent,
-      ...(enclave.scene === "storm" ? { tone: "storm" as const } : {}),
+      palette: enclave.palette,
     };
   });
 }

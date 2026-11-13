@@ -15,6 +15,7 @@ import { StatusPanel } from "@/components/states/status-panel";
 import { prefersReducedMotion } from "@/lib/a11y/motion";
 import { formatLatitude, formatLongitude } from "@/lib/expedition/format";
 import { ARGENTINA_VIEW } from "@/lib/expedition/argentina";
+import { paletteVars } from "@/lib/expedition/enclaves";
 import {
   collapsePins,
   INSPECT_ZOOM,
@@ -325,10 +326,15 @@ export function MapView({
       button.textContent = dot ? "" : pin.shortLabel;
       button.setAttribute("aria-label", pin.label);
       button.dataset.pinId = pin.id;
-      if (pin.tone) {
-        button.dataset.tone = pin.tone;
-      }
       button.style.setProperty("--zone-accent", pin.accent);
+      if (pin.palette) {
+        const vars = paletteVars(pin.palette);
+        for (const [name, value] of Object.entries(vars)) {
+          if (typeof value === "string") {
+            button.style.setProperty(name, value);
+          }
+        }
+      }
       const stop = (event: Event) => {
         event.stopPropagation();
       };

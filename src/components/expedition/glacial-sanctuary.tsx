@@ -3,7 +3,7 @@
 import { useEffect, useId, useState, type CSSProperties } from "react";
 import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import type { DossierEntry, DossierPhase } from "@/components/expedition/use-dossier";
-import type { Enclave } from "@/lib/expedition/enclaves";
+import { paletteVars, type Enclave } from "@/lib/expedition/enclaves";
 import { statLabel, STAT_SCALE, typeLabel } from "@/lib/pokeapi/labels";
 
 const ART_WIDTH = 1672;
@@ -15,6 +15,8 @@ const SCENE = {
     interior: "/images/enclaves/articuno/interior-santuario-glacial.webp",
     bias: "-66%",
     pulse: "51%",
+    mouthX: "68%",
+    mouthY: "46%",
     perch: { x: 50, y: 55, size: 16 },
   },
   storm: {
@@ -22,6 +24,17 @@ const SCENE = {
     interior: "/images/enclaves/zapdos/interior-central-electrica-abandonada.webp",
     bias: "-76%",
     pulse: "54%",
+    mouthX: "76%",
+    mouthY: "57%",
+    perch: { x: 50, y: 58, size: 16 },
+  },
+  ember: {
+    exterior: "/images/enclaves/moltres/entrada-santuario-volcanico.webp",
+    interior: "/images/enclaves/moltres/interior-santuario-volcanico.webp",
+    bias: "-80%",
+    pulse: "55%",
+    mouthX: "80%",
+    mouthY: "50%",
     perch: { x: 50, y: 58, size: 16 },
   },
 } as const;
@@ -147,7 +160,14 @@ export function GlacialSanctuary({
       className="enclave-visit"
       data-scene={enclave.scene}
       data-stage={stage}
-      style={{ "--cover-bias": art.bias } as CSSProperties}
+      style={
+        {
+          ...paletteVars(enclave.palette),
+          "--cover-bias": art.bias,
+          "--mouth-x": art.mouthX,
+          "--mouth-y": art.mouthY,
+        } as CSSProperties
+      }
       data-paused={paused ? "true" : "false"}
       data-rite={rite ? "true" : "false"}
       data-charging={loading ? "true" : "false"}
@@ -172,13 +192,7 @@ export function GlacialSanctuary({
             />
           )}
           <div className="art-layer" aria-hidden="true">
-            {stage === "exterior" ? (
-              enclave.scene === "storm" ? <StormExterior /> : <ExteriorWeather />
-            ) : enclave.scene === "storm" ? (
-              <StormInterior charging={loading} rite={rite} />
-            ) : (
-              <InteriorWeather charging={loading} rite={rite} />
-            )}
+            <SceneWeather scene={enclave.scene} stage={stage} charging={loading} rite={rite} />
             {stage === "interior" && spriteId && label ? (
               <div
                 className={rite ? "perch perch-rite" : "perch"}
@@ -218,7 +232,9 @@ export function GlacialSanctuary({
             {rite ? "¡Una presencia legendaria se ha manifestado!" : stage === "interior" && discovered && label ? label : enclave.place}
           </h2>
           {rite && label ? (
-            <p className="scene-narration">{label} ha sido registrado en la Pokédex.</p>
+            <p className="scene-narration">
+              {enclave.manifested ?? `${label} ha sido registrado en la Pokédex.`}
+            </p>
           ) : (
             <p className="scene-narration" role={failed || statsFailed ? "alert" : undefined} aria-busy={loading || undefined}>
               {stage === "exterior"
@@ -232,7 +248,7 @@ export function GlacialSanctuary({
                     : statsFailed
                       ? "La ficha no llegó. Sigue registrada como vista."
                       : discovered && label
-                        ? `${label} permanece sobre el altar.`
+                        ? (enclave.manifested ?? `${label} permanece sobre el altar.`)
                         : enclave.interior}
             </p>
           )}
@@ -304,6 +320,26 @@ function DossierSheet({ entry }: { entry: DossierEntry }) {
       </ul>
     </div>
   );
+}
+
+function SceneWeather({
+  scene,
+  stage,
+  charging,
+  rite,
+}: {
+  scene: Enclave["scene"];
+  stage: "exterior" | "interior";
+  charging: boolean;
+  rite: boolean;
+}) {
+  if (scene === "storm") {
+    return stage === "exterior" ? <StormExterior /> : <StormInterior charging={charging} rite={rite} />;
+  }
+  if (scene === "ember") {
+    return stage === "exterior" ? <EmberExterior /> : <EmberInterior charging={charging} rite={rite} />;
+  }
+  return stage === "exterior" ? <ExteriorWeather /> : <InteriorWeather charging={charging} rite={rite} />;
 }
 
 function ExteriorWeather() {
@@ -388,6 +424,89 @@ function StormInterior({ charging, rite }: { charging: boolean; rite: boolean })
       ))}
       <span className="storm-bolt" style={{ left: "34%", top: "8%" }} />
       <span className="storm-bolt storm-bolt-late" style={{ left: "66%", top: "10%" }} />
+      {rite ? <div className="rite-flash" /> : null}
+    </>
+  );
+}
+
+const EMBERS = [
+  { left: "12%", delay: "0s", duration: "11s", size: "4px" },
+  { left: "24%", delay: "2.4s", duration: "13s", size: "3px" },
+  { left: "37%", delay: "1.1s", duration: "10s", size: "5px" },
+  { left: "49%", delay: "3.2s", duration: "14s", size: "3px" },
+  { left: "61%", delay: "0.6s", duration: "12s", size: "4px" },
+  { left: "73%", delay: "2.8s", duration: "11s", size: "3px" },
+  { left: "84%", delay: "1.6s", duration: "13s", size: "5px" },
+  { left: "92%", delay: "0.3s", duration: "10.5s", size: "3px" },
+] as const;
+
+const EMBER_MOTES = [
+  { x: 28, y: 46, delay: "0s" },
+  { x: 72, y: 44, delay: "1.4s" },
+  { x: 38, y: 68, delay: "0.8s" },
+  { x: 62, y: 70, delay: "2.2s" },
+  { x: 18, y: 62, delay: "1.7s" },
+  { x: 82, y: 60, delay: "0.4s" },
+] as const;
+
+const EMBER_SPARKS = [
+  { x: 24, y: 38, size: 1.1, delay: "0s", duration: "5.2s" },
+  { x: 76, y: 36, size: 1.2, delay: "1.6s", duration: "5.8s" },
+  { x: 34, y: 64, size: 0.85, delay: "0.7s", duration: "4.8s" },
+  { x: 66, y: 66, size: 0.9, delay: "2.2s", duration: "5.4s" },
+  { x: 14, y: 52, size: 0.75, delay: "1.3s", duration: "6s" },
+  { x: 86, y: 50, size: 0.8, delay: "2.8s", duration: "4.6s" },
+] as const;
+
+function EmberExterior() {
+  return (
+    <>
+      <div className="ember-veil" />
+      <div className="mouth-glow" />
+      <div className="steam" />
+      <span className="warm-flash" style={{ left: "28%", top: "42%" }} />
+      <span className="warm-flash warm-flash-late" style={{ left: "64%", top: "36%" }} />
+      {EMBERS.map((ember) => (
+        <span
+          key={ember.left}
+          className="ember"
+          style={{
+            left: ember.left,
+            width: ember.size,
+            height: ember.size,
+            animationDelay: ember.delay,
+            animationDuration: ember.duration,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+function EmberInterior({ charging, rite }: { charging: boolean; rite: boolean }) {
+  return (
+    <>
+      <div className={charging || rite ? "altar-glow altar-glow-hot" : "altar-glow"} />
+      {EMBER_SPARKS.map((spark) => (
+        <span
+          key={`${spark.x}-${spark.y}`}
+          className="ice-spark"
+          style={{
+            left: `${spark.x}%`,
+            top: `${spark.y}%`,
+            width: `${spark.size}%`,
+            animationDelay: spark.delay,
+            animationDuration: spark.duration,
+          }}
+        />
+      ))}
+      {EMBER_MOTES.map((mote) => (
+        <span
+          key={`${mote.x}-${mote.y}`}
+          className="ember-mote"
+          style={{ left: `${mote.x}%`, top: `${mote.y}%`, animationDelay: mote.delay }}
+        />
+      ))}
       {rite ? <div className="rite-flash" /> : null}
     </>
   );

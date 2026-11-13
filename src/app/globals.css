@@ -707,27 +707,18 @@ body {
 
 .mouth-glow {
   position: absolute;
-  top: 46%;
-  left: 68%;
+  top: var(--mouth-y, 46%);
+  left: var(--mouth-x, 68%);
   width: 18%;
   height: 22%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(210, 255, 248, 0.55), rgba(80, 210, 255, 0.12) 46%, transparent 72%);
+  background: radial-gradient(
+    circle,
+    var(--mouth, rgba(210, 255, 248, 0.55)),
+    var(--mouth-soft, rgba(80, 210, 255, 0.12)) 46%,
+    var(--mouth-fade, rgba(210, 255, 248, 0)) 72%
+  );
   animation: mouth-breathe 4.8s ease-in-out infinite;
-}
-
-.enclave-visit[data-scene="storm"] .mouth-glow {
-  top: 57%;
-  left: 76%;
-  background: radial-gradient(circle, rgba(255, 244, 180, 0.62), rgba(255, 186, 40, 0.14) 46%, transparent 72%);
-}
-
-.enclave-visit[data-scene="storm"] .altar-glow {
-  background: radial-gradient(ellipse, rgba(255, 236, 160, 0.55), rgba(255, 190, 40, 0.14) 52%, transparent 74%);
-}
-
-.enclave-visit[data-scene="storm"] .ice-spark {
-  background: #fff4c2;
 }
 
 .storm-veil {
@@ -761,6 +752,58 @@ body {
   transform: rotate(-12deg);
 }
 
+.ember-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 90, 20, 0) 20%, rgba(255, 90, 20, 0.14) 78%, rgba(80, 16, 4, 0.22));
+  mask-image: linear-gradient(rgba(0, 0, 0, 0) 28%, #000 100%);
+}
+
+.steam {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 22%;
+  background: linear-gradient(rgba(255, 186, 140, 0), rgba(255, 186, 140, 0.14));
+}
+
+.ember {
+  position: absolute;
+  bottom: 6%;
+  border-radius: 999px;
+  background: #ff9a3c;
+  box-shadow: 0 0 6px rgba(255, 90, 20, 0.85);
+  animation: ember-rise linear infinite;
+}
+
+.warm-flash {
+  position: absolute;
+  width: 16%;
+  height: 16%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--pulse-hot, #ffe7c2), rgba(255, 120, 40, 0) 70%);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  animation: bolt-flash 7.6s ease-in-out infinite;
+}
+
+.warm-flash-late {
+  animation-delay: 3.4s;
+}
+
+.ember-mote {
+  position: absolute;
+  z-index: 2;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--pulse-core, #ffc56b);
+  box-shadow: 0 0 6px var(--pulse-halo, rgba(190, 36, 12, 0.8));
+  opacity: 0;
+  animation: ice-spark 5.6s ease-in-out infinite;
+}
+
 .cold-mist {
   position: absolute;
   right: 0;
@@ -785,7 +828,12 @@ body {
   width: 24%;
   height: 14%;
   transform: translate(-50%, -35%);
-  background: radial-gradient(ellipse, rgba(230, 255, 255, 0.42), rgba(120, 220, 255, 0.1) 52%, transparent 74%);
+  background: radial-gradient(
+    ellipse,
+    var(--altar, rgba(230, 255, 255, 0.42)),
+    var(--altar-soft, rgba(120, 220, 255, 0.1)) 52%,
+    var(--altar-fade, rgba(230, 255, 255, 0)) 74%
+  );
   animation: altar-breathe 4.4s ease-in-out infinite;
 }
 
@@ -797,7 +845,7 @@ body {
   position: absolute;
   z-index: 2;
   aspect-ratio: 1;
-  background: #f7fffd;
+  background: var(--spark, #f7fffd);
   clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
   opacity: 0;
   animation: ice-spark 5.6s ease-in-out infinite;
@@ -824,18 +872,24 @@ body {
 .altar-pulse-ring {
   position: absolute;
   inset: 8%;
-  border: 2px solid rgba(244, 255, 253, 0.92);
+  border: 2px solid var(--pulse-ring, rgba(126, 232, 255, 0.95));
   border-radius: 50%;
-  box-shadow: 0 0 12px rgba(186, 244, 255, 0.85);
+  box-shadow: 0 0 12px var(--pulse-halo, rgba(122, 108, 255, 0.8));
   animation: altar-pulse 2.2s ease-out infinite;
+}
+
+.altar-pulse:hover .altar-pulse-ring,
+.altar-pulse:focus-visible .altar-pulse-ring {
+  border-color: var(--pulse-hot, #f3fffb);
+  box-shadow: 0 0 18px var(--pulse-halo, rgba(122, 108, 255, 0.8));
 }
 
 .altar-pulse-core {
   position: absolute;
   inset: 38%;
   border-radius: 50%;
-  background: rgba(244, 255, 253, 0.95);
-  box-shadow: 0 0 10px #fff;
+  background: var(--pulse-core, #d7f6ff);
+  box-shadow: 0 0 10px var(--pulse-halo, rgba(122, 108, 255, 0.8));
 }
 
 .altar-pulse-label {
@@ -865,12 +919,17 @@ body {
 }
 
 .altar-pulse:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--pulse-hot, #f3fffb);
   outline-offset: 4px;
 }
 
 .enclave-visit[data-charging="true"] .altar-pulse-ring {
   animation-duration: 0.85s;
+  border-color: var(--pulse-hot, #f3fffb);
+}
+
+.enclave-visit[data-charging="true"] .altar-pulse-core {
+  background: var(--pulse-hot, #f3fffb);
 }
 
 .scene-ui {
@@ -1031,7 +1090,7 @@ body {
 .rite-flash {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 48%, rgba(244, 255, 253, 0.72), transparent 36%);
+  background: radial-gradient(circle at 50% 48%, var(--rite, rgba(210, 245, 255, 0.72)), rgba(210, 245, 255, 0) 36%);
   animation: sanctuary-flash 0.9s ease-out 1 forwards;
 }
 
@@ -1049,6 +1108,11 @@ body {
 .enclave-visit[data-paused="true"] .snow-flake,
 .enclave-visit[data-paused="true"] .rain-drop,
 .enclave-visit[data-paused="true"] .storm-bolt,
+.enclave-visit[data-paused="true"] .ember,
+.enclave-visit[data-paused="true"] .warm-flash,
+.enclave-visit[data-paused="true"] .ember-veil,
+.enclave-visit[data-paused="true"] .steam,
+.enclave-visit[data-paused="true"] .ember-mote,
 .enclave-visit[data-paused="true"] .aurora-veil,
 .enclave-visit[data-paused="true"] .mouth-glow,
 .enclave-visit[data-paused="true"] .altar-glow,
@@ -1094,6 +1158,18 @@ body {
 
   91% {
     opacity: 0.65;
+  }
+}
+
+@keyframes ember-rise {
+  from {
+    transform: translateY(0);
+    opacity: 0.85;
+  }
+
+  to {
+    transform: translateY(-58vh);
+    opacity: 0;
   }
 }
 
@@ -1228,6 +1304,11 @@ body {
   .rain-drop,
   .storm-bolt,
   .storm-veil,
+  .ember,
+  .warm-flash,
+  .ember-veil,
+  .steam,
+  .ember-mote,
   .altar-glow,
   .altar-glow-hot,
   .ice-spark,
@@ -1242,11 +1323,14 @@ body {
 
   .snow-flake,
   .rain-drop,
-  .storm-bolt {
+  .storm-bolt,
+  .ember,
+  .warm-flash {
     display: none;
   }
 
-  .ice-spark {
+  .ice-spark,
+  .ember-mote {
     opacity: 0.4;
     transform: translate(-50%, -50%);
   }

@@ -12,6 +12,7 @@ function fail(message: string): never {
 const expected = [
   { id: "santuario-glacial", scene: "glacial", nationalId: 144, speciesName: "articuno" },
   { id: "central-electrica", scene: "storm", nationalId: 145, speciesName: "zapdos" },
+  { id: "santuario-volcanico", scene: "ember", nationalId: 146, speciesName: "moltres" },
 ] as const;
 
 if (ENCLAVES.length !== expected.length) {
