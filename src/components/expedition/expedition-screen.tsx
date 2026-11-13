@@ -3,6 +3,7 @@
 import { MotionConfig, motion } from "framer-motion";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { DetailDock } from "@/components/expedition/detail-dock";
+import { AnomalyGate } from "@/components/expedition/anomaly-gate";
 import { EnclaveInvite } from "@/components/expedition/enclave-invite";
 import { GlacialSanctuary } from "@/components/expedition/glacial-sanctuary";
 import { HudBar } from "@/components/expedition/hud-bar";
@@ -39,7 +40,7 @@ export function ExpeditionScreen() {
   const [camera, setCamera] = useState<CameraRequest | null>(null);
   const [dexOpen, setDexOpen] = useState(false);
   const [enclaveId, setEnclaveId] = useState<string | null>(null);
-  const [inside, setInside] = useState(false);
+  const [visit, setVisit] = useState<"gate" | "exterior" | "interior" | null>(null);
   const [examining, setExamining] = useState(false);
   const [ceremony, setCeremony] = useState(false);
   const [knownNames, setKnownNames] = useState<ReadonlyMap<string, string>>(
@@ -74,7 +75,9 @@ export function ExpeditionScreen() {
     : null;
   const enclaveSeen = enclave ? progress.seen.has(enclave.encounterId) : false;
   const revealSpecies =
-    inside && enclaveCard && (enclaveSeen || examining) ? enclaveCard.speciesName : null;
+    visit === "interior" && enclaveCard && (enclaveSeen || examining)
+      ? enclaveCard.speciesName
+      : null;
 
   const acceptEnclave = useCallback((entry: DossierEntry) => {
     const current = findEnclave(enclaveId);
@@ -129,7 +132,7 @@ export function ExpeditionScreen() {
       return;
     }
     setEnclaveId(null);
-    setInside(false);
+    setVisit(null);
     setExamining(false);
     setSelectedId(id);
     setNotebookOpen(true);
@@ -142,17 +145,24 @@ export function ExpeditionScreen() {
       return;
     }
     setSelectedId(null);
-    setInside(false);
+    setVisit("gate");
     setExamining(false);
+    setCeremony(false);
     setEnclaveId(id);
-    setNotebookOpen(true);
     focusCamera(next.point.longitude, next.point.latitude, 8);
   }
 
   function leaveEnclave() {
-    setInside(false);
+    const id = enclaveId;
+    setVisit(null);
     setExamining(false);
     setCeremony(false);
+    window.setTimeout(() => {
+      if (!id) {
+        return;
+      }
+      document.querySelector<HTMLButtonElement>(`button[data-pin-id="${CSS.escape(id)}"]`)?.focus();
+    }, 0);
   }
 
   function focusZone(zoneId: string) {
@@ -219,11 +229,11 @@ export function ExpeditionScreen() {
                 }
                 onEnter={() => {
                   setDexOpen(false);
-                  setInside(true);
+                  setVisit("gate");
                 }}
                 onIndex={() => {
                   setEnclaveId(null);
-                  setInside(false);
+                  setVisit(null);
                   setExamining(false);
                 }}
                 onClose={() => setNotebookOpen(false)}
@@ -249,7 +259,17 @@ export function ExpeditionScreen() {
           </div>
         ) : (
           <div className="relative z-30 col-start-1 row-start-3 border-t border-phosphor/20 bg-abyss px-4 py-2 lg:hidden">
-            <button type="button" className="action-button inline-flex w-full items-center justify-center" onClick={() => setNotebookOpen(true)}>
+            <button
+              type="button"
+              className="action-button inline-flex w-full items-center justify-center"
+              onClick={() => {
+                if (enclave) {
+                  setVisit("gate");
+                  return;
+                }
+                setNotebookOpen(true);
+              }}
+            >
               {enclave ? "Abrir anomalía" : selected ? "Abrir ficha" : "Abrir bitácora"}
             </button>
           </div>
@@ -271,27 +291,39 @@ export function ExpeditionScreen() {
               reset();
               setSelectedId(null);
               setEnclaveId(null);
-              setInside(false);
+              setVisit(null);
               setExamining(false);
             }}
           />
         ) : null}
-        {inside && enclave?.scene === "glacial" ? (
+        {visit === "gate" && enclave ? (
+          <AnomalyGate
+            knownName={
+              enclaveSeen && enclaveCard
+                ? (knownNames.get(enclaveCard.speciesName) ?? speciesLabel(enclaveCard.speciesName))
+                : null
+            }
+            onInvestigate={() => setVisit("exterior")}
+            onClose={leaveEnclave}
+          />
+        ) : null}
+        {(visit === "exterior" || visit === "interior") && enclave?.scene === "glacial" ? (
           <GlacialSanctuary
+            stage={visit}
             enclave={enclave}
             phase={enclaveDossier.phase}
             discovered={enclaveSeen || enclaveDossier.phase === "ready"}
             ceremony={ceremony}
             entry={enclaveDossier.entry}
             spriteId={
-              enclaveSeen || enclaveDossier.phase === "ready"
+              visit === "interior" && (enclaveSeen || enclaveDossier.phase === "ready")
                 ? (enclaveDossier.entry?.species.id ?? enclaveCard?.nationalId ?? null)
                 : null
             }
             label={
-              enclaveSeen || enclaveDossier.phase === "ready"
+              enclaveSeen || (visit === "interior" && enclaveDossier.phase === "ready")
                 ? (enclaveDossier.entry?.species.spanishName ??
-                  (enclaveCard ? speciesLabel(enclaveCard.speciesName) : null))
+                  (enclaveCard ? knownNames.get(enclaveCard.speciesName) ?? speciesLabel(enclaveCard.speciesName) : null))
                 : null
             }
             onExamine={() => {
@@ -299,6 +331,12 @@ export function ExpeditionScreen() {
               setExamining(true);
             }}
             onRetry={enclaveDossier.retry}
+            onEnter={() => setVisit("interior")}
+            onExterior={() => {
+              setVisit("exterior");
+              setExamining(false);
+              setCeremony(false);
+            }}
             onLeave={leaveEnclave}
           />
         ) : null}

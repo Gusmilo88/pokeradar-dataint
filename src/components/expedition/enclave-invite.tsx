@@ -50,7 +50,7 @@ export function EnclaveInvite({
             onClick={onEnter}
             autoFocus
           >
-            Entrar
+            Investigar
           </button>
           <button type="button" className="action-button inline-flex items-center justify-center" onClick={onIndex}>
             Índice
