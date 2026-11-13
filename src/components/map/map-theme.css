@@ -77,9 +77,11 @@
 }
 
 .field-pin-enclave {
-  min-width: 5.5rem;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  height: 2.75rem;
   min-height: 2.75rem;
-  padding: 0 0.7rem;
+  padding: 0;
   border-radius: 999px;
   border: 1px solid var(--pin-line, #d9fff4);
   background: radial-gradient(
@@ -90,13 +92,33 @@
     var(--pin-edge, #7a6cff)
   );
   color: var(--pin-ink, #04141c);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
   box-shadow:
-    0 0 0 2px var(--pin-ring, rgba(125, 255, 195, 0.7)),
-    0 0 16px 3px var(--pin-glow, rgba(90, 150, 255, 0.55));
+    0 0 0 1px var(--pin-ring, rgba(125, 255, 195, 0.7)),
+    0 0 8px 1px var(--pin-glow, rgba(90, 150, 255, 0.55));
   animation: enclave-pulse 2.8s ease-in-out infinite;
+}
+
+.field-pin-enclave[data-known]:focus-visible::after {
+  content: attr(data-known);
+  position: absolute;
+  bottom: calc(100% + 0.35rem);
+  left: 50%;
+  padding: 0.12rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(6, 16, 24, 0.92);
+  color: var(--pulse-hot, #f4fffd);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateX(-50%);
 }
 
 .field-pin-dot {
@@ -148,8 +170,8 @@
 @keyframes enclave-pulse {
   50% {
     box-shadow:
-      0 0 0 6px var(--pin-glow-soft, rgba(125, 255, 195, 0.22)),
-      0 0 20px 6px var(--pin-glow, rgba(90, 208, 255, 0.4));
+      0 0 0 3px var(--pin-glow-soft, rgba(125, 255, 195, 0.22)),
+      0 0 10px 2px var(--pin-glow, rgba(90, 208, 255, 0.4));
   }
 }
 

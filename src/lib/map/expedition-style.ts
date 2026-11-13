@@ -85,9 +85,9 @@ export function applyExpeditionStyle(map: MapLibreMap): void {
         type: "line",
         source: "argentina-land",
         paint: {
-          "line-color": "#f4efe4",
-          "line-width": ["interpolate", ["linear"], ["zoom"], 3, 1.8, 8, 1.15, 12, 0.6],
-          "line-opacity": 0.92,
+          "line-color": "#6ec4ea",
+          "line-width": ["interpolate", ["linear"], ["zoom"], 3, 1.6, 8, 1.15, 12, 0.7],
+          "line-opacity": 0.9,
         },
       },
       before,

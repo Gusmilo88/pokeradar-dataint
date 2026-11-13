@@ -23,6 +23,14 @@ const sightings = buildFieldSightings();
 if (sightings.length !== 50) {
   fail(`Los encuentros de campo son ${sightings.length}.`);
 }
+const outside = sightings.filter((sighting) => !containsArgentina(sighting));
+if (outside.length > 0) {
+  fail(
+    `Fuera del polígono de Argentina, incluida la frontera con Paraguay y Brasil: ${outside
+      .map((sighting) => `${sighting.speciesName} ${sighting.zoneId} ${sighting.latitude.toFixed(4)},${sighting.longitude.toFixed(4)}`)
+      .join("; ")}.`,
+  );
+}
 if (KANTO_CATALOG.length !== 56 || KANTO_CATALOG.filter((entry) => entry.role === "field").length !== 50) {
   fail("El catálogo de 56 dejó de estar intacto.");
 }

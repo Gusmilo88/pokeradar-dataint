@@ -777,21 +777,6 @@ body {
   animation: ember-rise linear infinite;
 }
 
-.warm-flash {
-  position: absolute;
-  width: 16%;
-  height: 16%;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--pulse-hot, #ffe7c2), rgba(255, 120, 40, 0) 70%);
-  opacity: 0;
-  transform: translate(-50%, -50%);
-  animation: bolt-flash 7.6s ease-in-out infinite;
-}
-
-.warm-flash-late {
-  animation-delay: 3.4s;
-}
-
 .ember-mote {
   position: absolute;
   z-index: 2;
@@ -1109,7 +1094,6 @@ body {
 .enclave-visit[data-paused="true"] .rain-drop,
 .enclave-visit[data-paused="true"] .storm-bolt,
 .enclave-visit[data-paused="true"] .ember,
-.enclave-visit[data-paused="true"] .warm-flash,
 .enclave-visit[data-paused="true"] .ember-veil,
 .enclave-visit[data-paused="true"] .steam,
 .enclave-visit[data-paused="true"] .ember-mote,
@@ -1305,7 +1289,6 @@ body {
   .storm-bolt,
   .storm-veil,
   .ember,
-  .warm-flash,
   .ember-veil,
   .steam,
   .ember-mote,
@@ -1324,8 +1307,7 @@ body {
   .snow-flake,
   .rain-drop,
   .storm-bolt,
-  .ember,
-  .warm-flash {
+  .ember {
     display: none;
   }
 

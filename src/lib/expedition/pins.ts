@@ -36,6 +36,8 @@ export interface FieldPin {
   label: string;
   accent: string;
   palette?: EnclavePalette;
+  /** Nombre visible solo al enfocar un enclave ya descubierto. */
+  focusName?: string;
 }
 
 function zoneById(zones: readonly ExpeditionZone[]): Map<string, ExpeditionZone> {
@@ -111,7 +113,8 @@ export function buildEnclavePins(
       kind: "enclave" as const,
       longitude: enclave.point.longitude,
       latitude: enclave.point.latitude,
-      shortLabel: revealed ? name.slice(0, 9) : "Anomalía",
+      shortLabel: "?",
+      ...(revealed ? { focusName: name } : {}),
       label: revealed
         ? `${name}. ${enclave.place}. ${enclave.region}.`
         : `Anomalía sin identificar. ${enclave.signal} en ${enclave.region}.`,

@@ -464,8 +464,6 @@ function EmberExterior() {
       <div className="ember-veil" />
       <div className="mouth-glow" />
       <div className="steam" />
-      <span className="warm-flash" style={{ left: "28%", top: "42%" }} />
-      <span className="warm-flash warm-flash-late" style={{ left: "64%", top: "36%" }} />
       {EMBERS.map((ember) => (
         <span
           key={ember.left}

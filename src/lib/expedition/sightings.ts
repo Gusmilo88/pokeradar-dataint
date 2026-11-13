@@ -5,6 +5,7 @@ import {
   type Sighting,
 } from "@/lib/expedition/argentina";
 import { containsBounds, isEastOfChile } from "@/lib/expedition/geography";
+import { containsArgentina } from "@/lib/map/argentina-hit";
 import {
   EXPEDITION_SIZE,
   FIELD_ENCOUNTERS,
@@ -64,6 +65,46 @@ function accept(point: GeoPoint, zone: ExpeditionZone, taken: readonly GeoPoint[
     return false;
   }
   return taken.every((other) => distanceKm(other, point) >= 0.45);
+}
+
+/** El rectángulo de la zona puede cruzar el polígono. Este paso solo mueve los que quedan afuera. */
+function acceptLand(point: GeoPoint, zone: ExpeditionZone, taken: readonly GeoPoint[]): boolean {
+  return accept(point, zone, taken) && containsArgentina(point);
+}
+
+function landPoint(
+  zone: ExpeditionZone,
+  encounterId: string,
+  taken: readonly GeoPoint[],
+  seed: string,
+): GeoPoint {
+  const random = mulberry32(hashString(`${seed}:${encounterId}:land`));
+  const { west, east, south, north } = zone.bounds;
+  for (let attempt = 0; attempt < 64; attempt += 1) {
+    const point = {
+      longitude: west + (east - west) * random(),
+      latitude: south + (north - south) * random(),
+    };
+    if (acceptLand(point, zone, taken)) {
+      return point;
+    }
+  }
+  const columns = 36;
+  const rows = 36;
+  const startColumn = Math.floor(random() * columns);
+  const startRow = Math.floor(random() * rows);
+  for (let step = 0; step < columns * rows; step += 1) {
+    const column = (startColumn + (step % columns)) % columns;
+    const row = (startRow + Math.floor(step / columns)) % rows;
+    const point = {
+      longitude: west + ((east - west) * (column + 0.5)) / columns,
+      latitude: south + ((north - south) * (row + 0.5)) / rows,
+    };
+    if (acceptLand(point, zone, taken)) {
+      return point;
+    }
+  }
+  throw new Error(`No hay suelo argentino en ${zone.id} para ${encounterId}.`);
 }
 
 function placeEntry(
@@ -175,6 +216,21 @@ function placeCatalog(
 
   if (sightings.length !== FIELD_ENCOUNTERS) {
     throw new Error(`Se colocaron ${sightings.length} encuentros y el campo pide ${FIELD_ENCOUNTERS}.`);
+  }
+
+  const zonesById = new Map(resolvedZones.map((zone) => [zone.id, zone]));
+  for (const sighting of sightings) {
+    if (containsArgentina(sighting)) {
+      continue;
+    }
+    const zone = zonesById.get(sighting.zoneId);
+    if (!zone) {
+      throw new Error(`${sighting.id} no tiene zona.`);
+    }
+    const taken = sightings.filter((other) => other !== sighting && containsArgentina(other));
+    const point = landPoint(zone, sighting.id, taken, seed);
+    sighting.latitude = point.latitude;
+    sighting.longitude = point.longitude;
   }
 
   return sightings;

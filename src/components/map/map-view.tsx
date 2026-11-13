@@ -326,6 +326,9 @@ export function MapView({
       button.textContent = dot ? "" : pin.shortLabel;
       button.setAttribute("aria-label", pin.label);
       button.dataset.pinId = pin.id;
+      if (pin.focusName) {
+        button.dataset.known = pin.focusName;
+      }
       button.style.setProperty("--zone-accent", pin.accent);
       if (pin.palette) {
         const vars = paletteVars(pin.palette);
