@@ -17,11 +17,13 @@ export function FieldEntry({
   zone,
   expeditionNumber,
   state = "seen",
+  place,
 }: {
   entry: DossierEntry;
-  zone: ExpeditionZone;
+  zone: ExpeditionZone | null;
   expeditionNumber: number | null;
   state?: Extract<DiscoveryState, "seen" | "caught">;
+  place?: string;
 }) {
   const titleId = useId();
   const { species, pokemon } = entry;
@@ -33,7 +35,7 @@ export function FieldEntry({
       <p className="font-mono text-[10px] tracking-[0.18em] text-amber uppercase">
         {dexNumber(species.id)}
         {expeditionNumber ? ` · Exp. ${String(expeditionNumber).padStart(2, "0")}` : ""}
-        {` · ${zone.code}`}
+        {zone ? ` · ${zone.code}` : ""}
       </p>
       <p className={state === "caught" ? "mt-2 font-mono text-[10px] tracking-[0.16em] text-amber uppercase" : "mt-2 font-mono text-[10px] tracking-[0.16em] text-phosphor uppercase"}>
         {state === "caught" ? "Capturado" : "Visto"}
@@ -90,7 +92,9 @@ export function FieldEntry({
         })}
       </ul>
       <p className="mt-4 text-sm text-quiet">
-        {zone.name} · {HABITAT_LABEL[zone.habitat]}. Encuentro simulado.
+        {zone
+          ? `${zone.name} · ${HABITAT_LABEL[zone.habitat]}. Encuentro simulado.`
+          : (place ?? "Sin zona de campo.")}
       </p>
     </article>
   );

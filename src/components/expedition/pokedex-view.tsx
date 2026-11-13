@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import { FieldEntry } from "@/components/expedition/field-entry";
 import { useDossier } from "@/components/expedition/use-dossier";
+import { findEnclaveByEncounter } from "@/lib/expedition/enclaves";
 import { findZone } from "@/lib/expedition/pins";
 import { explorationHint } from "@/lib/expedition/hints";
 import { KANTO_CATALOG, type CatalogEntry } from "@/lib/expedition/kanto";
@@ -192,6 +193,7 @@ function DexPlate({
 }) {
   const revealed = state !== "undiscovered";
   const zone = entry.zoneId ? (findZone(entry.zoneId) ?? null) : null;
+  const enclave = findEnclaveByEncounter(entry.encounterId);
   const dossier = useDossier(revealed ? entry.speciesName : null);
   const name = revealed ? (dossier.entry?.species.spanishName ?? speciesLabel(entry.speciesName)) : "???";
 
@@ -204,12 +206,13 @@ function DexPlate({
       >
         Álbum
       </button>
-      {revealed && dossier.entry && zone ? (
+      {revealed && dossier.entry ? (
         <FieldEntry
           entry={dossier.entry}
           zone={zone}
           expeditionNumber={entry.expeditionNumber}
-          state={state}
+          state={state === "caught" ? "caught" : "seen"}
+          place={enclave ? `${enclave.place}. ${enclave.region}.` : undefined}
         />
       ) : (
         <article className="border border-phosphor/20 bg-void/40 px-4 py-4">
@@ -264,6 +267,15 @@ function DexPlate({
           )}
         </article>
       )}
+      {enclave && revealed ? (
+        <button
+          type="button"
+          className="action-button mt-4 inline-flex items-center justify-center"
+          onClick={() => onSeek(entry.encounterId)}
+        >
+          Ver en el mapa
+        </button>
+      ) : null}
     </div>
   );
 }

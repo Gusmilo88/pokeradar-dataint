@@ -76,6 +76,24 @@
   border-radius: 0.35rem;
 }
 
+.field-pin-enclave {
+  min-width: 3.25rem;
+  min-height: 3.25rem;
+  border-radius: 999px;
+  border-color: #08202c;
+  background: #e7f8ff;
+  color: #08202c;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 3px #7ec8d6;
+}
+
+.field-pin-enclave.is-selected {
+  background: #f2c14e;
+  color: #1a1404;
+  box-shadow: 0 0 0 3px #f2c14e;
+}
+
 .field-pin-dot {
   background: transparent;
   border-color: transparent;

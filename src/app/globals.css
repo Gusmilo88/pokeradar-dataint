@@ -120,10 +120,34 @@ body {
   }
 }
 
+.sanctuary-beam {
+  animation: sanctuary-flicker 5.5s ease-in-out infinite;
+}
+
+.sanctuary-seal {
+  animation: sanctuary-flicker 4.2s ease-in-out infinite;
+}
+
+@keyframes sanctuary-flicker {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+
+  50% {
+    opacity: 0.85;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .radar-spinner {
     animation: none;
     background: var(--radar-phosphor);
     mask: none;
+  }
+
+  .sanctuary-beam,
+  .sanctuary-seal {
+    animation: none;
   }
 }

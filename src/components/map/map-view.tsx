@@ -49,11 +49,14 @@ export interface MapCamera {
 export interface MapViewProps {
   zonePins: readonly FieldPin[];
   encounterPins: readonly FieldPin[];
+  enclavePins: readonly FieldPin[];
   selectedId: string | null;
   selectedZoneId: string | null;
+  selectedEnclaveId: string | null;
   camera: MapCamera | null;
   onSelectSighting: (id: string) => void;
   onFocusZone: (zoneId: string) => void;
+  onSelectEnclave: (id: string) => void;
 }
 
 const initialReadout: MapReadout = {
@@ -92,16 +95,20 @@ function townDot(): ImageData {
 export function MapView({
   zonePins,
   encounterPins,
+  enclavePins,
   selectedId,
   selectedZoneId,
+  selectedEnclaveId,
   camera,
   onSelectSighting,
   onFocusZone,
+  onSelectEnclave,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const selectRef = useRef(onSelectSighting);
   const zoneRef = useRef(onFocusZone);
+  const enclaveRef = useRef(onSelectEnclave);
   const [attempt, setAttempt] = useState(0);
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
   const [detail, setDetail] = useState<string | null>(null);
@@ -111,7 +118,8 @@ export function MapView({
   useEffect(() => {
     selectRef.current = onSelectSighting;
     zoneRef.current = onFocusZone;
-  }, [onFocusZone, onSelectSighting]);
+    enclaveRef.current = onSelectEnclave;
+  }, [onFocusZone, onSelectEnclave, onSelectSighting]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -282,7 +290,9 @@ export function MapView({
       const point = map.project([pin.longitude, pin.latitude]);
       return { x: point.x, y: point.y };
     };
-    const pins = showEncounters ? collapsePins(encounterPins, project) : zonePins;
+    const pins = showEncounters
+      ? [...collapsePins(encounterPins, project), ...enclavePins]
+      : [...zonePins, ...enclavePins];
     const markers: Marker[] = [];
 
     const approach = (pin: FieldPin) => {
@@ -303,13 +313,15 @@ export function MapView({
       button.type = "button";
       const dot = pin.kind === "encounter" && !labeled;
       button.className =
-        pin.kind === "zone"
-          ? "field-pin field-pin-zone"
-          : pin.kind === "stack"
-            ? "field-pin field-pin-stack"
-            : dot
-              ? "field-pin field-pin-dot"
-              : "field-pin field-pin-encounter";
+        pin.kind === "enclave"
+          ? "field-pin field-pin-enclave"
+          : pin.kind === "zone"
+            ? "field-pin field-pin-zone"
+            : pin.kind === "stack"
+              ? "field-pin field-pin-stack"
+              : dot
+                ? "field-pin field-pin-dot"
+                : "field-pin field-pin-encounter";
       button.textContent = dot ? "" : pin.shortLabel;
       button.setAttribute("aria-label", pin.label);
       button.dataset.pinId = pin.id;
@@ -321,6 +333,8 @@ export function MapView({
         event.stopPropagation();
         if (pin.kind === "zone") {
           zoneRef.current(pin.zoneId);
+        } else if (pin.kind === "enclave") {
+          enclaveRef.current(pin.id);
         } else if (pin.kind === "stack") {
           approach(pin);
         } else {
@@ -373,7 +387,7 @@ export function MapView({
         marker.remove();
       }
     };
-  }, [attempt, encounterPins, layoutTick, phase, zonePins]);
+  }, [attempt, enclavePins, encounterPins, layoutTick, phase, zonePins]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -384,14 +398,14 @@ export function MapView({
     const buttons = map.getContainer().querySelectorAll<HTMLButtonElement>(".field-pin");
     buttons.forEach((button) => {
       const id = button.dataset.pinId ?? "";
-      const selected = showEncounters
-        ? id === selectedId
-        : id === `zone:${selectedZoneId ?? ""}`;
+      const selected =
+        id === selectedEnclaveId ||
+        (showEncounters ? id === selectedId : id === `zone:${selectedZoneId ?? ""}`);
       button.classList.toggle("is-selected", selected);
       button.setAttribute("aria-pressed", selected ? "true" : "false");
       button.style.zIndex = selected ? "2" : "1";
     });
-  }, [encounterPins, layoutTick, phase, selectedId, selectedZoneId, zonePins]);
+  }, [enclavePins, encounterPins, layoutTick, phase, selectedEnclaveId, selectedId, selectedZoneId, zonePins]);
 
   useEffect(() => {
     const map = mapRef.current;

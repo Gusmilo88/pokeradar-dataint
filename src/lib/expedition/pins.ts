@@ -5,6 +5,8 @@ import {
   type ExpeditionZone,
   type Sighting,
 } from "@/lib/expedition/argentina";
+import type { Enclave } from "@/lib/expedition/enclaves";
+import { KANTO_CATALOG } from "@/lib/expedition/kanto";
 import { speciesLabel } from "@/lib/pokeapi/labels";
 
 export const REGIONAL_ZOOM = 6.5;
@@ -27,7 +29,7 @@ const HABITAT_CODE: Record<ExpeditionHabitat, string> = {
 export interface FieldPin {
   id: string;
   zoneId: string;
-  kind: "zone" | "encounter" | "stack";
+  kind: "zone" | "encounter" | "stack" | "enclave";
   longitude: number;
   latitude: number;
   shortLabel: string;
@@ -88,6 +90,32 @@ export function buildEncounterPins(
         accent: zone.accent,
       },
     ];
+  });
+}
+
+export function buildEnclavePins(
+  enclaves: readonly Enclave[],
+  revealedIds: ReadonlySet<string>,
+  knownNames: ReadonlyMap<string, string>,
+): FieldPin[] {
+  return enclaves.map((enclave) => {
+    const revealed = revealedIds.has(enclave.encounterId);
+    const card = KANTO_CATALOG.find((entry) => entry.encounterId === enclave.encounterId);
+    const name = card
+      ? (knownNames.get(card.speciesName) ?? speciesLabel(card.speciesName))
+      : "Señal";
+    return {
+      id: enclave.id,
+      zoneId: enclave.id,
+      kind: "enclave" as const,
+      longitude: enclave.point.longitude,
+      latitude: enclave.point.latitude,
+      shortLabel: revealed ? name.slice(0, 9) : "Hielo",
+      label: revealed
+        ? `${name}. ${enclave.place}. ${enclave.region}.`
+        : `Anomalía sin identificar. Señal glacial en ${enclave.region}.`,
+      accent: "#7ec8d6",
+    };
   });
 }
 

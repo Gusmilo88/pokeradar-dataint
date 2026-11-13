@@ -10,9 +10,13 @@ La expedición tiene 56 especies de Kanto (Pokédex Nacional 1–151), escritas 
 
 Cincuenta especies están en el mapa. Cada una usa el hábitat que PokéAPI publica para su zona. Las cuotas son 5, 7, 4, 5, 5, 5, 4, 5, 4 y 6. La semilla `pokeradar-kanto-v1` fija la coordenada. Dar vuelta el catálogo no mueve los puntos. Cada punto cae dentro del rectángulo de su zona y al este de una polilínea de la divisoria con Chile. El mar de Puerto Pirámides queda en el Golfo Nuevo. No hay un polígono de costa: un punto dentro del rectángulo puede caer en una laguna chica.
 
-Seis especies quedan reservadas y no se dibujan como encuentros: Articuno, Zapdos, Moltres, Aerodactyl, Mewtwo y Mew. Cinco tienen hábitat `rare`, que no es una zona. Aerodactyl es de montaña, y aun así queda fuera del mapa. No hay escena interior. En la interfaz siguen ocultas: el álbum las muestra como `???`, con una pista que no nombra la especie.
+Seis especies quedan reservadas y no se dibujan como encuentros de campo: Articuno, Zapdos, Moltres, Aerodactyl, Mewtwo y Mew. Cinco tienen hábitat `rare`, que no es una zona. Aerodactyl es de montaña, y aun así queda fuera de esos encuentros. El álbum las muestra como `???` hasta descubrirlas. Solo Articuno tiene enclave: el Santuario Glacial. Las otras cinco siguen sin escena.
 
-En el zoom del país se ven diez sellos con el nombre y la cantidad. Si dos rectángulos se pisan, el sello se corre en pantalla y el ancla no se mueve: así Iguazú y Cataratas se pueden pulsar. Desde zoom 6.5 el mapa cambia a encuentros, agrupados si caen a menos de 36 px. Pulsar una zona vuela a zoom 8. Elegir una criatura vuela a zoom 12.2 y pide la ficha. Con movimiento reducido el mismo destino es un salto.
+En el zoom del país se ven diez sellos con el nombre y la cantidad, y un sello redondo «Hielo». Si dos rectángulos se pisan, el sello se corre en pantalla y el ancla no se mueve: así Iguazú y Cataratas se pueden pulsar, y el santuario no tapa a Moreno. Desde zoom 6.5 el mapa cambia a encuentros, agrupados si caen a menos de 36 px. El sello del santuario sigue visible. Pulsar una zona, o el santuario, vuela a zoom 8. Elegir una criatura de campo vuela a zoom 12.2 y pide la ficha. Con movimiento reducido el mismo destino es un salto.
+
+El santuario está en Santa Cruz, latitud -50.7 y longitud -73. Cae dentro del polígono ARG de Natural Earth y al este de la divisoria con Chile, fuera del rectángulo de los cinco encuentros de Perito Moreno. El punto no es un frente de glaciar medido: la escala 1:50.000.000 no alcanza para eso. Antes de entrar, el sello no dice el nombre de la criatura. La bitácora muestra la anomalía y el botón Entrar.
+
+Adentro hay una escena propia, dibujada con SVG y CSS. No copia un mapa de un juego y no usa imágenes generadas. El campo `scene: "glacial"` es el lugar donde un bloque posterior puede cambiar ese dibujo por un asset pixel art elegido a mano. Examinar el sello pide la ficha real. Si PokéAPI responde, hay una revelación, el sprite animado de Black & White y el estado visto. Si falla, sigue sin descubrir. Salir no recrea MapLibre: el mapa queda montado debajo, con el mismo tamaño y el mismo zoom. Volver a entrar, ya vista, muestra la criatura sin repetir el examen. Escape sale de la escena. Con movimiento reducido, el haz de luz no se anima y el sprite es el PNG.
 
 Una especie empieza sin descubrir. El sello y el índice dicen `???`. La silueta usa el PNG frontal de Black & White, generación V, con el color apagado: se conserva la forma y no el color. El `alt` queda vacío. Al elegirla aparece «Señal nueva» y se pide la ficha. Si PokéAPI responde, pasa a vista, se guarda y se muestran el nombre, el número nacional, los tipos, las estadísticas y el hábitat. Si falla, sigue sin descubrir y se puede reintentar. Si ya estaba vista, la ficha se abre directo.
 
@@ -81,7 +85,7 @@ No se agregaron dependencias. `npm audit` reporta 8 moderadas. La raíz es GHSA-
 
 ## Uso de inteligencia artificial
 
-Herramienta: Cursor, con el modelo Grok. Se usó para leer el brief, contrastar PokéAPI, OpenFreeMap y Natural Earth, y escribir los bloques B0, B1, B1.5, B2 y B3.
+Herramienta: Cursor, con el modelo Grok. Se usó para leer el brief, contrastar PokéAPI, OpenFreeMap y Natural Earth, y escribir los bloques B0, B1, B1.5, B2, B3 y B4A.
 
 Correcciones sobre la salida del modelo:
 
@@ -104,7 +108,8 @@ Correcciones sobre la salida del modelo:
 - La atribución de MapLibre arranca expandida en anchos chicos y tapaba la base del mapa. Al cargar se pliega; el botón de atribución sigue ahí.
 - Enter sobre un sello propio no lo activaba solo con el comportamiento nativo bajo el evento de prueba. El sello escucha Enter y Espacio. Las flechas siguen yendo al lienzo de MapLibre.
 - En B3 el CSS de desarrollo no incorporó `.pixel-sprite` ni `.creature-silhouette` aunque el archivo fuente sí las tiene. El sprite lleva el mismo recorte de color y `image-rendering: pixelated` en el atributo `style`, que es lo que se midió en el navegador.
-- La automatización del navegador manda teclas con `isTrusted: false`. Tab no mueve el foco. Escape sí cerró la Pokédex, porque el cierre está en un listener propio. Enter y Espacio de un usuario real los resuelve el botón nativo; esa pulsación de confianza no se pudo reproducir con la herramienta.
+- La automatización del navegador manda teclas con `isTrusted: false`. Tab no mueve el foco. Escape sí cerró la Pokédex y el santuario, porque el cierre está en un listener propio. Enter y Espacio de un usuario real los resuelven los botones nativos; esa pulsación de confianza no se pudo reproducir con la herramienta.
+- El primer dibujo del santuario, con `slice` y columnas altas, se leía como franjas. El segundo, con `meet` en un teléfono vertical, dejaba la escena en una banda chica. Quedó `xMidYMax slice`: el piso y el sello se apoyan sobre el panel. Sigue siendo un boceto en SVG, no el pixel art definitivo.
 
 ## Verificación
 
@@ -114,6 +119,7 @@ npm run lint
 npm run build
 npx tsx scripts/verify-pokeapi.ts
 npx tsx scripts/verify-progress.ts
+npx tsx scripts/verify-enclave.ts
 ```
 
 El script pega a PokéAPI. Comprueba Pikachu, rechaza un objeto inválido, recorre los nueve hábitats y exige que Wormadam resuelva a `wormadam-plant`. Para Kanto exige 56 especies, ids nacionales 1–151, sin duplicados, los seis reservados fuera del mapa, coordenadas iguales si se invierte el catálogo, puntos dentro de la zona y al este de la divisoria, cero `fetch` al colocar, y el estado inicial `undiscovered`. Después contrasta cada ficha con `/pokemon-species/{id}`: nombre, generación I y hábitat.
@@ -145,9 +151,26 @@ En el navegador, sobre `npm run dev`, en B3, con `localStorage` vacío al empeza
 
 No se usó un teléfono táctil real. No se volvió a medir la ventana de 525×444 ni el zoom de navegador al 150 %. Al abrir el álbum el navegador pidió las siluetas visibles (unas 40 de 56), no las 56 fichas: en esa sesión hubo 2 pedidos a `pokeapi.co`.
 
+`scripts/verify-enclave.ts` no usa red. Exige un solo enclave, Articuno reservado, el catálogo en 56 y 50 de campo, el punto dentro de Argentina y fuera del rectángulo de Perito Moreno, y que el texto previo no nombre a las seis reservadas.
+
+En el navegador, sobre `npm run dev`, en B4A, con almacenamiento vacío:
+
+- En 1440×900 y zoom 3.8, «Hielo» y «Moreno» se podían pulsar por separado. El sello no decía Articuno y no hubo pedidos a PokéAPI.
+- Entrar mostró el santuario y «Examinar la señal», sin el nombre. El mapa seguía en 1080×827.
+- Un 503 durante el examen no escribió `kanto-144` ni mostró el nombre. Reintentar mostró Articuno, tipos Hielo y Volador, el GIF `black-white/animated/144.gif` y `seen: ["kanto-144"]`, con `caught` vacío.
+- Volver al mapa dejó el mismo tamaño de canvas y el zoom en 8.0. Reingresar mostró la criatura sin el botón de examinar.
+- La Pokédex abrió `#0144 · Exp. 51`, Visto, y «1 vistas · 0 capturadas». Tras recargar, el sello decía Articuno. Los 50 encuentros de campo seguían en el índice.
+- Se demoró la ficha, se salió del santuario y después se soltó la respuesta. El progreso siguió en cero.
+- Con movimiento reducido, el haz tenía `animation-name: none` y el sprite fue `black-white/144.png`.
+- En 1440×480 el botón «Volver al mapa» quedó dentro de la ventana. En 390×844 el título no se cortó, el sello estaba sobre el mapa y el botón de salida también. Escape cerró la escena.
+- Después, el encuentro 36 de la Puna siguió abriendo «Señal nueva».
+- La consola repitió el aviso conocido de `circle-11`. Con el movimiento reducido emulado, Framer avisó que las animaciones pueden no verse. No apareció un error nuevo de la app.
+
+No se usó un teléfono táctil real. Tab sigue sin poder recorrer la escena con la herramienta, porque sus teclas no son de confianza.
+
 ## Qué queda para el bloque siguiente
 
-No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja y no se obtiene desde la interfaz. No hay cartas holográficas ni enclaves. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal, y Malvinas no están dibujadas dentro de Argentina. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula.
+No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja y no se obtiene desde la interfaz. No hay cartas holográficas. Faltan cinco enclaves. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal, y Malvinas no están dibujadas dentro de Argentina. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula. El santuario es un boceto SVG: el pixel art definitivo entra cuando haya un asset elegido a mano.
 
 ## Decisiones
 
@@ -156,7 +179,8 @@ No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja 
 | Catálogo fijo de Kanto y semilla `pokeradar-kanto-v1` | Las especies no cambian al recargar y cada encuentro tiene id propio | Elegir al azar entre el hábitat en cada visita |
 | Contorno Natural Earth 5.1.2, sin fusionar Malvinas | El límite es una fuente pública y la disputa queda documentada | Dibujar un polígono a mano o incorporar el reclamo |
 | Manchas de color, no biomas | El proyecto no tiene polígonos de ecorregión | Pintar las provincias o un hábitat científico |
-| Seis reservados fuera del mapa | No son encuentros comunes y la escena interior es otro bloque | Ponerlos en una zona con el resto |
+| Seis reservados fuera de los encuentros de campo | No son avistamientos comunes | Ponerlos en una zona con los otros cincuenta |
+| Un enclave, escena `glacial`, encima del mapa | Articuno se descubre en un lugar distinto sin recrear MapLibre | Seis pantallas genéricas o una ruta nueva |
 | Caché en memoria, ficha al elegir | Cero fichas al entrar; el detalle, bajo demanda | Prefetch de las 56 fichas |
 | Worker en `public/` | Vercel sirve el estático sin leer `node_modules` en runtime | Mantener la ruta que hacía `fs.readFile` |
 | Sustituto del icono ausente, con `console.warn` | El mapa no se cae y el hueco del sprite queda visible | `hasImage`, que dispara el error, o silenciar la consola |
@@ -164,3 +188,4 @@ No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja 
 | Progreso en `localStorage`, esquema v1 | Sobrevive al refresco y un documento inválido vuelve a cero | Un backend o guardar el nombre en español |
 | Silueta del PNG de Black & White | La forma es la del sprite real y el color no se revela | Generar una imagen o mostrar el GIF oculto |
 | GIF de Black & White al descubrir; PNG si el movimiento está reducido | El recurso es del repositorio PokeAPI/sprites y el GIF no sigue animado cuando se pidió calma | Un `prefers-reduced-motion` que solo pause por CSS |
+| Santuario en -50.7, -73, validado con Natural Earth | Está en Santa Cruz, dentro del polígono y separado de los encuentros | Usar el ancla de Moreno y tapar esos cinco puntos |
