@@ -180,3 +180,44 @@
     animation: none;
   }
 }
+
+.atlas-nav {
+  display: grid;
+  gap: 0.35rem;
+  width: 11.5rem;
+  max-width: calc(100vw - 5.5rem);
+}
+
+.atlas-nav ul {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.atlas-nav button {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(142, 246, 223, 0.35);
+  border-radius: 8px;
+  background: rgba(6, 20, 28, 0.92);
+  color: #e7f6f2;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+}
+
+.atlas-nav button[aria-pressed="true"] {
+  border-color: #8ef6df;
+  color: #8ef6df;
+}
+
+.atlas-nav button:focus-visible {
+  outline: 2px solid #8ef6df;
+  outline-offset: 2px;
+}

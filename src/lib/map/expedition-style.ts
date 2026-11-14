@@ -1,7 +1,9 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { EXPEDITION_ZONES } from "@/lib/expedition/argentina";
 import { expeditionAccents } from "@/lib/expedition/accents";
+import { ATLANTIC_LABELS } from "@/lib/map/atlantic-hit";
 import { ARGENTINA_LAND } from "@/lib/map/argentina-land";
+import atlanticIslands from "@/lib/map/atlantic-islands.json";
 
 const QUIET_COUNTRY_LABELS = [
   "place_country_other",
@@ -32,10 +34,10 @@ function soften(map: MapLibreMap, id: string, opacity: unknown): void {
   map.setPaintProperty(id, "text-opacity", opacity as never);
 }
 
-function outlinePaint(map: MapLibreMap): void {
-  map.setPaintProperty("argentina-outline", "line-color", ARGENTINA_OUTLINE);
-  map.setPaintProperty("argentina-outline", "line-opacity", 1);
-  map.setPaintProperty("argentina-outline", "line-width", [
+function outlinePaint(map: MapLibreMap, id: string): void {
+  map.setPaintProperty(id, "line-color", ARGENTINA_OUTLINE);
+  map.setPaintProperty(id, "line-opacity", 1);
+  map.setPaintProperty(id, "line-width", [
     "interpolate",
     ["linear"],
     ["zoom"],
@@ -68,30 +70,119 @@ function placeOutline(map: MapLibreMap): void {
   } else if (before) {
     map.moveLayer("argentina-outline", before);
   }
-  outlinePaint(map);
+  outlinePaint(map, "argentina-outline");
 }
 
-function labelMalvinas(map: MapLibreMap, id: string): void {
-  if (!map.getLayer(id)) {
-    return;
+const HIDDEN_ISLAND_NAMES = [
+  "falkland islands",
+  "falkland is.",
+  "islas malvinas",
+  "south georgia and the south sandwich islands",
+  "south georgia and south sandwich islands",
+  "s. geo. and the is.",
+  "south georgia",
+  "south sandwich islands",
+  "islas georgias del sur",
+  "islas georgias del sur y sandwich del sur",
+  "islas sandwich del sur",
+];
+
+function hideRemoteIslandNames(map: MapLibreMap): void {
+  const layers = map.getStyle()?.layers ?? [];
+  for (const layer of layers) {
+    const sourceLayer = "source-layer" in layer ? layer["source-layer"] : undefined;
+    if (layer.type !== "symbol" || (sourceLayer !== "place" && sourceLayer !== "water_name")) {
+      continue;
+    }
+    const current = map.getFilter(layer.id);
+    if (JSON.stringify(current).includes("falkland islands")) {
+      continue;
+    }
+    const drop = [
+      "!",
+      [
+        "in",
+        [
+          "downcase",
+          [
+            "to-string",
+            ["coalesce", ["get", "name_en"], ["get", "name:en"], ["get", "name:es"], ["get", "name"], ""],
+          ],
+        ],
+        ["literal", HIDDEN_ISLAND_NAMES],
+      ],
+    ];
+    map.setFilter(layer.id, (current ? ["all", current, drop] : drop) as never);
   }
-  const current = map.getLayoutProperty(id, "text-field");
-  if (JSON.stringify(current).includes("Islas Malvinas")) {
-    return;
+}
+
+function placeIslands(map: MapLibreMap): void {
+  const before = map.getLayer(OUTLINE_BEFORE) ? OUTLINE_BEFORE : undefined;
+  if (!map.getSource("atlantic-islands")) {
+    map.addSource("atlantic-islands", {
+      type: "geojson",
+      data: atlanticIslands as never,
+    });
   }
-  map.setLayoutProperty(id, "text-field", [
-    "case",
-    ["==", ["coalesce", ["get", "name:es"], ""], "Islas Malvinas"],
-    ["get", "name:es"],
-    [
-      "any",
-      ["==", ["coalesce", ["get", "name_en"], ""], "Falkland Islands"],
-      ["==", ["coalesce", ["get", "name:en"], ""], "Falkland Islands"],
-      ["==", ["coalesce", ["get", "name"], ""], "Falkland Islands"],
-    ],
-    "Islas Malvinas",
-    current ?? ["coalesce", ["get", "name_en"], ["get", "name"]],
-  ] as never);
+  if (!map.getLayer("atlantic-outline")) {
+    map.addLayer(
+      {
+        id: "atlantic-outline",
+        type: "line",
+        source: "atlantic-islands",
+        paint: {
+          "line-color": ARGENTINA_OUTLINE,
+          "line-opacity": 1,
+          "line-width": 2.8,
+        },
+        layout: {
+          "line-join": "round",
+          "line-cap": "round",
+        },
+      },
+      before,
+    );
+  } else if (before) {
+    map.moveLayer("atlantic-outline", before);
+  }
+  outlinePaint(map, "atlantic-outline");
+
+  if (!map.getSource("atlantic-labels")) {
+    map.addSource("atlantic-labels", {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features: ATLANTIC_LABELS.map((label) => ({
+          type: "Feature" as const,
+          properties: { name: label.name, group: label.group },
+          geometry: { type: "Point" as const, coordinates: [label.longitude, label.latitude] },
+        })),
+      },
+    });
+  }
+  if (!map.getLayer("atlantic-label")) {
+    map.addLayer({
+      id: "atlantic-label",
+      type: "symbol",
+      source: "atlantic-labels",
+      minzoom: 4.8,
+      layout: {
+        "text-field": ["get", "name"],
+        "text-font": ["Noto Sans Regular"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 5, 11, 8, 15],
+        "text-letter-spacing": 0.08,
+        "text-max-width": 14,
+        "text-anchor": "center",
+        "text-allow-overlap": true,
+        "text-padding": 6,
+      },
+      paint: {
+        "text-color": "#d7e7f2",
+        "text-halo-color": "#07141c",
+        "text-halo-width": 1.25,
+      },
+    });
+  }
 }
 
 /**
@@ -148,11 +239,12 @@ export function applyExpeditionStyle(map: MapLibreMap): void {
     );
   }
   placeOutline(map);
+  placeIslands(map);
+  hideRemoteIslandNames(map);
 
   const countryOpacity = ["interpolate", ["linear"], ["zoom"], 3, 0.38, 6, 0.82];
   for (const id of QUIET_COUNTRY_LABELS) {
     soften(map, id, countryOpacity);
-    labelMalvinas(map, id);
   }
   soften(map, "place_state", ["interpolate", ["linear"], ["zoom"], 3, 0.28, 6.5, 0.85]);
 }

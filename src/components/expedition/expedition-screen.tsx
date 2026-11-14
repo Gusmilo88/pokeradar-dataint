@@ -24,6 +24,7 @@ import {
 } from "@/lib/expedition/pins";
 import { discoveryState, tally } from "@/lib/expedition/progress";
 import { findSighting } from "@/lib/expedition/sightings";
+import type { AtlasFrame } from "@/lib/map/atlas-frames";
 import { speciesLabel } from "@/lib/pokeapi/labels";
 
 interface CameraRequest {
@@ -31,6 +32,7 @@ interface CameraRequest {
   latitude: number;
   zoom: number;
   request: number;
+  exact?: boolean;
 }
 
 export function ExpeditionScreen() {
@@ -116,14 +118,19 @@ export function ExpeditionScreen() {
     [knownNames, progress.seen],
   );
 
-  function focusCamera(longitude: number, latitude: number, zoom: number) {
+  function focusCamera(longitude: number, latitude: number, zoom: number, exact = false) {
     cameraRequest.current += 1;
     setCamera({
       longitude,
       latitude,
       zoom,
       request: cameraRequest.current,
+      exact,
     });
+  }
+
+  function exploreRegion(frame: AtlasFrame) {
+    focusCamera(frame.longitude, frame.latitude, frame.zoom, true);
   }
 
   function selectSighting(id: string) {
@@ -215,6 +222,7 @@ export function ExpeditionScreen() {
             onSelectSighting={selectSighting}
             onFocusZone={focusZone}
             onSelectEnclave={selectEnclave}
+            onExplore={exploreRegion}
           />
         </main>
         {notebookOpen ? (

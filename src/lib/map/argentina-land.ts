@@ -7,11 +7,11 @@ import collection from "@/lib/map/argentina-land.json";
  * No se aplicó otra simplificación: la generalización es la de la escala 1:50.000.000.
  *
  * Limitaciones: no sirve para catastro ni para un límite legal.
- * Islas Malvinas (FLK) y Georgias del Sur (SGS) son features aparte en esta fuente.
- * Natural Earth anota Malvinas como administradas por el Reino Unido y reclamadas por Argentina.
- * Este mapa no fusiona ese feature ni dibuja el sector antártico, que no está en el polígono ARG.
+ * Malvinas (FLK) y Georgias y Sandwich del Sur (SGS) no están en este polígono.
+ * Esos contornos salen del extracto 1:10.000.000 y se dibujan como features aparte.
+ * No incluye el sector antártico.
  */
 export const ARGENTINA_LAND_NOTE =
-  "Contorno de Natural Earth 5.1.2 (admin-0, 1:50.000.000). Malvinas y el sector antártico no forman parte de este polígono.";
+  "Contornos de Natural Earth 5.1.2. Argentina, 1:50.000.000. Malvinas, Georgias del Sur y Sandwich del Sur, 1:10.000.000, en polígonos aparte.";
 
 export const ARGENTINA_LAND = collection;

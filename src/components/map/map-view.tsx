@@ -30,7 +30,9 @@ import {
   OPENFREEMAP_DARK_STYLE,
 } from "@/lib/map/constants";
 import { ARGENTINA_LAND_NOTE } from "@/lib/map/argentina-land";
+import type { AtlasFrame } from "@/lib/map/atlas-frames";
 import { applyExpeditionStyle } from "@/lib/map/expedition-style";
+import { RegionNav } from "@/components/map/region-nav";
 
 setWorkerUrl(MAPLIBRE_WORKER_URL);
 
@@ -45,6 +47,8 @@ export interface MapCamera {
   latitude: number;
   zoom: number;
   request: number;
+  /** Con true, el zoom pedido reemplaza al actual. Sin él, la cámara solo acerca. */
+  exact?: boolean;
 }
 
 export interface MapViewProps {
@@ -58,6 +62,7 @@ export interface MapViewProps {
   onSelectSighting: (id: string) => void;
   onFocusZone: (zoneId: string) => void;
   onSelectEnclave: (id: string) => void;
+  onExplore: (frame: AtlasFrame) => void;
 }
 
 const initialReadout: MapReadout = {
@@ -104,6 +109,7 @@ export function MapView({
   onSelectSighting,
   onFocusZone,
   onSelectEnclave,
+  onExplore,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -427,7 +433,7 @@ export function MapView({
     if (!map || !camera || phase !== "ready") {
       return;
     }
-    const zoom = Math.max(map.getZoom(), camera.zoom);
+    const zoom = camera.exact ? camera.zoom : Math.max(map.getZoom(), camera.zoom);
     const target = {
       center: [camera.longitude, camera.latitude] as [number, number],
       zoom,
@@ -457,6 +463,11 @@ export function MapView({
       <p className="sr-only" aria-live="polite">
         {liveMessage}
       </p>
+      {phase === "ready" ? (
+        <div className="absolute bottom-14 left-3 z-10">
+          <RegionNav onSelect={onExplore} />
+        </div>
+      ) : null}
       <div className="pointer-events-none absolute top-3 left-3 z-10 rounded-md border border-phosphor/30 bg-void px-3 py-2 font-mono text-[11px] leading-5 text-phosphor-strong">
         <p>LAT {formatLatitude(readout.latitude)}</p>
         <p>LON {formatLongitude(readout.longitude)}</p>
