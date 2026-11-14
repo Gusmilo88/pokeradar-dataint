@@ -19,6 +19,7 @@ export function CaptureStage({
   stillUrl,
   animatedUrl,
   accent,
+  sceneCreature = false,
   reduced,
   done,
   soundOn,
@@ -37,6 +38,7 @@ export function CaptureStage({
   stillUrl: string | null;
   animatedUrl: string | null;
   accent: CaptureAccentId | null;
+  sceneCreature?: boolean;
   reduced: boolean;
   done: boolean;
   soundOn: boolean;
@@ -83,6 +85,7 @@ export function CaptureStage({
       data-reel={reel}
       data-steps={steps}
       data-accent={accent ?? undefined}
+      data-creature={sceneCreature ? "scene" : "stage"}
       data-capture={done ? "done" : "running"}
       onKeyDown={trapTab}
     >

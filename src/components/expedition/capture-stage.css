@@ -134,6 +134,14 @@
 .capture-spark:nth-child(5) { top: 22%; left: 48%; background: var(--capture-accent-2); }
 .capture-spark:nth-child(6) { top: 58%; left: 50%; }
 
+.capture-stage[data-creature="scene"] .capture-creature {
+  visibility: hidden;
+}
+
+.capture-stage[data-creature="scene"][data-reel="throw"] {
+  background: radial-gradient(ellipse at 50% 42%, rgba(10, 28, 42, 0.08), rgba(3, 8, 14, 0.55) 72%);
+}
+
 .capture-stage[data-reel="throw"] .capture-ball-rig {
   animation: ball-throw 0.68s cubic-bezier(0.18, 0.72, 0.22, 1) both;
 }

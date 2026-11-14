@@ -12,6 +12,7 @@ import {
   stopCaptureAudio,
   writeCaptureAudio,
 } from "@/lib/expedition/capture-audio";
+import { perchPose, type PerchPose } from "@/lib/expedition/perch-pose";
 import {
   abortCapture,
   beginCapture,
@@ -38,6 +39,7 @@ export function CapturePanel({
   animatedUrl,
   label,
   onCaptured,
+  onScenePose,
 }: {
   encounterId: string;
   captureRate: number;
@@ -48,6 +50,7 @@ export function CapturePanel({
   animatedUrl: string | null;
   label: string;
   onCaptured: (encounterId: string) => void;
+  onScenePose?: (pose: PerchPose) => void;
 }) {
   const difficulty = captureDifficulty(captureRate, baseStats);
   const difficultyLabel = difficulty === null ? null : resistanceLabel(difficulty);
@@ -67,6 +70,7 @@ export function CapturePanel({
   const lock = useRef(false);
   const successPlayed = useRef(false);
   const onCapturedRef = useRef(onCaptured);
+  const onScenePoseRef = useRef(onScenePose);
   const runRef = useRef(run);
   const completeRef = useRef<(next: CaptureRun) => CaptureRun>((next) => next);
   const flashTimer = useRef<number | null>(null);
@@ -75,6 +79,26 @@ export function CapturePanel({
   useEffect(() => {
     onCapturedRef.current = onCaptured;
   }, [onCaptured]);
+
+  useEffect(() => {
+    onScenePoseRef.current = onScenePose;
+  }, [onScenePose]);
+
+  const pose = perchPose({
+    caught: state === "caught",
+    status: run.status,
+    reel,
+    reduced: manual,
+    step: run.status === "running" ? run.step : 0,
+  });
+
+  useEffect(() => {
+    onScenePoseRef.current?.(pose);
+  }, [pose]);
+
+  useEffect(() => {
+    return () => onScenePoseRef.current?.("shown");
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -255,6 +279,7 @@ export function CapturePanel({
           stillUrl={stillUrl}
           animatedUrl={animatedUrl}
           accent={captureAccent(encounterId)}
+          sceneCreature={onScenePose !== undefined}
           reduced={manual}
           done={run.status === "done"}
           soundOn={soundOn}

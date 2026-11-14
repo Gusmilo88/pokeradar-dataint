@@ -1450,6 +1450,49 @@ body {
   transform: translate(-50%, -100%);
 }
 
+.perch-absorb {
+  pointer-events: none;
+  animation: perch-absorb 0.52s ease-in forwards;
+}
+
+.perch-gone {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.perch-flight {
+  position: fixed;
+  z-index: 80;
+  pointer-events: none;
+  animation: perch-flight 0.52s ease-in forwards;
+}
+
+@keyframes perch-absorb {
+  to {
+    transform: translate(-50%, -100%) scale(0.12);
+    opacity: 0;
+    filter: brightness(2.6);
+  }
+}
+
+@keyframes perch-flight {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  55% {
+    filter: brightness(2.5);
+  }
+
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(0.12);
+    opacity: 0;
+    filter: brightness(2.8);
+  }
+}
+
 .perch-rite {
   animation: perch-form 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both;
 }
@@ -2032,6 +2075,8 @@ body {
   .altar-glow-hot,
   .ice-spark,
   .perch-rite,
+  .perch-absorb,
+  .perch-flight,
   .cold-mist,
   .altar-pulse-ring,
   .enclave-visit,
@@ -2068,6 +2113,10 @@ body {
   .grove-wisp,
   .perch-grove {
     animation: none;
+  }
+
+  .perch {
+    transition: opacity 0.2s linear, visibility 0.2s linear;
   }
 
   .snow-flake,

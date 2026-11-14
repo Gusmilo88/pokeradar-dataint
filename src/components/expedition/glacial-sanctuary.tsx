@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useId, useState, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { CapturePanel } from "@/components/expedition/capture-panel";
 import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import type { DossierEntry, DossierPhase } from "@/components/expedition/use-dossier";
 import { paletteVars, type Enclave } from "@/lib/expedition/enclaves";
+import type { PerchPose } from "@/lib/expedition/perch-pose";
 import { statLabel, STAT_SCALE, typeLabel } from "@/lib/pokeapi/labels";
 
 const ART_WIDTH = 1672;
@@ -145,6 +147,18 @@ export function GlacialSanctuary({
 }) {
   const titleId = useId();
   const art = SCENE[enclave.scene];
+  const perchRef = useRef<HTMLDivElement>(null);
+  const [pose, setPose] = useState<PerchPose>("shown");
+  const [flight, setFlight] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+    dx: number;
+    dy: number;
+  } | null>(null);
+  const live: PerchPose = caught ? "hidden" : pose;
+  const flying = live === "absorb" && flight !== null;
   const src = stage === "exterior" ? art.exterior : art.interior;
   const [skipStage, setSkipStage] = useState<"exterior" | "interior" | null>(null);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
@@ -158,6 +172,26 @@ export function GlacialSanctuary({
   const rite = stage === "interior" && ceremony && discovered && !skipped;
   const sheet = sheetStage === stage && discovered && entry !== null;
   const canExamine = stage === "interior" && !discovered && !loading && !failed;
+
+  function reportPose(next: PerchPose) {
+    if (next === "absorb" && perchRef.current) {
+      const from = perchRef.current.getBoundingClientRect();
+      const ball = perchRef.current.ownerDocument.querySelector(".capture-ball-rig")?.getBoundingClientRect();
+      const originX = from.left + from.width / 2;
+      const originY = from.top + from.height / 2;
+      setFlight({
+        left: from.left,
+        top: from.top,
+        width: from.width,
+        height: from.height,
+        dx: ball ? ball.left + ball.width / 2 - originX : 0,
+        dy: ball ? ball.top + ball.height / 2 - originY : 0,
+      });
+    } else {
+      setFlight(null);
+    }
+    setPose(next);
+  }
 
   useEffect(() => {
     if (stage !== "exterior") {
@@ -228,18 +262,56 @@ export function GlacialSanctuary({
             <SceneWeather scene={enclave.scene} stage={stage} charging={loading} rite={rite} />
             {stage === "interior" && spriteId && label ? (
               <div
-                className={rite ? (enclave.scene === "grove" ? "perch perch-grove" : "perch perch-rite") : "perch"}
+                ref={perchRef}
+                data-perch={flying ? "absorb" : live}
+                className={[
+                  "perch",
+                  rite ? (enclave.scene === "grove" ? "perch-grove" : "perch-rite") : "",
+                  live === "absorb" && !flying ? "perch-absorb" : "",
+                  live === "hidden" || flying ? "perch-gone" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 style={{ left: `${art.perch.x}%`, top: `${art.perch.y}%`, width: `${art.perch.size}%` }}
               >
-                <CreatureSprite
-                  nationalId={spriteId}
-                  revealed
-                  label={label}
-                  stillUrl={entry?.pokemon.sprites.blackWhite}
-                  animatedUrl={entry?.pokemon.sprites.blackWhiteAnimated}
-                />
+                {live === "shown" || (live === "absorb" && !flying) ? (
+                  <CreatureSprite
+                    nationalId={spriteId}
+                    revealed
+                    label={label}
+                    stillUrl={entry?.pokemon.sprites.blackWhite}
+                    animatedUrl={entry?.pokemon.sprites.blackWhiteAnimated}
+                  />
+                ) : null}
               </div>
             ) : null}
+            {flying && flight && spriteId && label
+              ? createPortal(
+                  <div
+                    className="perch-flight"
+                    data-perch="absorb"
+                    style={
+                      {
+                        left: flight.left,
+                        top: flight.top,
+                        width: flight.width,
+                        height: flight.height,
+                        "--dx": `${flight.dx}px`,
+                        "--dy": `${flight.dy}px`,
+                      } as CSSProperties
+                    }
+                  >
+                    <CreatureSprite
+                      nationalId={spriteId}
+                      revealed
+                      label={label}
+                      stillUrl={entry?.pokemon.sprites.blackWhite}
+                      animatedUrl={entry?.pokemon.sprites.blackWhiteAnimated}
+                    />
+                  </div>,
+                  document.body,
+                )
+              : null}
           </div>
           {canExamine || loading ? (
             <button
@@ -304,6 +376,7 @@ export function GlacialSanctuary({
               animatedUrl={entry.pokemon.sprites.blackWhiteAnimated}
               label={label ?? entry.species.spanishName ?? entry.species.name}
               onCaptured={onCaptured}
+              onScenePose={reportPose}
             />
           ) : null}
           <div className="scene-actions">

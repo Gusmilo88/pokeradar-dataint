@@ -15,6 +15,7 @@ import {
   serializeProgress,
 } from "../src/lib/expedition/progress";
 import { captureAccent } from "../src/lib/expedition/capture-accent";
+import { perchPose } from "../src/lib/expedition/perch-pose";
 import { CAPTURE_CUES } from "../src/lib/expedition/capture-audio";
 import { parseSpecies } from "../src/lib/pokeapi/parse";
 
@@ -235,6 +236,46 @@ if (CAPTURE_CUES.join(",") !== "throw,absorb,shake,success") {
 }
 if (captureDifficulty(255, [20, 10, 55, 15, 20, 80]) !== 1) {
   fail("El acento alteró la dificultad.");
+}
+
+const poseBase = {
+  caught: false,
+  status: "running" as const,
+  reel: "throw" as const,
+  reduced: false,
+  step: 0,
+};
+for (const id of accents) {
+  if (captureAccent(id) === null) {
+    fail(`El enclave ${id} perdió su acento.`);
+  }
+  if (perchPose(poseBase) !== "shown") {
+    fail("El sprite del enclave se ocultó durante el lanzamiento.");
+  }
+  if (perchPose({ ...poseBase, reel: "absorb" }) !== "absorb") {
+    fail("La absorción no mueve el sprite del escenario.");
+  }
+  if (perchPose({ ...poseBase, reel: "drop" }) !== "hidden") {
+    fail("El sprite sigue en el altar al caer la bola.");
+  }
+  if (perchPose({ ...poseBase, reel: "resist", step: 2 }) !== "hidden") {
+    fail("El sprite sigue flotando durante un movimiento.");
+  }
+  if (perchPose({ ...poseBase, status: "aborted", reel: "still" }) !== "shown") {
+    fail("Cancelar no devolvió el sprite a su lugar.");
+  }
+  if (perchPose({ ...poseBase, status: "done", reel: "flash" }) !== "hidden") {
+    fail("Omitir o completar dejó el sprite visible.");
+  }
+  if (perchPose({ ...poseBase, caught: true, status: "idle", reel: "still" }) !== "hidden") {
+    fail("Un capturado reingresa como salvaje.");
+  }
+  if (perchPose({ ...poseBase, reduced: true, reel: "still", step: 0 }) !== "shown") {
+    fail("El movimiento reducido ocultó el sprite antes del primer paso.");
+  }
+  if (perchPose({ ...poseBase, reduced: true, reel: "still", step: 1 }) !== "hidden") {
+    fail("El movimiento reducido dejó el sprite durante la resistencia.");
+  }
 }
 
 console.log("OK capture difficulty=1..10 steps=3/4 prior=kanto-151");
