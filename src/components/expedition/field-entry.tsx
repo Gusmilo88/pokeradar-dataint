@@ -108,6 +108,10 @@ export function FieldEntry({
           captureRate={entry.species.capture_rate}
           baseStats={entry.pokemon.stats.map((stat) => stat.base_stat)}
           state={state}
+          nationalId={species.id}
+          stillUrl={pokemon.sprites.blackWhite ?? pokemon.sprites.front_default}
+          animatedUrl={pokemon.sprites.blackWhiteAnimated}
+          label={displayName}
           onCaptured={onCaptured}
         />
       ) : null}

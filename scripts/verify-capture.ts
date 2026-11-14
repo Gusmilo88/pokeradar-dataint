@@ -14,6 +14,8 @@ import {
   parseProgress,
   serializeProgress,
 } from "../src/lib/expedition/progress";
+import { captureAccent } from "../src/lib/expedition/capture-accent";
+import { CAPTURE_CUES } from "../src/lib/expedition/capture-audio";
 import { parseSpecies } from "../src/lib/pokeapi/parse";
 
 function fail(message: string): never {
@@ -214,6 +216,25 @@ for (const broken of [
   if (!rejected) {
     fail("Una tasa ausente o inválida se aceptó.");
   }
+}
+
+if (captureAccent("kanto-129") !== null || captureAccent("kanto-143") !== null) {
+  fail("Un encuentro de campo recibió acento de reservado.");
+}
+const accents = ["kanto-144", "kanto-145", "kanto-146", "kanto-142", "kanto-150", "kanto-151"];
+const seenAccents = new Set<string>();
+for (const id of accents) {
+  const accent = captureAccent(id);
+  if (!accent || seenAccents.has(accent)) {
+    fail(`El acento de ${id} no es propio.`);
+  }
+  seenAccents.add(accent);
+}
+if (CAPTURE_CUES.join(",") !== "throw,absorb,shake,success") {
+  fail("Los efectos de captura cambiaron.");
+}
+if (captureDifficulty(255, [20, 10, 55, 15, 20, 80]) !== 1) {
+  fail("El acento alteró la dificultad.");
 }
 
 console.log("OK capture difficulty=1..10 steps=3/4 prior=kanto-151");

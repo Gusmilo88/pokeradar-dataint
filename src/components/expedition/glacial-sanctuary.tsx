@@ -299,6 +299,10 @@ export function GlacialSanctuary({
               captureRate={entry.species.capture_rate}
               baseStats={entry.pokemon.stats.map((stat) => stat.base_stat)}
               state={caught ? "caught" : "seen"}
+              nationalId={entry.species.id}
+              stillUrl={entry.pokemon.sprites.blackWhite ?? entry.pokemon.sprites.front_default}
+              animatedUrl={entry.pokemon.sprites.blackWhiteAnimated}
+              label={label ?? entry.species.spanishName ?? entry.species.name}
               onCaptured={onCaptured}
             />
           ) : null}

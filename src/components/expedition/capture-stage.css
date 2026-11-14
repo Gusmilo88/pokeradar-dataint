@@ -1,0 +1,269 @@
+.capture-stage {
+  position: fixed;
+  z-index: 70;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding:
+    max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+  background: radial-gradient(ellipse at 50% 42%, rgba(10, 28, 42, 0.35), rgba(3, 8, 14, 0.9) 68%);
+  --capture-accent: #f2c14e;
+  --capture-accent-2: #fff6d8;
+}
+
+.capture-stage[data-accent="ice"] {
+  --capture-accent: #9eefff;
+  --capture-accent-2: #e7fbff;
+}
+
+.capture-stage[data-accent="spark"] {
+  --capture-accent: #f6d56a;
+  --capture-accent-2: #fff4c4;
+}
+
+.capture-stage[data-accent="flame"] {
+  --capture-accent: #ff9a3c;
+  --capture-accent-2: #ffd0a6;
+}
+
+.capture-stage[data-accent="fossil"] {
+  --capture-accent: #d7c4a3;
+  --capture-accent-2: #f3ead8;
+}
+
+.capture-stage[data-accent="mind"] {
+  --capture-accent: #c9a6ff;
+  --capture-accent-2: #efe4ff;
+}
+
+.capture-stage[data-accent="grove"] {
+  --capture-accent: #7dffa8;
+  --capture-accent-2: #ffb7d5;
+}
+
+.capture-scene {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 14rem;
+  overflow: hidden;
+}
+
+.capture-creature {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  width: min(34vw, 9.5rem);
+  height: min(34vw, 9.5rem);
+  transform: translate(-50%, -50%);
+  image-rendering: pixelated;
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.45));
+}
+
+.capture-ball-rig {
+  position: absolute;
+  top: 62%;
+  left: 50%;
+  width: 4.6rem;
+  height: 4.6rem;
+  margin-left: -2.3rem;
+}
+
+.poke-ball {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 12px 10px rgba(0, 0, 0, 0.5));
+}
+
+.poke-ball-top,
+.poke-ball-bottom {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.capture-flash,
+.capture-ring {
+  position: absolute;
+  top: 58%;
+  left: 50%;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.capture-flash {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin: -0.6rem 0 0 -0.6rem;
+  background: #fff;
+  opacity: 0;
+}
+
+.capture-ring {
+  width: 2rem;
+  height: 2rem;
+  margin: -1rem 0 0 -1rem;
+  border: 2px solid var(--capture-accent);
+  opacity: 0;
+}
+
+.capture-sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.capture-spark {
+  position: absolute;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--capture-accent);
+  box-shadow: 0 0 10px var(--capture-accent-2);
+  opacity: 0;
+}
+
+.capture-spark:nth-child(1) { top: 34%; left: 42%; }
+.capture-spark:nth-child(2) { top: 28%; left: 58%; }
+.capture-spark:nth-child(3) { top: 46%; left: 30%; }
+.capture-spark:nth-child(4) { top: 48%; left: 68%; }
+.capture-spark:nth-child(5) { top: 22%; left: 48%; background: var(--capture-accent-2); }
+.capture-spark:nth-child(6) { top: 58%; left: 50%; }
+
+.capture-stage[data-reel="throw"] .capture-ball-rig {
+  animation: ball-throw 0.68s cubic-bezier(0.18, 0.72, 0.22, 1) both;
+}
+
+.capture-stage[data-reel="absorb"] .poke-ball-top {
+  transform: translateY(-8px);
+}
+
+.capture-stage[data-reel="absorb"] .poke-ball-bottom {
+  transform: translateY(8px);
+}
+
+.capture-stage[data-reel="absorb"] .capture-creature {
+  animation: creature-absorb 0.5s ease-in forwards;
+}
+
+.capture-stage[data-reel="absorb"] .capture-flash,
+.capture-stage[data-reel="flash"] .capture-flash {
+  animation: capture-burst 0.52s ease-out both;
+}
+
+.capture-stage[data-reel="drop"] .capture-creature,
+.capture-stage[data-reel="resist"] .capture-creature,
+.capture-stage[data-reel="flash"] .capture-creature {
+  opacity: 0;
+}
+
+.capture-stage[data-reel="drop"] .capture-ball-rig {
+  animation: ball-drop 0.46s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+.capture-stage[data-reel="resist"] .capture-ball-rig {
+  animation: ball-shake 0.74s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.capture-stage[data-steps="4"][data-reel="resist"] .capture-ball-rig {
+  animation-name: ball-shake-hard;
+}
+
+.capture-stage[data-reel="flash"] .capture-ring {
+  animation: capture-ring 0.7s ease-out both;
+}
+
+.capture-stage[data-accent] .poke-ball-button {
+  fill: var(--capture-accent-2);
+}
+
+.capture-stage[data-accent][data-reel="absorb"] .capture-spark,
+.capture-stage[data-accent][data-reel="flash"] .capture-spark,
+.capture-stage[data-accent][data-reel="resist"] .capture-spark {
+  animation: spark-out 0.7s ease-out both;
+}
+
+.capture-copy {
+  text-align: center;
+}
+
+.capture-banner {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.8rem, 6vw, 3.2rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.05;
+  text-shadow: 0 0 22px var(--capture-accent);
+}
+
+.capture-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+@keyframes ball-throw {
+  0% { transform: translate(-38vw, 18vh) rotate(-24deg) scale(0.72); }
+  60% { transform: translate(0, -20vh) rotate(260deg) scale(1); }
+  100% { transform: translate(0, -7vh) rotate(420deg) scale(1); }
+}
+
+@keyframes ball-drop {
+  0% { transform: translateY(-7vh); }
+  72% { transform: translateY(1.2vh); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes ball-shake {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-14deg); }
+  40% { transform: rotate(12deg); }
+  60% { transform: rotate(-8deg); }
+  80% { transform: rotate(5deg); }
+}
+
+@keyframes ball-shake-hard {
+  0%, 100% { transform: rotate(0); }
+  16% { transform: rotate(-20deg) translateX(-4px); }
+  34% { transform: rotate(18deg) translateX(4px); }
+  52% { transform: rotate(-14deg); }
+  70% { transform: rotate(9deg); }
+  86% { transform: rotate(-4deg); }
+}
+
+@keyframes creature-absorb {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -20%) scale(0.15); }
+}
+
+@keyframes capture-burst {
+  0% { opacity: 0; transform: scale(0.4); }
+  35% { opacity: 0.95; transform: scale(8); }
+  100% { opacity: 0; transform: scale(14); }
+}
+
+@keyframes capture-ring {
+  0% { opacity: 0.8; transform: scale(0.6); }
+  100% { opacity: 0; transform: scale(7); }
+}
+
+@keyframes spark-out {
+  0% { opacity: 0; transform: scale(0.4); }
+  30% { opacity: 0.9; }
+  100% { opacity: 0; transform: scale(1.6) translateY(-18px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capture-stage *,
+  .capture-stage *::before,
+  .capture-stage *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
