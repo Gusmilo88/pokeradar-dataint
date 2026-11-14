@@ -135,6 +135,9 @@ export function PokedexView({
       if (document.querySelector('.capture-stage[data-capture="running"]')) {
         return;
       }
+      if (document.querySelector("[data-badge-case]")) {
+        return;
+      }
       event.preventDefault();
       event.stopImmediatePropagation();
       if (confirmReset) {

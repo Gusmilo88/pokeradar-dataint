@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { clearStoredBadges } from "@/lib/badges/ledger";
 import { clearStoredTeam } from "@/components/expedition/use-team";
 import {
   emptyProgress,
@@ -94,6 +95,7 @@ export function useProgress(): {
   const reset = useCallback(() => {
     publish(serializeProgress(emptyProgress()));
     clearStoredTeam();
+    clearStoredBadges();
   }, []);
 
   return { progress, hydrated, markSeen: reveal, markCaught: capture, reset };

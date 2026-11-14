@@ -2,6 +2,7 @@
 
 import { MotionConfig, motion } from "framer-motion";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { BadgeCase } from "@/components/expedition/badge-case";
 import { DetailDock } from "@/components/expedition/detail-dock";
 import { AnomalyGate } from "@/components/expedition/anomaly-gate";
 import { EncounterModal } from "@/components/expedition/encounter-modal";
@@ -14,6 +15,7 @@ import { TeamDock } from "@/components/expedition/team-dock";
 import { useArgentinaNow } from "@/components/expedition/use-clock";
 import { useDossier, type DossierEntry } from "@/components/expedition/use-dossier";
 import { useFieldTypes } from "@/components/expedition/use-field-types";
+import { useBadges } from "@/components/expedition/use-badges";
 import { useProgress } from "@/components/expedition/use-progress";
 import { useRegionWeather } from "@/components/expedition/use-region-weather";
 import { useTeam } from "@/components/expedition/use-team";
@@ -57,6 +59,7 @@ export function ExpeditionScreen() {
   const fieldTypes = useFieldTypes();
   const [camera, setCamera] = useState<CameraRequest | null>(null);
   const [dexOpen, setDexOpen] = useState(false);
+  const [badgesOpen, setBadgesOpen] = useState(false);
   const [enclaveId, setEnclaveId] = useState<string | null>(null);
   const [visit, setVisit] = useState<"gate" | "exterior" | "interior" | null>(null);
   const [examining, setExamining] = useState(false);
@@ -66,7 +69,9 @@ export function ExpeditionScreen() {
   );
   const cameraRequest = useRef(0);
   const dexOpener = useRef<HTMLElement | null>(null);
+  const badgeOpener = useRef<HTMLElement | null>(null);
   const { progress, hydrated, markSeen, markCaught, reset } = useProgress();
+  const badges = useBadges(progress.caught);
   const team = useTeam(progress.caught, hydrated);
 
   const rememberName = useCallback((entry: DossierEntry) => {
@@ -255,10 +260,17 @@ export function ExpeditionScreen() {
         <div className="col-span-full row-start-1">
           <HudBar
             notebookOpen={notebookOpen}
+            badgesOpen={badgesOpen}
             onOpen={() => setNotebookOpen(true)}
             onDex={() => {
               dexOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+              setBadgesOpen(false);
               setDexOpen(true);
+            }}
+            onBadges={() => {
+              badgeOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+              setDexOpen(false);
+              setBadgesOpen(true);
             }}
           />
           <motion.div
@@ -383,6 +395,18 @@ export function ExpeditionScreen() {
             now={now}
             teamMembers={team.members}
             onTeam={team.add}
+          />
+        ) : null}
+        {badgesOpen ? (
+          <BadgeCase
+            badges={badges.badges}
+            summary={badges.summary}
+            onAcknowledge={badges.acknowledge}
+            onClose={() => {
+              setBadgesOpen(false);
+              const opener = badgeOpener.current;
+              window.setTimeout(() => opener?.focus(), 0);
+            }}
           />
         ) : null}
         {selected && zone ? (

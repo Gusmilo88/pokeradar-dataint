@@ -1,0 +1,421 @@
+.badge-case {
+  position: absolute;
+  inset: 0;
+  z-index: 65;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: auto;
+  color: #f6efe2;
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(255, 214, 150, 0.18), transparent 46%),
+    radial-gradient(ellipse at 50% 120%, rgba(90, 28, 16, 0.45), transparent 42%),
+    linear-gradient(180deg, #2c241c 0%, #16110e 38%, #0c0908 100%);
+}
+
+.badge-case-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.badge-case-art[data-ready="true"] {
+  opacity: 0.22;
+}
+
+.badge-sheet {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.badge-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.05rem 1.15rem 0.35rem;
+}
+
+.badge-kicker {
+  margin: 0;
+  color: #e7c98a;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.badge-title {
+  margin: 0.15rem 0 0;
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  font-weight: 620;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+}
+
+.badge-summary {
+  min-width: min(100%, 16rem);
+}
+
+.badge-count {
+  margin: 0;
+  color: #f8f1e4;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+}
+
+.badge-count strong {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+}
+
+.badge-bar {
+  height: 0.45rem;
+  margin-top: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 236, 210, 0.12);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.badge-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8d6a3e, #f0d48a 55%, #fff6dc);
+  box-shadow: 0 0 12px rgba(240, 212, 138, 0.45);
+}
+
+.badge-scroll {
+  padding: 0.85rem 1.15rem 1.4rem;
+}
+
+.badge-tray {
+  position: relative;
+  border: 1px solid rgba(214, 176, 112, 0.55);
+  border-radius: 1.6rem;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(120, 24, 32, 0.28), transparent 42%),
+    linear-gradient(180deg, rgba(62, 18, 22, 0.72), rgba(16, 8, 8, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 228, 180, 0.28),
+    inset 0 -18px 40px rgba(0, 0, 0, 0.35),
+    0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.badge-tray::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 30%);
+  pointer-events: none;
+}
+
+.badge-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.15rem 0.75rem;
+  margin: 0;
+  padding: 1.15rem 0.85rem 1.25rem;
+  list-style: none;
+}
+
+.badge-grid > li {
+  min-width: 0;
+}
+
+.badge-slot {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.2rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.badge-orbit {
+  width: min(100%, 8.5rem);
+  padding: 3px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--badge-gem) calc(var(--badge-progress) * 1%),
+    rgba(255, 236, 210, 0.16) 0
+  );
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.28);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.badge-bezel {
+  display: block;
+  padding: 7%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.85), transparent 28%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.55), var(--badge-metal) 38%, #2a241c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -8px 12px rgba(0, 0, 0, 0.35);
+}
+
+.badge-face {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--badge-gem) 34%, #1a100c), #100c0a 72%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16), inset 0 8px 16px rgba(0, 0, 0, 0.28);
+}
+
+.badge-face img,
+.badge-blank {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.badge-face img {
+  object-fit: contain;
+  padding: 6%;
+}
+
+.badge-case [data-state="locked"] .badge-face {
+  filter: grayscale(1) brightness(0.55);
+}
+
+.badge-case [data-state="locked"] .badge-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, transparent 42%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+.badge-case [data-state="fresh"] .badge-orbit {
+  box-shadow: 0 0 0 1px rgba(255, 244, 214, 0.4), 0 0 22px var(--badge-glow);
+}
+
+/* data-shine="armed" reserva el barrido. Se puede reemplazar la animación sin tocar la marca. */
+.badge-face[data-shine="armed"]::before {
+  content: "";
+  position: absolute;
+  inset: -10%;
+  background: linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.72) 48%, transparent 62%);
+  transform: translateX(-130%) rotate(8deg);
+  animation: badge-shine 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.badge-name {
+  margin-top: 0.35rem;
+  color: #f8f1e4;
+  font-size: 0.92rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.badge-progress,
+.badge-state {
+  color: #e6d3b4;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge-state {
+  text-transform: uppercase;
+}
+
+.badge-slot[data-state="fresh"] .badge-state {
+  color: #ffe7a8;
+}
+
+.badge-slot:hover .badge-orbit {
+  transform: translateY(-3px);
+}
+
+.badge-tone-arcoiris[data-state="earned"] .badge-orbit,
+.badge-tone-arcoiris[data-state="fresh"] .badge-orbit {
+  background: conic-gradient(#ff5a5a, #ffd15a, #7dff8a, #5ad7ff, #c9a0ff, #ff5a5a);
+}
+
+.badge-detail-back {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(6, 4, 3, 0.72);
+  cursor: pointer;
+}
+
+.badge-detail {
+  display: grid;
+  width: min(100%, 40rem);
+  max-height: min(92dvh, 44rem);
+  grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr);
+  gap: 1rem 1.2rem;
+  overflow: auto;
+  padding: 1.1rem;
+  border: 1px solid rgba(214, 176, 112, 0.6);
+  border-radius: 1.4rem;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 220, 160, 0.16), transparent 36%),
+    linear-gradient(180deg, #2a2118, #120e0c);
+  box-shadow: inset 0 1px 0 rgba(255, 236, 210, 0.28), 0 24px 60px rgba(0, 0, 0, 0.45);
+  color: #f6efe2;
+  cursor: default;
+}
+
+.badge-detail-medal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.badge-detail-medal .badge-orbit {
+  width: min(100%, 12rem);
+}
+
+.badge-detail-copy {
+  min-width: 0;
+}
+
+.badge-detail h3 {
+  margin: 0;
+  font-size: 1.7rem;
+  line-height: 1.05;
+}
+
+.badge-lead,
+.badge-missing,
+.badge-path {
+  margin: 0.55rem 0 0;
+  color: #f0e2cc;
+  line-height: 1.45;
+}
+
+.badge-facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.35rem 0.8rem;
+  margin: 0.9rem 0 0;
+}
+
+.badge-facts dt {
+  color: #e7c98a;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.badge-facts dd {
+  margin: 0;
+}
+
+.badge-species-title {
+  margin: 0.95rem 0 0.4rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.badge-species {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.badge-species li {
+  border: 1px solid rgba(255, 236, 210, 0.18);
+  border-radius: 999px;
+  padding: 0.28rem 0.6rem;
+  color: #cbbba6;
+  font-size: 0.82rem;
+}
+
+.badge-species li[data-caught="true"] {
+  border-color: rgba(240, 212, 138, 0.7);
+  background: rgba(240, 212, 138, 0.14);
+  color: #fff6e4;
+}
+
+.badge-path {
+  color: #d9c7a4;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
+.badge-detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.9rem;
+}
+
+@keyframes badge-shine {
+  0%,
+  55% {
+    transform: translateX(-130%) rotate(8deg);
+  }
+  100% {
+    transform: translateX(130%) rotate(8deg);
+  }
+}
+
+@media (max-width: 800px) {
+  .badge-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 0.55rem;
+  }
+
+  .badge-top {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .badge-detail {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .badge-detail-copy {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge-orbit,
+  .badge-slot:hover .badge-orbit {
+    transition: none;
+    transform: none;
+  }
+
+  .badge-face[data-shine="armed"]::before {
+    animation: none;
+    opacity: 0;
+  }
+}
