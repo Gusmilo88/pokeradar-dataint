@@ -34,6 +34,40 @@ function soften(map: MapLibreMap, id: string, opacity: unknown): void {
   map.setPaintProperty(id, "text-opacity", opacity as never);
 }
 
+/**
+ * El filtro del canvas aplasta los negros. Estos tonos salen, ya filtrados,
+ * como océano azul oscuro y tierra carbón. Desde el zoom 7 vuelven al estilo.
+ */
+const NIGHT_OCEAN = "#1c4564";
+const NIGHT_LAND = "#2c2824";
+const NIGHT_WOOD = "#1a2620";
+
+function paintByZoom(map: MapLibreMap, id: string, property: string, near: string, far: string): void {
+  if (!map.getLayer(id)) {
+    return;
+  }
+  map.setPaintProperty(id, property as "fill-color", [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    0,
+    near,
+    6,
+    near,
+    10,
+    far,
+  ] as never);
+}
+
+function paintNightEarth(map: MapLibreMap): void {
+  paintByZoom(map, "background", "background-color", NIGHT_LAND, "rgb(12, 12, 12)");
+  paintByZoom(map, "water", "fill-color", NIGHT_OCEAN, "rgb(27, 27, 29)");
+  paintByZoom(map, "landcover_wood", "fill-color", NIGHT_WOOD, "rgb(32, 32, 32)");
+  paintByZoom(map, "landuse_park", "fill-color", NIGHT_WOOD, "rgb(32, 32, 32)");
+  paintByZoom(map, "landcover_glacier", "fill-color", "#1a2834", "hsl(0, 1%, 2%)");
+  paintByZoom(map, "landcover_ice_shelf", "fill-color", "#1a2834", "rgb(12, 12, 12)");
+}
+
 function outlinePaint(map: MapLibreMap, id: string): void {
   map.setPaintProperty(id, "line-color", ARGENTINA_OUTLINE);
   map.setPaintProperty(id, "line-opacity", 1);
@@ -190,6 +224,7 @@ function placeIslands(map: MapLibreMap): void {
  * Los acentos son manchas de expedición, no polígonos de bioma.
  */
 export function applyExpeditionStyle(map: MapLibreMap): void {
+  paintNightEarth(map);
   const before = beforeRoads(map);
   const accentColor: unknown[] = ["match", ["get", "zoneId"]];
   for (const zone of EXPEDITION_ZONES) {
@@ -242,7 +277,7 @@ export function applyExpeditionStyle(map: MapLibreMap): void {
   placeIslands(map);
   hideRemoteIslandNames(map);
 
-  const countryOpacity = ["interpolate", ["linear"], ["zoom"], 3, 0.38, 6, 0.82];
+  const countryOpacity = ["interpolate", ["linear"], ["zoom"], 0, 0.78, 2.2, 0.7, 3, 0.38, 6, 0.82];
   for (const id of QUIET_COUNTRY_LABELS) {
     soften(map, id, countryOpacity);
   }
