@@ -46,6 +46,25 @@ const SCENE = {
     mouthY: "48%",
     perch: { x: 50, y: 60, size: 18 },
   },
+  lab: {
+    exterior: "/images/enclaves/mewtwo/entrada-laboratorio-secreto.webp",
+    interior: "/images/enclaves/mewtwo/interior-laboratorio-secreto.webp",
+    bias: "-75%",
+    pulse: "62%",
+    mouthX: "75%",
+    mouthY: "58%",
+    perch: { x: 50, y: 66, size: 15 },
+  },
+  grove: {
+    exterior: "/images/enclaves/mew/entrada-santuario-esmeralda.webp",
+    interior: "/images/enclaves/mew/interior-santuario-esmeralda.webp",
+    bias: "-76%",
+    pulse: "58%",
+    pulseX: "51%",
+    mouthX: "77%",
+    mouthY: "47%",
+    perch: { x: 51, y: 52, size: 12 },
+  },
 } as const;
 
 const SNOW = [
@@ -204,7 +223,7 @@ export function GlacialSanctuary({
             <SceneWeather scene={enclave.scene} stage={stage} charging={loading} rite={rite} />
             {stage === "interior" && spriteId && label ? (
               <div
-                className={rite ? "perch perch-rite" : "perch"}
+                className={rite ? (enclave.scene === "grove" ? "perch perch-grove" : "perch perch-rite") : "perch"}
                 style={{ left: `${art.perch.x}%`, top: `${art.perch.y}%`, width: `${art.perch.size}%` }}
               >
                 <CreatureSprite
@@ -221,7 +240,7 @@ export function GlacialSanctuary({
             <button
               type="button"
               className="altar-pulse"
-              style={{ left: "50%", top: art.pulse }}
+              style={{ left: "pulseX" in art ? art.pulseX : "50%", top: art.pulse }}
               onClick={onExamine}
               disabled={loading}
               aria-busy={loading}
@@ -229,7 +248,9 @@ export function GlacialSanctuary({
             >
               <span className="altar-pulse-ring" aria-hidden="true" />
               <span className="altar-pulse-core" aria-hidden="true" />
-              <span className="altar-pulse-label">Examinar la señal del altar</span>
+              <span className="altar-pulse-label">
+                {enclave.scene === "grove" ? "Examinar la señal de la isla" : "Examinar la señal del altar"}
+              </span>
             </button>
           ) : null}
         </div>
@@ -354,6 +375,12 @@ function SceneWeather({
   }
   if (scene === "fossil") {
     return stage === "exterior" ? <FossilExterior /> : <FossilInterior charging={charging} rite={rite} />;
+  }
+  if (scene === "lab") {
+    return stage === "exterior" ? <LabExterior /> : <LabInterior charging={charging} rite={rite} />;
+  }
+  if (scene === "grove") {
+    return stage === "exterior" ? <GroveExterior /> : <GroveInterior charging={charging} rite={rite} />;
   }
   return stage === "exterior" ? <ExteriorWeather /> : <InteriorWeather charging={charging} rite={rite} />;
 }
@@ -651,6 +678,251 @@ function InteriorWeather({ charging, rite }: { charging: boolean; rite: boolean 
         />
       ))}
       {rite ? <div className="rite-flash" /> : null}
+    </>
+  );
+}
+
+const LAB_LAMPS = [
+  { x: 64, y: 46, delay: "0s" },
+  { x: 86, y: 42, delay: "1.4s" },
+  { x: 38, y: 16, delay: "2.6s" },
+] as const;
+
+const LAB_SPARKS = [
+  { x: 75, y: 52, delay: "0.2s" },
+  { x: 75, y: 64, delay: "1.8s" },
+  { x: 28, y: 22, delay: "3.1s" },
+] as const;
+
+const LAB_SCREENS = [
+  { x: 16, y: 44, delay: "0s" },
+  { x: 82, y: 46, delay: "1.6s" },
+] as const;
+
+const LAB_MOTES = [
+  { x: 46, y: 48, delay: "0s", duration: "9s" },
+  { x: 54, y: 42, delay: "2.2s", duration: "11s" },
+  { x: 42, y: 58, delay: "4.1s", duration: "10s" },
+  { x: 58, y: 56, delay: "1.1s", duration: "12s" },
+] as const;
+
+const LAB_GLITCH = [
+  { x: 18, y: 42, delay: "0.4s" },
+  { x: 84, y: 48, delay: "2.8s" },
+  { x: 48, y: 36, delay: "4.6s" },
+] as const;
+
+function LabExterior() {
+  return (
+    <>
+      <div className="lab-fog" />
+      <div className="lab-door" />
+      {LAB_LAMPS.map((lamp) => (
+        <span
+          key={`${lamp.x}-${lamp.y}`}
+          className="lab-lamp"
+          style={{ left: `${lamp.x}%`, top: `${lamp.y}%`, animationDelay: lamp.delay }}
+        />
+      ))}
+      {LAB_SPARKS.map((spark) => (
+        <span
+          key={`${spark.x}-${spark.y}`}
+          className="lab-spark"
+          style={{ left: `${spark.x}%`, top: `${spark.y}%`, animationDelay: spark.delay }}
+        />
+      ))}
+    </>
+  );
+}
+
+function LabInterior({ charging, rite }: { charging: boolean; rite: boolean }) {
+  return (
+    <>
+      <div className={charging || rite ? "lab-tube lab-tube-hot" : "lab-tube"} />
+      <div className={charging || rite ? "altar-glow altar-glow-hot" : "altar-glow"} />
+      {LAB_SCREENS.map((screen) => (
+        <span
+          key={`${screen.x}-${screen.y}`}
+          className="lab-screen"
+          style={{ left: `${screen.x}%`, top: `${screen.y}%`, animationDelay: screen.delay }}
+        />
+      ))}
+      <div className="lab-vapor" />
+      {LAB_MOTES.map((mote) => (
+        <span
+          key={`${mote.x}-${mote.y}`}
+          className="lab-mote"
+          style={{
+            left: `${mote.x}%`,
+            top: `${mote.y}%`,
+            animationDelay: mote.delay,
+            animationDuration: mote.duration,
+          }}
+        />
+      ))}
+      {LAB_GLITCH.map((glitch) => (
+        <span
+          key={`${glitch.x}-${glitch.y}`}
+          className="lab-glitch"
+          style={{ left: `${glitch.x}%`, top: `${glitch.y}%`, animationDelay: glitch.delay }}
+        />
+      ))}
+      {rite ? (
+        <>
+          <div className="lab-gather" />
+          <div className="lab-shade" />
+          <div className="lab-psi" />
+        </>
+      ) : null}
+    </>
+  );
+}
+
+/** Luces a lo largo del sendero y del arco, no repartidas por el cielo. */
+const GROVE_ORBS = [
+  { x: 70, y: 44, delay: "0s", duration: "4.6s" },
+  { x: 78, y: 40, delay: "1.2s", duration: "5.2s" },
+  { x: 74, y: 52, delay: "0.6s", duration: "4.8s" },
+  { x: 66, y: 58, delay: "2.1s", duration: "5.4s" },
+  { x: 82, y: 56, delay: "1.6s", duration: "4.4s" },
+  { x: 72, y: 64, delay: "0.3s", duration: "5.6s" },
+  { x: 60, y: 70, delay: "2.4s", duration: "5s" },
+] as const;
+
+const GROVE_ISLE_ORBS = [
+  { x: 44, y: 50, delay: "0s", duration: "5s" },
+  { x: 58, y: 48, delay: "1.4s", duration: "4.6s" },
+  { x: 48, y: 42, delay: "0.8s", duration: "5.4s" },
+  { x: 56, y: 56, delay: "2.2s", duration: "4.8s" },
+  { x: 40, y: 54, delay: "1.1s", duration: "5.2s" },
+] as const;
+
+const GROVE_GLINTS = [
+  { x: 24, y: 34, delay: "0.4s" },
+  { x: 76, y: 30, delay: "1.8s" },
+  { x: 32, y: 22, delay: "2.6s" },
+  { x: 68, y: 24, delay: "0.9s" },
+] as const;
+
+const GROVE_PETALS = [
+  { left: "16%", delay: "0s", duration: "15s" },
+  { left: "74%", delay: "4.2s", duration: "17s" },
+  { left: "48%", delay: "7s", duration: "16s" },
+  { left: "86%", delay: "2.2s", duration: "14s" },
+] as const;
+
+const GROVE_WINGS = [
+  { x: 24, y: 74, delay: "0s" },
+  { x: 88, y: 36, delay: "2.4s" },
+] as const;
+
+const GROVE_RIPPLES = [
+  { x: 42, y: 72, width: "14%", delay: "0s" },
+  { x: 58, y: 76, width: "10%", delay: "1.6s" },
+  { x: 50, y: 82, width: "16%", delay: "0.8s" },
+] as const;
+
+const GROVE_GATHER = [
+  { x: 28, y: 34 },
+  { x: 70, y: 30 },
+  { x: 36, y: 62 },
+  { x: 66, y: 58 },
+  { x: 50, y: 26 },
+] as const;
+
+function GroveExterior() {
+  return (
+    <>
+      <div className="grove-ray" />
+      <div className="grove-mouth" />
+      {GROVE_ORBS.map((orb) => (
+        <span
+          key={`${orb.x}-${orb.y}`}
+          className="grove-orb"
+          style={{
+            left: `${orb.x}%`,
+            top: `${orb.y}%`,
+            animationDelay: orb.delay,
+            animationDuration: orb.duration,
+          }}
+        />
+      ))}
+      {GROVE_GLINTS.map((glint) => (
+        <span
+          key={`${glint.x}-${glint.y}`}
+          className="grove-glint"
+          style={{ left: `${glint.x}%`, top: `${glint.y}%`, animationDelay: glint.delay }}
+        />
+      ))}
+      {GROVE_PETALS.map((petal) => (
+        <span
+          key={petal.left}
+          className="grove-petal"
+          style={{ left: petal.left, animationDelay: petal.delay, animationDuration: petal.duration }}
+        />
+      ))}
+      {GROVE_WINGS.map((wing) => (
+        <span
+          key={`${wing.x}-${wing.y}`}
+          className="grove-wing"
+          style={{ left: `${wing.x}%`, top: `${wing.y}%`, animationDelay: wing.delay }}
+        />
+      ))}
+    </>
+  );
+}
+
+function GroveInterior({ charging, rite }: { charging: boolean; rite: boolean }) {
+  return (
+    <>
+      <div className="grove-ray grove-ray-soft" />
+      {GROVE_ISLE_ORBS.map((orb) => (
+        <span
+          key={`${orb.x}-${orb.y}`}
+          className={charging ? "grove-orb grove-orb-live" : "grove-orb"}
+          style={{
+            left: `${orb.x}%`,
+            top: `${orb.y}%`,
+            animationDelay: orb.delay,
+            animationDuration: orb.duration,
+          }}
+        />
+      ))}
+      {GROVE_GLINTS.map((glint) => (
+        <span
+          key={`${glint.x}-${glint.y}`}
+          className="grove-glint"
+          style={{ left: `${glint.x}%`, top: `${glint.y}%`, animationDelay: glint.delay }}
+        />
+      ))}
+      {GROVE_RIPPLES.map((ripple) => (
+        <span
+          key={`${ripple.x}-${ripple.y}`}
+          className="grove-ripple"
+          style={{
+            left: `${ripple.x}%`,
+            top: `${ripple.y}%`,
+            width: ripple.width,
+            animationDelay: ripple.delay,
+          }}
+        />
+      ))}
+      {GROVE_PETALS.map((petal) => (
+        <span
+          key={petal.left}
+          className="grove-petal grove-petal-low"
+          style={{ left: petal.left, animationDelay: petal.delay, animationDuration: petal.duration }}
+        />
+      ))}
+      {rite ? (
+        <>
+          {GROVE_GATHER.map((orb) => (
+            <span key={`${orb.x}-${orb.y}`} className="grove-gather" style={{ left: `${orb.x}%`, top: `${orb.y}%` }} />
+          ))}
+          <div className="grove-gleam" />
+          <div className="grove-wisp" />
+        </>
+      ) : null}
     </>
   );
 }

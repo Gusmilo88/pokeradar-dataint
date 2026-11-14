@@ -4,6 +4,7 @@ import { containsBounds, isEastOfChile } from "../src/lib/expedition/geography";
 import { KANTO_CATALOG } from "../src/lib/expedition/kanto";
 import { buildFieldSightings } from "../src/lib/expedition/sightings";
 import { containsArgentina } from "../src/lib/map/argentina-hit";
+import { containsSouthGeorgia } from "../src/lib/map/south-georgia-hit";
 
 function fail(message: string): never {
   throw new Error(message);
@@ -14,6 +15,8 @@ const expected = [
   { id: "central-electrica", scene: "storm", nationalId: 145, speciesName: "zapdos" },
   { id: "santuario-volcanico", scene: "ember", nationalId: 146, speciesName: "moltres" },
   { id: "caverna-fosil", scene: "fossil", nationalId: 142, speciesName: "aerodactyl" },
+  { id: "laboratorio-secreto", scene: "lab", nationalId: 150, speciesName: "mewtwo" },
+  { id: "refugio-escondido", scene: "grove", nationalId: 151, speciesName: "mew" },
 ] as const;
 
 if (ENCLAVES.length !== expected.length) {
@@ -45,7 +48,27 @@ for (const spec of expected) {
   if (!card || card.role !== "reserved" || card.nationalId !== spec.nationalId || card.speciesName !== spec.speciesName) {
     fail(`${spec.id} no apunta al reservado ${spec.speciesName}.`);
   }
-  if (!containsArgentina(enclave.point) || !isEastOfChile(enclave.point)) {
+  const onContinent = containsArgentina(enclave.point) && isEastOfChile(enclave.point);
+  if (spec.id === "refugio-escondido") {
+    if (containsArgentina(enclave.point)) {
+      fail("El Refugio Escondido quedó dentro del polígono continental.");
+    }
+    if (!containsSouthGeorgia(enclave.point)) {
+      fail("El Refugio Escondido no cae en Georgia del Sur.");
+    }
+    if (enclave.point.latitude !== -54.4408 || enclave.point.longitude !== -36.5556) {
+      fail("El Refugio Escondido se movió del monte Paget.");
+    }
+    if ((enclave.arrival ?? "").toLowerCase().includes("legend")) {
+      fail("El refugio quedó etiquetado como legendario.");
+    }
+    if (containsSouthGeorgia({ latitude: -53.7, longitude: -36.5 })) {
+      fail("El mar al norte de Georgia del Sur se leyó como tierra.");
+    }
+    if (containsSouthGeorgia({ latitude: -34.6, longitude: -58.4 })) {
+      fail("Buenos Aires se leyó como Georgia del Sur.");
+    }
+  } else if (!onContinent) {
     fail(`${spec.id} no cae dentro de Argentina.`);
   }
   if (EXPEDITION_ZONES.some((zone) => containsBounds(zone.bounds, enclave.point))) {
@@ -60,6 +83,11 @@ for (const spec of expected) {
     }
     if ((enclave.arrival ?? "").toLowerCase().includes("legend")) {
       fail("La Caverna Fósil quedó etiquetada como legendaria.");
+    }
+  }
+  if (spec.id === "laboratorio-secreto") {
+    if (enclave.point.latitude !== -49.33 || enclave.point.longitude !== -72.89) {
+      fail("El Laboratorio Secreto se movió de El Chaltén.");
     }
   }
   const hidden = `${enclave.anomaly} ${enclave.sealed} ${enclave.exterior} ${enclave.interior} Anomalía sin identificar. ${enclave.signal} en ${enclave.region}.`;

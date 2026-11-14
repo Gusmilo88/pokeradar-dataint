@@ -9,7 +9,7 @@ import type { GeoPoint } from "@/lib/expedition/argentina";
  * `palette` pinta el marcador, el pulso del altar y los acentos del rito.
  * Un enclave nuevo elige esos colores; el componente del pulso no se copia.
  */
-export type EnclaveScene = "glacial" | "storm" | "ember" | "fossil";
+export type EnclaveScene = "glacial" | "storm" | "ember" | "fossil" | "lab" | "grove";
 
 export interface EnclavePalette {
   ring: string;
@@ -105,6 +105,30 @@ const STORM: EnclavePalette = {
   pinGlowSoft: "rgba(255, 214, 90, 0.22)",
 };
 
+const PSYCHIC: EnclavePalette = {
+  ring: "rgba(176, 120, 255, 0.96)",
+  halo: "rgba(226, 60, 255, 0.7)",
+  core: "#efe6ff",
+  hot: "#f7f4ff",
+  rite: "rgba(196, 150, 255, 0.7)",
+  altar: "rgba(160, 110, 255, 0.48)",
+  altarSoft: "rgba(40, 20, 80, 0.16)",
+  altarFade: "rgba(160, 110, 255, 0)",
+  spark: "#d7c4ff",
+  mouth: "rgba(176, 110, 255, 0.5)",
+  mouthSoft: "rgba(90, 40, 180, 0.14)",
+  mouthFade: "rgba(176, 110, 255, 0)",
+  pinHi: "#f4f7ff",
+  pinMid: "#c9a6ff",
+  pinDeep: "#6a2fd4",
+  pinEdge: "#e23cff",
+  pinInk: "#100818",
+  pinLine: "#efe8ff",
+  pinRing: "rgba(180, 120, 255, 0.75)",
+  pinGlow: "rgba(226, 60, 255, 0.45)",
+  pinGlowSoft: "rgba(120, 80, 255, 0.22)",
+};
+
 const FOSSIL: EnclavePalette = {
   ring: "rgba(224, 168, 64, 0.95)",
   halo: "rgba(62, 176, 170, 0.55)",
@@ -127,6 +151,30 @@ const FOSSIL: EnclavePalette = {
   pinRing: "rgba(224, 176, 72, 0.75)",
   pinGlow: "rgba(62, 176, 170, 0.35)",
   pinGlowSoft: "rgba(224, 176, 72, 0.22)",
+};
+
+const GROVE: EnclavePalette = {
+  ring: "rgba(255, 214, 110, 0.96)",
+  halo: "rgba(64, 214, 176, 0.72)",
+  core: "#ffe7a8",
+  hot: "#fff6d6",
+  rite: "rgba(255, 182, 210, 0.7)",
+  altar: "rgba(255, 214, 120, 0.42)",
+  altarSoft: "rgba(46, 196, 160, 0.14)",
+  altarFade: "rgba(255, 214, 120, 0)",
+  spark: "#ffe08a",
+  mouth: "rgba(92, 220, 176, 0.5)",
+  mouthSoft: "rgba(255, 206, 110, 0.14)",
+  mouthFade: "rgba(92, 220, 176, 0)",
+  pinHi: "#fff8dc",
+  pinMid: "#7edec4",
+  pinDeep: "#1c8f72",
+  pinEdge: "#f0a8c8",
+  pinInk: "#102018",
+  pinLine: "#fff1c8",
+  pinRing: "rgba(255, 210, 120, 0.75)",
+  pinGlow: "rgba(64, 214, 176, 0.42)",
+  pinGlowSoft: "rgba(243, 166, 200, 0.22)",
 };
 
 const EMBER: EnclavePalette = {
@@ -256,6 +304,44 @@ export const ENCLAVES: readonly Enclave[] = [
     manifested: "Aerodactyl se ha manifestado.",
     arrival: "Una presencia antigua se ha manifestado.",
     palette: FOSSIL,
+  },
+  {
+    id: "laboratorio-secreto",
+    place: "Laboratorio Secreto",
+    region: "Santa Cruz",
+    anomaly: "Una emisión que no coincide con los encuentros de la zona. Sale de la roca.",
+    sealed: "En el centro hay una plataforma. Todavía no tiene nombre.",
+    point: { latitude: -49.33, longitude: -72.89 },
+    encounterId: "kanto-150",
+    scene: "lab",
+    kicker: "Santa Cruz · El Chaltén",
+    accent: "#8b5cf6",
+    signal: "Señal psíquica",
+    remains: "El laboratorio sigue en la montaña.",
+    exterior: "Una instalación olvidada sigue emitiendo señales desde el interior de la montaña.",
+    interior:
+      "Los sistemas de contención están dañados. Una presencia desconocida parece responder a nuestra llegada.",
+    manifested: "Mewtwo se ha manifestado.",
+    palette: PSYCHIC,
+  },
+  {
+    id: "refugio-escondido",
+    place: "Refugio Escondido",
+    region: "Islas Georgias del Sur",
+    anomaly: "Un verdor imposible entre el hielo del sur. No coincide con los encuentros de la zona.",
+    sealed: "En el centro hay una isla. Todavía no tiene nombre.",
+    point: { latitude: -54.4408, longitude: -36.5556 },
+    encounterId: "kanto-151",
+    scene: "grove",
+    kicker: "Georgias del Sur · Subantártico",
+    accent: "#2fbf8a",
+    signal: "Señal esmeralda",
+    remains: "El refugio sigue entre el verde.",
+    exterior: "Entre raíces milenarias, pequeñas luces revelan un sendero que parece imposible.",
+    interior: "El agua permanece en calma. Una presencia diminuta parece observar desde algún lugar del refugio.",
+    manifested: "Mew se ha manifestado.",
+    arrival: "¡Una presencia diminuta se ha manifestado!",
+    palette: GROVE,
   },
 ];
 

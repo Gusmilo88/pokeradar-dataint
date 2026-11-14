@@ -36,13 +36,18 @@ function polygons(): readonly Polygon[] {
   return feature?.geometry.coordinates ?? [];
 }
 
-/** Punto dentro del polígono ARG de Natural Earth, restando huecos. */
-export function containsArgentina(point: GeoPoint): boolean {
-  return polygons().some((polygon) => {
+/** Punto dentro de polígonos [contorno, ...huecos]. El mismo criterio que Argentina. */
+export function containsPolygons(point: GeoPoint, polygons: readonly Polygon[]): boolean {
+  return polygons.some((polygon) => {
     const [shell, ...holes] = polygon;
     if (!shell || !pointInRing(point, shell)) {
       return false;
     }
     return holes.every((hole) => !pointInRing(point, hole));
   });
+}
+
+/** Punto dentro del polígono ARG de Natural Earth, restando huecos. */
+export function containsArgentina(point: GeoPoint): boolean {
+  return containsPolygons(point, polygons());
 }
