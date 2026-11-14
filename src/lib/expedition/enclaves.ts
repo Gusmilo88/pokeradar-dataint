@@ -9,7 +9,7 @@ import type { GeoPoint } from "@/lib/expedition/argentina";
  * `palette` pinta el marcador, el pulso del altar y los acentos del rito.
  * Un enclave nuevo elige esos colores; el componente del pulso no se copia.
  */
-export type EnclaveScene = "glacial" | "storm" | "ember";
+export type EnclaveScene = "glacial" | "storm" | "ember" | "fossil";
 
 export interface EnclavePalette {
   ring: string;
@@ -52,6 +52,8 @@ export interface Enclave {
   interior: string;
   /** Línea de la visita ya descubierta. Si falta, se arma con el nombre de la ficha. */
   manifested?: string;
+  /** Título del rito. Si falta, se usa la frase de las aves. */
+  arrival?: string;
   palette: EnclavePalette;
 }
 
@@ -101,6 +103,30 @@ const STORM: EnclavePalette = {
   pinRing: "rgba(255, 214, 90, 0.75)",
   pinGlow: "rgba(255, 176, 40, 0.5)",
   pinGlowSoft: "rgba(255, 214, 90, 0.22)",
+};
+
+const FOSSIL: EnclavePalette = {
+  ring: "rgba(224, 168, 64, 0.95)",
+  halo: "rgba(62, 176, 170, 0.55)",
+  core: "#f0d08a",
+  hot: "#fff1c4",
+  rite: "rgba(240, 196, 110, 0.7)",
+  altar: "rgba(232, 176, 72, 0.48)",
+  altarSoft: "rgba(92, 84, 72, 0.16)",
+  altarFade: "rgba(232, 176, 72, 0)",
+  spark: "#e8c56a",
+  mouth: "rgba(72, 206, 196, 0.4)",
+  mouthSoft: "rgba(214, 164, 72, 0.12)",
+  mouthFade: "rgba(72, 206, 196, 0)",
+  pinHi: "#f6e6c4",
+  pinMid: "#e0b15a",
+  pinDeep: "#8d6b38",
+  pinEdge: "#2f9c98",
+  pinInk: "#1c1610",
+  pinLine: "#f3e2b8",
+  pinRing: "rgba(224, 176, 72, 0.75)",
+  pinGlow: "rgba(62, 176, 170, 0.35)",
+  pinGlowSoft: "rgba(224, 176, 72, 0.22)",
 };
 
 const EMBER: EnclavePalette = {
@@ -211,6 +237,25 @@ export const ENCLAVES: readonly Enclave[] = [
     interior: "El calor aumenta. Una presencia desconocida concentra su energía sobre el altar.",
     manifested: "Moltres se ha manifestado.",
     palette: EMBER,
+  },
+  {
+    id: "caverna-fosil",
+    place: "Caverna Fósil",
+    region: "San Juan",
+    anomaly: "Una vibración en la piedra del valle. No coincide con los encuentros de la zona.",
+    sealed: "En el centro hay un altar de piedra. Todavía no tiene nombre.",
+    point: { latitude: -30.12, longitude: -67.85 },
+    encounterId: "kanto-142",
+    scene: "fossil",
+    kicker: "San Juan · Ischigualasto",
+    accent: "#d4a24a",
+    signal: "Señal fósil",
+    remains: "La caverna sigue entre la piedra.",
+    exterior: "Entre rocas milenarias, una señal desconocida emerge desde las profundidades.",
+    interior: "Los fósiles parecen reaccionar a una energía antigua. Algo despierta bajo la piedra.",
+    manifested: "Aerodactyl se ha manifestado.",
+    arrival: "Una presencia antigua se ha manifestado.",
+    palette: FOSSIL,
   },
 ];
 

@@ -37,6 +37,15 @@ const SCENE = {
     mouthY: "50%",
     perch: { x: 50, y: 58, size: 16 },
   },
+  fossil: {
+    exterior: "/images/enclaves/aerodactyl/entrada-caverna-fosil.webp",
+    interior: "/images/enclaves/aerodactyl/interior-caverna-fosil.webp",
+    bias: "-72%",
+    pulse: "57%",
+    mouthX: "72%",
+    mouthY: "48%",
+    perch: { x: 50, y: 60, size: 18 },
+  },
 } as const;
 
 const SNOW = [
@@ -229,7 +238,11 @@ export function GlacialSanctuary({
         <div className="scene-caption" key={rite ? "rite" : stage}>
           <p className="scene-kicker">{enclave.kicker}</p>
           <h2 id={titleId} className="scene-title">
-            {rite ? "¡Una presencia legendaria se ha manifestado!" : stage === "interior" && discovered && label ? label : enclave.place}
+            {rite
+              ? (enclave.arrival ?? "¡Una presencia legendaria se ha manifestado!")
+              : stage === "interior" && discovered && label
+                ? label
+                : enclave.place}
           </h2>
           {rite && label ? (
             <p className="scene-narration">
@@ -338,6 +351,9 @@ function SceneWeather({
   }
   if (scene === "ember") {
     return stage === "exterior" ? <EmberExterior /> : <EmberInterior charging={charging} rite={rite} />;
+  }
+  if (scene === "fossil") {
+    return stage === "exterior" ? <FossilExterior /> : <FossilInterior charging={charging} rite={rite} />;
   }
   return stage === "exterior" ? <ExteriorWeather /> : <InteriorWeather charging={charging} rite={rite} />;
 }
@@ -506,6 +522,105 @@ function EmberInterior({ charging, rite }: { charging: boolean; rite: boolean })
         />
       ))}
       {rite ? <div className="rite-flash" /> : null}
+    </>
+  );
+}
+
+const FOSSIL_DUST = [
+  { left: "12%", top: "38%", delay: "0s", duration: "16s" },
+  { left: "28%", top: "52%", delay: "3.2s", duration: "18s" },
+  { left: "44%", top: "30%", delay: "1.4s", duration: "15s" },
+  { left: "58%", top: "46%", delay: "4.6s", duration: "17s" },
+  { left: "70%", top: "34%", delay: "0.8s", duration: "19s" },
+  { left: "82%", top: "58%", delay: "2.5s", duration: "16s" },
+  { left: "36%", top: "68%", delay: "5.1s", duration: "18s" },
+  { left: "64%", top: "72%", delay: "1.9s", duration: "15s" },
+] as const;
+
+const FOSSIL_GLINTS = [
+  { x: 46, y: 62, delay: "0.4s", duration: "8.2s" },
+  { x: 87, y: 62, delay: "2.8s", duration: "7.6s" },
+  { x: 38, y: 54, delay: "5.2s", duration: "9s" },
+  { x: 71, y: 74, delay: "1.6s", duration: "8.6s" },
+] as const;
+
+const FOSSIL_CAVE_GLINTS = [
+  { x: 16, y: 84, delay: "0.6s", duration: "7.4s" },
+  { x: 86, y: 82, delay: "3.4s", duration: "8.8s" },
+  { x: 30, y: 62, delay: "1.8s", duration: "7.8s" },
+  { x: 68, y: 58, delay: "4.2s", duration: "8.2s" },
+  { x: 20, y: 40, delay: "2.2s", duration: "9.4s" },
+] as const;
+
+function FossilExterior() {
+  return (
+    <>
+      <span className="fossil-ray" style={{ left: "6%", animationDelay: "0s" }} />
+      <span className="fossil-ray fossil-ray-late" style={{ left: "22%" }} />
+      <div className="mouth-glow" />
+      {FOSSIL_DUST.map((speck) => (
+        <span
+          key={`${speck.left}-${speck.top}`}
+          className="fossil-dust"
+          style={{
+            left: speck.left,
+            top: speck.top,
+            animationDelay: speck.delay,
+            animationDuration: speck.duration,
+          }}
+        />
+      ))}
+      {FOSSIL_GLINTS.map((glint) => (
+        <span
+          key={`${glint.x}-${glint.y}`}
+          className="fossil-glint"
+          style={{
+            left: `${glint.x}%`,
+            top: `${glint.y}%`,
+            animationDelay: glint.delay,
+            animationDuration: glint.duration,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+function FossilInterior({ charging, rite }: { charging: boolean; rite: boolean }) {
+  return (
+    <>
+      <div className="fossil-shaft" />
+      <div className={charging || rite ? "altar-glow altar-glow-hot" : "altar-glow"} />
+      {FOSSIL_DUST.map((speck) => (
+        <span
+          key={`${speck.left}-${speck.top}`}
+          className="fossil-mote"
+          style={{
+            left: speck.left,
+            top: speck.top,
+            animationDelay: speck.delay,
+            animationDuration: speck.duration,
+          }}
+        />
+      ))}
+      {FOSSIL_CAVE_GLINTS.map((glint) => (
+        <span
+          key={`${glint.x}-${glint.y}`}
+          className="fossil-glint"
+          style={{
+            left: `${glint.x}%`,
+            top: `${glint.y}%`,
+            animationDelay: glint.delay,
+            animationDuration: glint.duration,
+          }}
+        />
+      ))}
+      {rite ? (
+        <>
+          <div className="fossil-wake" />
+          <div className="fossil-shade" />
+        </>
+      ) : null}
     </>
   );
 }

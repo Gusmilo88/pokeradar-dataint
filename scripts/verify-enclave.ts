@@ -13,6 +13,7 @@ const expected = [
   { id: "santuario-glacial", scene: "glacial", nationalId: 144, speciesName: "articuno" },
   { id: "central-electrica", scene: "storm", nationalId: 145, speciesName: "zapdos" },
   { id: "santuario-volcanico", scene: "ember", nationalId: 146, speciesName: "moltres" },
+  { id: "caverna-fosil", scene: "fossil", nationalId: 142, speciesName: "aerodactyl" },
 ] as const;
 
 if (ENCLAVES.length !== expected.length) {
@@ -52,6 +53,14 @@ for (const spec of expected) {
   }
   if (sightings.some((sighting) => sighting.id === enclave.encounterId)) {
     fail(`${spec.speciesName} se colocó como encuentro normal.`);
+  }
+  if (spec.id === "caverna-fosil") {
+    if (enclave.point.latitude !== -30.12 || enclave.point.longitude !== -67.85) {
+      fail("La Caverna Fósil se movió de Ischigualasto.");
+    }
+    if ((enclave.arrival ?? "").toLowerCase().includes("legend")) {
+      fail("La Caverna Fósil quedó etiquetada como legendaria.");
+    }
   }
   const hidden = `${enclave.anomaly} ${enclave.sealed} ${enclave.exterior} ${enclave.interior} Anomalía sin identificar. ${enclave.signal} en ${enclave.region}.`;
   for (const name of ["articuno", "zapdos", "moltres", "mewtwo", "mew", "aerodactyl"]) {

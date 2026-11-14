@@ -806,6 +806,100 @@ body {
   animation: snow-fall linear infinite;
 }
 
+.fossil-ray {
+  position: absolute;
+  top: -8%;
+  width: 14%;
+  height: 62%;
+  background: linear-gradient(180deg, rgba(255, 214, 150, 0.28), rgba(255, 214, 150, 0));
+  transform: rotate(18deg);
+  transform-origin: top center;
+  opacity: 0.2;
+  animation: fossil-ray 9s ease-in-out infinite;
+}
+
+.fossil-ray-late {
+  width: 9%;
+  height: 48%;
+  animation-delay: 3.4s;
+  transform: rotate(8deg);
+}
+
+.fossil-dust,
+.fossil-mote {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: #e7d2a4;
+  box-shadow: 0 0 4px rgba(232, 196, 120, 0.65);
+  opacity: 0;
+}
+
+.fossil-dust {
+  animation: fossil-drift linear infinite;
+}
+
+.fossil-mote {
+  background: #f0d7a0;
+  box-shadow: 0 0 6px rgba(255, 214, 140, 0.7);
+  animation: fossil-mote linear infinite;
+}
+
+.fossil-glint {
+  position: absolute;
+  z-index: 2;
+  width: 0.7%;
+  aspect-ratio: 1;
+  background: var(--spark, #e8c56a);
+  box-shadow: 0 0 8px var(--pulse-halo, rgba(62, 176, 170, 0.55));
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+  animation: fossil-glint ease-in-out infinite;
+}
+
+.fossil-shaft {
+  position: absolute;
+  top: 0;
+  left: 46%;
+  width: 8%;
+  height: 58%;
+  background: linear-gradient(rgba(255, 220, 170, 0.22), rgba(255, 220, 170, 0));
+  transform: skewX(-6deg);
+  animation: fossil-ray 8s ease-in-out infinite;
+}
+
+.enclave-visit[data-scene="fossil"] .altar-glow {
+  top: 58%;
+  width: 30%;
+}
+
+.enclave-visit[data-scene="fossil"][data-rite="true"] .fossil-shaft {
+  background: linear-gradient(rgba(255, 228, 180, 0.5), rgba(255, 228, 180, 0));
+}
+
+.fossil-wake {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 40%, rgba(240, 190, 90, 0.42), rgba(240, 190, 90, 0) 14%),
+    radial-gradient(circle at 32% 60%, rgba(232, 176, 72, 0.34), rgba(232, 176, 72, 0) 10%),
+    radial-gradient(circle at 68% 58%, rgba(232, 176, 72, 0.34), rgba(232, 176, 72, 0) 10%);
+  animation: fossil-wake 1.15s ease-out 1 forwards;
+}
+
+.fossil-shade {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 52%;
+  width: 24%;
+  height: 12%;
+  background: rgba(28, 22, 16, 0.78);
+  clip-path: polygon(50% 40%, 10% 16%, 0 50%, 18% 64%, 50% 56%, 82% 64%, 100% 50%, 90% 16%);
+  animation: fossil-shade 1.2s ease-out 1 forwards;
+}
+
 .altar-glow {
   position: absolute;
   top: 50%;
@@ -1102,7 +1196,12 @@ body {
 .enclave-visit[data-paused="true"] .altar-glow,
 .enclave-visit[data-paused="true"] .ice-spark,
 .enclave-visit[data-paused="true"] .sanctuary-mote,
-.enclave-visit[data-paused="true"] .altar-pulse-ring {
+.enclave-visit[data-paused="true"] .altar-pulse-ring,
+.enclave-visit[data-paused="true"] .fossil-dust,
+.enclave-visit[data-paused="true"] .fossil-mote,
+.enclave-visit[data-paused="true"] .fossil-glint,
+.enclave-visit[data-paused="true"] .fossil-ray,
+.enclave-visit[data-paused="true"] .fossil-shaft {
   animation-play-state: paused;
 }
 
@@ -1116,6 +1215,86 @@ body {
 @keyframes aurora-drift {
   50% {
     background-position: 100% 0;
+  }
+}
+
+@keyframes fossil-ray {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes fossil-drift {
+  0% {
+    transform: translate3d(0, 0.6rem, 0);
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: translate3d(2.2rem, -2.4rem, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes fossil-mote {
+  0% {
+    transform: translate3d(0, 0.4rem, 0);
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 0.75;
+  }
+
+  100% {
+    transform: translate3d(0.3rem, -1.6rem, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes fossil-glint {
+  0%,
+  78%,
+  100% {
+    opacity: 0;
+  }
+
+  86% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes fossil-wake {
+  0% {
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes fossil-shade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -30%) scale(0.72);
+  }
+
+  35% {
+    opacity: 0.85;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -80%) scale(1.04);
   }
 }
 
@@ -1300,14 +1479,24 @@ body {
   .altar-pulse-ring,
   .enclave-visit,
   .scene-caption,
-  .scene-fade {
+  .scene-fade,
+  .fossil-dust,
+  .fossil-mote,
+  .fossil-glint,
+  .fossil-ray,
+  .fossil-shaft,
+  .fossil-wake,
+  .fossil-shade {
     animation: none;
   }
 
   .snow-flake,
   .rain-drop,
   .storm-bolt,
-  .ember {
+  .ember,
+  .fossil-dust,
+  .fossil-shade,
+  .fossil-wake {
     display: none;
   }
 
@@ -1315,5 +1504,10 @@ body {
   .ember-mote {
     opacity: 0.4;
     transform: translate(-50%, -50%);
+  }
+
+  .fossil-glint,
+  .fossil-mote {
+    opacity: 0.35;
   }
 }
