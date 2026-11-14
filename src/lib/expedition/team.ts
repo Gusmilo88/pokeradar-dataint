@@ -56,6 +56,20 @@ export function removeMember(members: readonly string[], encounterId: string): s
   return members.filter((id) => id !== encounterId);
 }
 
+/** Mueve un integrante de `from` a `to`. El resto conserva el orden. */
+export function reorderMembers(members: readonly string[], from: number, to: number): string[] {
+  if (from === to || from < 0 || to < 0 || from >= members.length || to >= members.length) {
+    return [...members];
+  }
+  const copy = [...members];
+  const [item] = copy.splice(from, 1);
+  if (item === undefined) {
+    return [...members];
+  }
+  copy.splice(to, 0, item);
+  return copy;
+}
+
 export function moveMember(members: readonly string[], index: number, delta: -1 | 1): string[] {
   const next = index + delta;
   if (index < 0 || index >= members.length || next < 0 || next >= members.length) {

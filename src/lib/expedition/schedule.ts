@@ -87,13 +87,40 @@ export function isFieldWild(encounterId: string, date: Date): boolean {
   return isWindowOpen(window.start, window.end, argentinaClock(date).minutes);
 }
 
+export type DayPart = "madrugada" | "mañana" | "tarde" | "atardecer" | "noche";
+
+const DAY_PART_HINT: Record<DayPart, string> = {
+  madrugada: "Suele aparecer de madrugada.",
+  mañana: "Suele aparecer por la mañana.",
+  tarde: "Suele aparecer por la tarde.",
+  atardecer: "Suele aparecer al atardecer.",
+  noche: "Suele aparecer por la noche.",
+};
+
+/** La pista pública no dice la hora. El inicio de la ventana elige la franja. */
+export function dayPart(start: number): DayPart {
+  if (start < 5 * 60) {
+    return "madrugada";
+  }
+  if (start < 12 * 60) {
+    return "mañana";
+  }
+  if (start < 17 * 60) {
+    return "tarde";
+  }
+  if (start < 20 * 60) {
+    return "atardecer";
+  }
+  return "noche";
+}
+
 export function appearanceHint(window: TimeWindow): string {
-  return `Suele aparecer entre las ${formatMinutes(window.start)} y las ${formatMinutes(window.end)} (hora de Argentina).`;
+  return DAY_PART_HINT[dayPart(window.start)];
 }
 
 export function nextWindowHint(window: TimeWindow, date: Date): string {
   if (isWindowOpen(window.start, window.end, argentinaClock(date).minutes)) {
     return "";
   }
-  return `La próxima ventana empieza a las ${formatMinutes(window.start)} (hora de Argentina).`;
+  return appearanceHint(window);
 }

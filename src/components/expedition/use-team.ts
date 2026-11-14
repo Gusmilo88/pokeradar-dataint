@@ -6,6 +6,7 @@ import {
   emptyTeam,
   moveMember,
   parseTeam,
+  reorderMembers,
   removeMember,
   serializeTeam,
   TEAM_EVENT,
@@ -48,6 +49,7 @@ export function useTeam(caught: ReadonlySet<string>, hydrated: boolean): {
   add: (encounterId: string) => void;
   remove: (encounterId: string) => void;
   move: (index: number, delta: -1 | 1) => void;
+  reorder: (from: number, to: number) => void;
 } {
   const raw = useSyncExternalStore(subscribe, readRaw, () => "");
   const parsed = hydrated && raw ? parseTeam(raw, caught) : null;
@@ -84,7 +86,16 @@ export function useTeam(caught: ReadonlySet<string>, hydrated: boolean): {
     publish(moveMember(current, index, delta));
   }, []);
 
-  return { members, add, remove, move };
+  const reorder = useCallback((from: number, to: number) => {
+    const current = parseTeam(readRaw(), new Set(readCaughtIds())) ?? emptyTeam();
+    const next = reorderMembers(current, from, to);
+    if (next.every((id, index) => id === current[index])) {
+      return;
+    }
+    publish(next);
+  }, []);
+
+  return { members, add, remove, move, reorder };
 }
 
 function readCaughtIds(): string[] {

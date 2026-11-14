@@ -29,7 +29,7 @@ import {
   findZone,
   INSPECT_ZOOM,
 } from "@/lib/expedition/pins";
-import { discoveryState, tally } from "@/lib/expedition/progress";
+import { discoveryState } from "@/lib/expedition/progress";
 import { argentinaClock, isFieldWild } from "@/lib/expedition/schedule";
 import { findSighting } from "@/lib/expedition/sightings";
 import { activeEncounterIds, moodFromSnapshot } from "@/lib/expedition/weather";
@@ -254,8 +254,6 @@ export function ExpeditionScreen() {
       >
         <div className="col-span-full row-start-1">
           <HudBar
-            seen={hydrated ? tally(progress).seen : null}
-            caught={hydrated ? tally(progress).caught : null}
             notebookOpen={notebookOpen}
             onOpen={() => setNotebookOpen(true)}
             onDex={() => {
@@ -294,7 +292,7 @@ export function ExpeditionScreen() {
               members={team.members}
               names={knownNames}
               onRemove={team.remove}
-              onMove={team.move}
+              onReorder={team.reorder}
             />
           ) : null}
           {focusedZone ? (

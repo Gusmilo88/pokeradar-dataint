@@ -34,12 +34,12 @@ export function RegionBrief({
       <p className="mt-1 text-sm text-quiet">{BIOME_NOTE[zone.habitat]}</p>
       <p className="mt-2 text-sm">
         {weather?.status === "ready" && ready && mood
-          ? `${weatherLabel(ready)}. ${ready.temperatureC.toFixed(0)} °C. Observado ${ready.observedAt}. Favorece ${favoredLine(mood)}.`
+          ? `${weatherLabel(ready)}, ${ready.temperatureC.toFixed(0)} °C. Favorece ${favoredLine(mood)}.`
           : weather?.status === "pending"
             ? "Leyendo el clima…"
             : "Clima no disponible."}
       </p>
-      <p className="mt-1 text-sm text-quiet">{activeCount} señales activas. Las ocultas no se nombran.</p>
+      <p className="mt-1 text-sm text-quiet">{activeCount} señales en esta zona.</p>
       <button type="button" className="action-button mt-2" onClick={onClose}>Cerrar</button>
     </aside>
   );

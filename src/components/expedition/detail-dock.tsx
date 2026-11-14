@@ -25,7 +25,6 @@ export function DetailDock({
         <div>
           <p className="font-mono text-[10px] tracking-[0.18em] text-phosphor uppercase">Cuaderno</p>
           <h2 id="bitacora-titulo" className="text-lg font-semibold tracking-tight">Bitácora</h2>
-          <p className="mt-1 text-sm text-quiet">Índice de señales activas. La ficha se abre sobre el mapa.</p>
         </div>
         <button type="button" className="action-button inline-flex items-center justify-center" onClick={onClose}>
           Cerrar

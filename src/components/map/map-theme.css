@@ -246,18 +246,41 @@
   }
 }
 
-.atlas-nav {
-  display: grid;
+.map-canvas-shell {
+  container-type: size;
+}
+
+.map-tools {
+  position: absolute;
+  top: 5.75rem;
+  left: 0.5rem;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 0.35rem;
   width: 11.5rem;
-  max-width: calc(100vw - 5.5rem);
+  max-width: calc(100% - 4.5rem);
+  max-height: calc(100% - 9.5rem);
+  overflow: hidden;
+}
+
+.atlas-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 0;
 }
 
 .atlas-nav ul {
   display: grid;
   gap: 0.3rem;
+  min-height: 0;
+  max-height: max(2.75rem, min(11rem, calc(100cqh - 16rem)));
   margin: 0;
   padding: 0;
+  overflow: auto;
   list-style: none;
 }
 
@@ -292,6 +315,11 @@
   gap: 0.35rem;
   width: 8rem;
   max-width: calc(100vw - 4.5rem);
+}
+
+.map-tools .planet-controls,
+.map-tools .planet-approach {
+  width: 100%;
 }
 
 .planet-toggle {

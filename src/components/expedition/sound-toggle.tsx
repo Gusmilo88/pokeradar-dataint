@@ -7,13 +7,13 @@ import { useSoundEnabled } from "@/components/expedition/use-sound";
 function Speaker({ muted }: { muted: boolean }) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 10h3l4-3v10l-4-3H4z" />
+      <path className="speaker-body" d="M4 9.2h3.2L12 5v14l-4.8-4.2H4z" />
       {muted ? (
-        <path d="M16 9l5 6M21 9l-5 6" />
+        <path className="speaker-mark" d="M16 8.5l6 7M22 8.5l-6 7" />
       ) : (
         <>
-          <path d="M16 9.5a3 3 0 0 1 0 5" />
-          <path d="M18.5 7a6 6 0 0 1 0 10" />
+          <path className="speaker-mark" d="M15.5 9.2a3.2 3.2 0 0 1 0 5.6" />
+          <path className="speaker-mark" d="M18 6.6a6.2 6.2 0 0 1 0 10.8" />
         </>
       )}
     </svg>
@@ -26,7 +26,8 @@ export function SoundToggle() {
   return (
     <button
       type="button"
-      className="game-icon"
+      className="game-icon sound-toggle"
+      data-audio={enabled ? "on" : "off"}
       aria-pressed={enabled}
       aria-label={label}
       title={label}

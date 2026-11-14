@@ -80,7 +80,9 @@ body {
 @layer components {
   .action-button,
   .game-icon,
-  .tcg-control {
+  .tcg-control,
+  .tcg-icon,
+  .tcg-team {
     cursor: pointer;
   }
 
@@ -135,13 +137,33 @@ body {
 }
 
 .game-icon svg {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.speaker-body {
+  fill: currentColor;
+  stroke: none;
+}
+
+.speaker-mark {
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 2.1;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.sound-toggle[data-audio="on"] {
+  color: var(--radar-phosphor-strong);
+  border-color: rgba(142, 246, 223, 0.85);
+  box-shadow: inset 0 1px 0 rgba(232, 255, 248, 0.35), 0 0 0 1px rgba(142, 246, 223, 0.25);
+}
+
+.sound-toggle[data-audio="off"] {
+  color: var(--radar-amber);
+  border-color: rgba(242, 193, 78, 0.85);
+  background: rgba(42, 28, 8, 0.92);
 }
 
 .radar-spinner {
@@ -1269,9 +1291,9 @@ body {
 .altar-pulse {
   position: absolute;
   z-index: 6;
-  width: 7%;
-  min-width: 3rem;
-  min-height: 3rem;
+  width: 18%;
+  min-width: 6.75rem;
+  min-height: 6.75rem;
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   border: 0;
@@ -1280,17 +1302,30 @@ body {
   cursor: pointer;
 }
 
+.altar-pulse::before {
+  content: "";
+  position: absolute;
+  inset: -28%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--pulse-core, #d7f6ff) 0%, transparent 68%);
+  opacity: 0.72;
+  animation: altar-breathe 1.35s ease-in-out infinite;
+  pointer-events: none;
+}
+
 .altar-pulse:disabled {
   cursor: progress;
 }
 
 .altar-pulse-ring {
   position: absolute;
-  inset: 8%;
-  border: 2px solid var(--pulse-ring, rgba(126, 232, 255, 0.95));
+  inset: 4%;
+  border: 3px solid var(--pulse-ring, rgba(126, 232, 255, 0.95));
   border-radius: 50%;
-  box-shadow: 0 0 12px var(--pulse-halo, rgba(122, 108, 255, 0.8));
-  animation: altar-pulse 2.2s ease-out infinite;
+  box-shadow:
+    0 0 18px 4px var(--pulse-halo, rgba(122, 108, 255, 0.8)),
+    inset 0 0 12px var(--pulse-halo, rgba(122, 108, 255, 0.55));
+  animation: altar-pulse 1.45s ease-out infinite;
 }
 
 .altar-pulse:hover .altar-pulse-ring,
@@ -1301,10 +1336,10 @@ body {
 
 .altar-pulse-core {
   position: absolute;
-  inset: 38%;
+  inset: 30%;
   border-radius: 50%;
   background: var(--pulse-core, #d7f6ff);
-  box-shadow: 0 0 10px var(--pulse-halo, rgba(122, 108, 255, 0.8));
+  box-shadow: 0 0 28px 10px var(--pulse-halo, rgba(122, 108, 255, 0.9));
 }
 
 .altar-pulse-label {
@@ -2024,16 +2059,23 @@ body {
   }
 }
 
+@keyframes altar-breathe {
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
 @keyframes altar-pulse {
   0% {
-    opacity: 0.95;
-    transform: scale(0.72);
+    opacity: 1;
+    transform: scale(0.45);
   }
 
   70%,
   100% {
     opacity: 0;
-    transform: scale(1.2);
+    transform: scale(1.85);
   }
 }
 
@@ -2126,6 +2168,7 @@ body {
   .perch-absorb,
   .perch-flight,
   .cold-mist,
+  .altar-pulse::before,
   .altar-pulse-ring,
   .enclave-visit,
   .scene-caption,

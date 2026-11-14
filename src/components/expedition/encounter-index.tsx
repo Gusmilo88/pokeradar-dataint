@@ -69,9 +69,6 @@ export function EncounterIndex({
           );
         })}
       </div>
-      <p className="mt-4 text-sm text-quiet">
-        Los colores del mapa son acentos de la expedición, no biomas ni provincias. Seis señales todavía no tienen región de campo.
-      </p>
     </div>
   );
 }

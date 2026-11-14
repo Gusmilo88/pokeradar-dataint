@@ -125,13 +125,20 @@ export function EncounterModal({
   return (
     <div className="encounter-modal" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={dialogRef}>
       <button type="button" className="encounter-scrim" aria-label="Cerrar encuentro" tabIndex={-1} onClick={onClose} />
-      <div className="encounter-sheet">
+      <div
+        className="encounter-sheet"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            onClose();
+          }
+        }}
+      >
         <article className="encounter-card" data-motion={prefersReducedMotion() ? "off" : "on"}>
           <header className="encounter-head">
             <p className="font-mono text-[10px] tracking-[0.18em] text-phosphor uppercase">Exploración</p>
             <h2 id={titleId} className="text-2xl font-semibold tracking-tight">{name}</h2>
             <p className="font-mono text-[11px] tracking-[0.12em] text-quiet uppercase">
-              Exp. {String(sighting.expeditionNumber).padStart(2, "0")}
+              N.º {String(sighting.expeditionNumber).padStart(2, "0")}
               {revealed && entry ? ` · #${String(entry.species.id).padStart(4, "0")}` : ""}
               {zone ? ` · ${zone.code}` : ""}
             </p>

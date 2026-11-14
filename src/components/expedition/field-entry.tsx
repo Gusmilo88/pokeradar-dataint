@@ -39,7 +39,7 @@ export function FieldEntry({
     <article aria-labelledby={titleId} className="px-5 py-4 pl-8">
       <p className="font-mono text-[10px] tracking-[0.18em] text-amber uppercase">
         {dexNumber(species.id)}
-        {expeditionNumber ? ` · Exp. ${String(expeditionNumber).padStart(2, "0")}` : ""}
+        {expeditionNumber ? ` · N.º ${String(expeditionNumber).padStart(2, "0")}` : ""}
         {zone ? ` · ${zone.code}` : ""}
       </p>
       <p className={state === "caught" ? "mt-2 font-mono text-[10px] tracking-[0.16em] text-amber uppercase" : "mt-2 font-mono text-[10px] tracking-[0.16em] text-phosphor uppercase"}>
@@ -98,7 +98,7 @@ export function FieldEntry({
       </ul>
       <p className="mt-4 text-sm text-quiet">
         {zone
-          ? `${zone.name} · ${HABITAT_LABEL[zone.habitat]}. Encuentro simulado.`
+          ? `${zone.name} · ${HABITAT_LABEL[zone.habitat]}.`
           : (place ?? "Sin zona de campo.")}
       </p>
       {encounterId && onCaptured ? (

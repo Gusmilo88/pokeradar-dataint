@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { CapturePanel } from "@/components/expedition/capture-panel";
 import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import { useDossier } from "@/components/expedition/use-dossier";
@@ -46,7 +46,7 @@ function pad(value: number): string {
 
 function sortLabel(key: SortKey): string {
   const labels: Record<SortKey, string> = {
-    expedition: "Expediente",
+    expedition: "Registro",
     name: "Nombre",
     hp: "PS",
     attack: "Ataque",
@@ -344,8 +344,8 @@ export function PokedexView({
                       aria-pressed={focusNumber === entry.expeditionNumber}
                       aria-label={
                         revealed
-                          ? `${name}. Expedición ${pad(entry.expeditionNumber)}. ${stateLabel(state)}.`
-                          : `Expedición ${pad(entry.expeditionNumber)}. Identidad desconocida.`
+                          ? `${name}. Registro ${pad(entry.expeditionNumber)}. ${stateLabel(state)}.`
+                          : `Registro ${pad(entry.expeditionNumber)}. Identidad desconocida.`
                       }
                       onClick={() => setFocusNumber(entry.expeditionNumber)}
                     >
@@ -484,6 +484,56 @@ function CardPrint({
   );
 }
 
+function TurnIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M16.5 6.5A6.5 6.5 0 0 0 6.2 9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="M7.5 17.5A6.5 6.5 0 0 0 17.8 15"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path d="M6.2 5.2v3.8h3.8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17.8 18.8v-3.8h-3.8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function MapMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 20.5s5.5-4.8 5.5-9.2a5.5 5.5 0 1 0-11 0c0 4.4 5.5 9.2 5.5 9.2Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+      />
+      <circle cx="12" cy="11.2" r="1.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+function holdsCard(target: EventTarget | null): boolean {
+  return target instanceof Element && Boolean(target.closest("button, a, input, textarea, select, label, [data-no-flip]"));
+}
+
+function scrollMark(target: EventTarget | null): number {
+  if (!(target instanceof Element)) {
+    return 0;
+  }
+  const face = target.closest(".tcg-face");
+  const sheet = target.closest(".album-sheet");
+  return (face instanceof HTMLElement ? face.scrollTop : 0) + (sheet instanceof HTMLElement ? sheet.scrollTop : 0);
+}
+
 function DexCard({
   entry,
   state,
@@ -566,6 +616,38 @@ function DexCard({
     setFace((current) => (current === "front" ? "back" : "front"));
   }
 
+  const press = useRef<{ x: number; y: number; scroll: number; blocked: boolean } | null>(null);
+
+  function onCardPointerDown(event: ReactPointerEvent<HTMLElement>) {
+    if (event.button !== 0) {
+      return;
+    }
+    press.current = {
+      x: event.clientX,
+      y: event.clientY,
+      scroll: scrollMark(event.target),
+      blocked: holdsCard(event.target),
+    };
+  }
+
+  function onCardPointerUp(event: ReactPointerEvent<HTMLElement>) {
+    const start = press.current;
+    press.current = null;
+    if (!start || start.blocked || event.button !== 0 || holdsCard(event.target)) {
+      return;
+    }
+    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 12) {
+      return;
+    }
+    if (scrollMark(event.target) !== start.scroll) {
+      return;
+    }
+    if ((window.getSelection()?.toString() ?? "").length > 0) {
+      return;
+    }
+    flip();
+  }
+
   const schedule = timeWindow(entry.encounterId);
   const wild = !schedule || isFieldWild(entry.encounterId, now);
   const scheduleNote = !schedule
@@ -576,29 +658,26 @@ function DexCard({
         ? null
         : nextWindowHint(schedule, now);
   const catchAllowed = state === "seen" && ready && (wild || engaged === entry.encounterId);
+  const canSeek = !(schedule && !wild) && (entry.role === "field" || Boolean(revealed && enclave));
+  const seekLabel = revealed ? "Ver en el mapa" : "Buscar en el mapa";
+  const teamLabel = inTeam ? "En el equipo" : teamFull ? "Equipo lleno" : "Agregar al equipo";
 
-  function mapAction() {
-    if (schedule && !wild) {
-      return null;
-    }
-    if (entry.role === "field") {
-      return (
-        <button type="button" className="tcg-control" aria-label={revealed ? "Ver en el mapa" : "Buscar en el mapa"} onClick={() => onSeek(entry.encounterId)}>
-          Mapa
-        </button>
-      );
-    }
-    if (revealed && enclave) {
-      return (
-        <button type="button" className="tcg-control" aria-label="Ver en el mapa" onClick={() => onSeek(entry.encounterId)}>
-          Mapa
-        </button>
-      );
-    }
-    if (entry.role === "reserved") {
-      return <p className="tcg-note">Sin enclave de campo.</p>;
-    }
-    return null;
+  function turnControl(pressed: boolean) {
+    return (
+      <button
+        type="button"
+        className="tcg-icon tcg-flip"
+        aria-pressed={pressed}
+        aria-label="Girar carta"
+        title="Girar carta"
+        onClick={(event) => {
+          event.stopPropagation();
+          flip();
+        }}
+      >
+        <TurnIcon />
+      </button>
+    );
   }
 
   return (
@@ -629,7 +708,7 @@ function DexCard({
       >
         <div className="tcg-rotor">
           <div className="tcg-face tcg-front" inert={face === "back" ? true : undefined}>
-            <div className="tcg-frame">
+            <div className="tcg-frame" onPointerDown={onCardPointerDown} onPointerUp={onCardPointerUp}>
               <header className="tcg-top">
                 <div className="min-w-0">
                   <p className="tcg-kicker">{revealed ? `#${String(entry.nationalId).padStart(4, "0")}` : "???"}</p>
@@ -656,7 +735,7 @@ function DexCard({
                 {accent ? <p className="tcg-rarity">{albumAccentLabel(entry)}</p> : null}
                 {state === "caught" ? <p className="tcg-stamp">En la colección</p> : null}
               </div>
-              <p className="tcg-imprint">PokéRadar · Exp. {pad(entry.expeditionNumber)}</p>
+              <p className="tcg-imprint">Registro {pad(entry.expeditionNumber)}</p>
               <p className="album-state">{status}</p>
               {revealed && !ready ? (
                 <p className="tcg-note" role={dossier.phase === "error" ? "alert" : "status"}>
@@ -669,25 +748,14 @@ function DexCard({
                 <p className="tcg-note">{schedule ? scheduleNote : explorationHint(entry, zone)}</p>
               ) : null}
               {revealed && scheduleNote ? <p className="tcg-note">{scheduleNote}</p> : null}
-              <div className="tcg-actions">
-                <button type="button" className="tcg-control tcg-flip" aria-pressed={face === "back"} aria-label="Girar carta" onClick={flip}>
-                  Girar
-                </button>
-                {dossier.phase === "error" ? (
-                  <button type="button" className="tcg-control" onClick={dossier.retry}>
-                    Reintentar
-                  </button>
-                ) : null}
-                {!revealed ? mapAction() : null}
-                <button type="button" className="tcg-control tcg-close" onClick={onBack}>
-                  Cerrar
-                </button>
+              <div className="tcg-edge">
+                {turnControl(false)}
               </div>
             </div>
             <span className="tcg-foil" aria-hidden="true" />
           </div>
           <div className="tcg-face tcg-back" inert={face === "front" ? true : undefined}>
-            <div className="tcg-frame">
+            <div className="tcg-frame" onPointerDown={onCardPointerDown} onPointerUp={onCardPointerUp}>
               <header className="tcg-top">
                 <div className="min-w-0">
                   <p className="tcg-kicker">Ficha de expedición</p>
@@ -730,45 +798,61 @@ function DexCard({
                   <p className="tcg-note">Nombre, tipos y estadísticas bloqueados.</p>
                 </>
               )}
+              {!(schedule && !wild) && entry.role === "reserved" && !(revealed && enclave) ? (
+                <p className="tcg-note">Sin enclave de campo.</p>
+              ) : null}
               {dossier.phase === "error" ? (
-                <button type="button" className="tcg-control" onClick={dossier.retry}>
+                <button type="button" className="tcg-team" onClick={dossier.retry}>
                   Reintentar
                 </button>
               ) : null}
               {catchAllowed && ready ? (
-                <CapturePanel
-                  key={entry.encounterId}
-                  encounterId={entry.encounterId}
-                  captureRate={ready.species.capture_rate}
-                  baseStats={ready.pokemon.stats.map((stat) => stat.base_stat)}
-                  state="seen"
-                  nationalId={ready.species.id}
-                  stillUrl={ready.pokemon.sprites.blackWhite ?? ready.pokemon.sprites.front_default}
-                  animatedUrl={ready.pokemon.sprites.blackWhiteAnimated}
-                  label={name}
-                  onCaptured={onCaptured}
-                  onEngage={() => setEngaged(entry.encounterId)}
-                  onRelease={() => setEngaged(null)}
-                />
+                <div data-no-flip>
+                  <CapturePanel
+                    key={entry.encounterId}
+                    encounterId={entry.encounterId}
+                    captureRate={ready.species.capture_rate}
+                    baseStats={ready.pokemon.stats.map((stat) => stat.base_stat)}
+                    state="seen"
+                    nationalId={ready.species.id}
+                    stillUrl={ready.pokemon.sprites.blackWhite ?? ready.pokemon.sprites.front_default}
+                    animatedUrl={ready.pokemon.sprites.blackWhiteAnimated}
+                    label={name}
+                    onCaptured={onCaptured}
+                    onEngage={() => setEngaged(entry.encounterId)}
+                    onRelease={() => setEngaged(null)}
+                  />
+                </div>
               ) : null}
               {state === "caught" && ready ? (
-                <button type="button" className="tcg-control" disabled={inTeam || teamFull} onClick={onTeam}>
-                  {inTeam ? "En el equipo" : teamFull ? "Equipo lleno" : "Al equipo"}
+                <button
+                  type="button"
+                  className="tcg-team"
+                  aria-pressed={inTeam}
+                  disabled={!inTeam && teamFull}
+                  title={teamLabel}
+                  onClick={() => {
+                    if (!inTeam && !teamFull) {
+                      onTeam();
+                    }
+                  }}
+                >
+                  {teamLabel}
                 </button>
               ) : null}
-              {ready ? (
-                <button type="button" className="tcg-control" onClick={() => playSpeciesCry(ready.pokemon.cries, `${entry.encounterId}:replay`, true)}>
-                  Grito
-                </button>
-              ) : null}
-              <div className="tcg-actions">
-                <button type="button" className="tcg-control tcg-flip" aria-pressed={face === "back"} aria-label="Girar carta" onClick={flip}>
-                  Girar
-                </button>
-                {mapAction()}
-                <button type="button" className="tcg-control tcg-close" onClick={onBack}>
-                  Cerrar
-                </button>
+              <div className="tcg-edge">
+                {turnControl(true)}
+                {canSeek ? (
+                  <button
+                    type="button"
+                    className="tcg-icon tcg-seek"
+                    aria-label={seekLabel}
+                    title={seekLabel}
+                    onClick={() => onSeek(entry.encounterId)}
+                  >
+                    <MapMark />
+                  </button>
+                ) : null}
               </div>
             </div>
             <span className="tcg-foil" aria-hidden="true" />

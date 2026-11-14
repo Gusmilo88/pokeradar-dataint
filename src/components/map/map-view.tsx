@@ -537,7 +537,7 @@ export function MapView({
         : "Cargando el mapa de Argentina.";
 
   return (
-    <div className="relative h-full min-h-0 w-full">
+    <div className="map-canvas-shell relative h-full min-h-0 w-full">
       <div
         ref={containerRef}
         className="h-full w-full"
@@ -550,13 +550,14 @@ export function MapView({
       </p>
       {phase === "ready" ? (
         <>
-          <div className="absolute top-24 left-2 z-10">
+          <div className="map-tools">
             <ProjectionToggle
               mode={projection}
               showArgentina={false}
               onMode={chooseProjection}
               onArgentina={() => undefined}
             />
+            <RegionNav onSelect={onExplore} />
           </div>
           {readout.zoom < ARGENTINA_APPROACH_ZOOM ? (
             <button
@@ -572,9 +573,6 @@ export function MapView({
               Ver Argentina
             </button>
           ) : null}
-          <div className="absolute bottom-14 left-3 z-10">
-            <RegionNav onSelect={onExplore} />
-          </div>
         </>
       ) : null}
       <div className="pointer-events-none absolute top-3 left-3 z-10 rounded-md border border-phosphor/30 bg-void px-3 py-2 font-mono text-[11px] leading-5 text-phosphor-strong">

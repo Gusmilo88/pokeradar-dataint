@@ -54,9 +54,18 @@ if (!isWindowOpen(20 * 60, 5 * 60, 23 * 60 + 59) || isWindowOpen(20 * 60, 5 * 60
   throw new Error("La ventana que cruza medianoche falló");
 }
 const eevee = TIME_WINDOWS.find((window) => window.speciesName === "eevee");
-if (!eevee || appearanceHint(eevee) !== "Suele aparecer entre las 05:00 y las 08:00 (hora de Argentina).") {
+if (!eevee || appearanceHint(eevee) !== "Suele aparecer por la mañana.") {
   throw new Error("La pista horaria cambió");
 }
+const ditto = TIME_WINDOWS.find((window) => window.speciesName === "ditto");
+const voltorb = TIME_WINDOWS.find((window) => window.speciesName === "voltorb");
+const meowth = TIME_WINDOWS.find((window) => window.speciesName === "meowth");
+const koffing = TIME_WINDOWS.find((window) => window.speciesName === "koffing");
+if (!ditto || appearanceHint(ditto) !== "Suele aparecer de madrugada.") throw new Error("ditto");
+if (!voltorb || appearanceHint(voltorb) !== "Suele aparecer al atardecer.") throw new Error("voltorb");
+if (!meowth || appearanceHint(meowth) !== "Suele aparecer por la noche.") throw new Error("meowth");
+if (!koffing || appearanceHint(koffing) !== "Suele aparecer por la noche.") throw new Error("koffing");
+if (appearanceHint(eevee).match(/\d/)) throw new Error("la pista muestra una hora");
 if (TIME_WINDOWS.length !== 5) {
   throw new Error("Tienen que ser cinco especies con horario");
 }

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { CapturePanel } from "@/components/expedition/capture-panel";
 import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import type { DossierEntry, DossierPhase } from "@/components/expedition/use-dossier";
+import { playSpeciesCry } from "@/lib/expedition/cries";
 import { paletteVars, type Enclave } from "@/lib/expedition/enclaves";
 import type { PerchPose } from "@/lib/expedition/perch-pose";
 import { statLabel, STAT_SCALE, typeLabel } from "@/lib/pokeapi/labels";
@@ -172,6 +173,19 @@ export function GlacialSanctuary({
   const rite = stage === "interior" && ceremony && discovered && !skipped;
   const sheet = sheetStage === stage && discovered && entry !== null;
   const canExamine = stage === "interior" && !discovered && !loading && !failed;
+  const cried = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (stage !== "interior" || !entry || !(rite || discovered)) {
+      return;
+    }
+    const key = enclave.encounterId;
+    if (cried.current === key) {
+      return;
+    }
+    cried.current = key;
+    playSpeciesCry(entry.pokemon.cries, `enclave:${key}`);
+  }, [discovered, enclave.encounterId, entry, rite, stage]);
 
   function reportPose(next: PerchPose) {
     if (next === "absorb" && perchRef.current) {

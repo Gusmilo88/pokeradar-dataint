@@ -1,5 +1,5 @@
 import { emptyProgress, markCaught } from "../src/lib/expedition/progress";
-import { addMember, moveMember, parseTeam, removeMember, serializeTeam, TEAM_LIMIT } from "../src/lib/expedition/team";
+import { addMember, moveMember, parseTeam, removeMember, reorderMembers, serializeTeam, TEAM_LIMIT } from "../src/lib/expedition/team";
 
 let progress = emptyProgress();
 progress = markCaught(progress, "kanto-025");
@@ -14,6 +14,9 @@ team = addMember(team, "kanto-052", caught);
 if (team.join(",") !== "kanto-025,kanto-052") throw new Error("alta");
 team = moveMember(team, 0, 1);
 if (team.join(",") !== "kanto-052,kanto-025") throw new Error("orden");
+const dragged = reorderMembers(["kanto-025", "kanto-052", "kanto-001"], 0, 2);
+if (dragged.join(",") !== "kanto-052,kanto-001,kanto-025") throw new Error("arrastre");
+if (reorderMembers(dragged, 2, 2).join(",") !== dragged.join(",")) throw new Error("mismo lugar");
 team = removeMember(team, "kanto-052");
 if (team.join(",") !== "kanto-025") throw new Error("baja");
 

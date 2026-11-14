@@ -392,7 +392,21 @@
   transform: rotateY(180deg);
 }
 
+.tcg-card[data-face="front"] .tcg-back,
+.tcg-card[data-face="back"] .tcg-front {
+  pointer-events: none;
+}
+
+.tcg-face {
+  cursor: pointer;
+}
+
 .tcg-front {
+  overflow: hidden;
+}
+
+.tcg-front .tcg-frame {
+  height: 100%;
   overflow: hidden;
 }
 
@@ -500,16 +514,94 @@
   gap: 0.45rem;
 }
 
-.tcg-actions {
+.tcg-edge {
   position: sticky;
-  bottom: 0.55rem;
+  bottom: 0.15rem;
   z-index: 3;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(4.6rem, 1fr));
-  gap: 0.3rem;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
   margin-top: auto;
-  padding: 0.3rem 0 0.1rem;
-  background: linear-gradient(180deg, rgba(20, 17, 14, 0), #14110e 42%);
+  padding-top: 0.35rem;
+  background: linear-gradient(180deg, rgba(20, 17, 14, 0), #14110e 55%);
+}
+
+.tcg-flip {
+  grid-column: 2;
+  justify-self: center;
+}
+
+.tcg-seek {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.tcg-icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(242, 193, 78, 0.72);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 0.2), transparent 48%),
+    rgba(14, 11, 8, 0.94);
+  color: #f6efe2;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+.tcg-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.tcg-icon:hover,
+.tcg-team:hover {
+  border-color: #8ef6df;
+  color: #8ef6df;
+}
+
+.tcg-icon:focus-visible,
+.tcg-team:focus-visible {
+  outline: 2px solid #8ef6df;
+  outline-offset: 3px;
+}
+
+.tcg-icon:active,
+.tcg-team:active {
+  transform: translateY(1px);
+}
+
+.tcg-team {
+  align-self: center;
+  margin-top: 0.45rem;
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid rgba(242, 193, 78, 0.55);
+  border-radius: 999px;
+  background: rgba(16, 12, 8, 0.88);
+  color: #f6efe2;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tcg-team[aria-pressed="true"] {
+  border-color: #8ef6df;
+  color: #8ef6df;
+}
+
+.tcg-team:disabled,
+.tcg-team:disabled:hover {
+  border-color: rgba(242, 193, 78, 0.55);
+  color: #f6efe2;
+  cursor: default;
+  opacity: 0.72;
+  transform: none;
 }
 
 .tcg-control {
