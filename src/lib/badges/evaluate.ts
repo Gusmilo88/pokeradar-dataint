@@ -130,7 +130,7 @@ export function evaluateBadge(
   const record = ledger.records[badge.id];
   let presentation: BadgePresentation = "locked";
   if (result.unlocked) {
-    presentation = record?.acknowledged ? "earned" : "fresh";
+    presentation = record && !record.celebrated ? "fresh" : "earned";
   }
   return {
     id: badge.id,

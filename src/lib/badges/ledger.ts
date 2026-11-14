@@ -6,15 +6,25 @@ export const BADGES_KEY = "pokeradar.badges.v1";
 export const BADGES_EVENT = "pokeradar-badges";
 
 export interface BadgeRecord {
-  unlockedAt: string;
+  /** Null si la medalla ya estaba obtenida y no vimos el momento. */
+  unlockedAt: string | null;
   acknowledged: boolean;
+  /** La celebración automática ya se mostró, o no corresponde mostrarla. */
+  celebrated: boolean;
 }
 
 export interface BadgeLedger {
   records: Readonly<Record<string, BadgeRecord>>;
+  collectionCelebrated: boolean;
 }
 
-const EMPTY_LEDGER: BadgeLedger = { records: {} };
+export interface WitnessResult {
+  ledger: BadgeLedger;
+  medals: readonly string[];
+  collection: boolean;
+}
+
+const EMPTY_LEDGER: BadgeLedger = { records: {}, collectionCelebrated: false };
 
 const BADGE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -27,19 +37,29 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function readRecord(value: unknown): BadgeRecord | null {
-  if (!isRecord(value) || typeof value.unlockedAt !== "string" || value.unlockedAt.length === 0) {
+  if (!isRecord(value) || typeof value.acknowledged !== "boolean") {
     return null;
   }
-  if (typeof value.acknowledged !== "boolean") {
+  let unlockedAt: string | null;
+  if (value.unlockedAt === null) {
+    unlockedAt = null;
+  } else if (typeof value.unlockedAt === "string" && value.unlockedAt.length > 0) {
+    unlockedAt = value.unlockedAt;
+  } else {
     return null;
   }
-  return { unlockedAt: value.unlockedAt, acknowledged: value.acknowledged };
+  const celebrated = typeof value.celebrated === "boolean" ? value.celebrated : true;
+  return { unlockedAt, acknowledged: value.acknowledged, celebrated };
 }
 
 export function parseBadgeLedger(raw: string): BadgeLedger | null {
   try {
     const value: unknown = JSON.parse(raw);
     if (!isRecord(value) || value.version !== BADGES_VERSION || !isRecord(value.records)) {
+      return null;
+    }
+    const collectionCelebrated = value.collectionCelebrated === undefined ? false : value.collectionCelebrated;
+    if (typeof collectionCelebrated !== "boolean") {
       return null;
     }
     const records: Record<string, BadgeRecord> = {};
@@ -53,7 +73,7 @@ export function parseBadgeLedger(raw: string): BadgeLedger | null {
       }
       records[id] = record;
     }
-    return { records };
+    return { records, collectionCelebrated };
   } catch {
     return null;
   }
@@ -66,9 +86,17 @@ export function serializeBadgeLedger(ledger: BadgeLedger): string {
     if (!record) {
       continue;
     }
-    records[id] = { unlockedAt: record.unlockedAt, acknowledged: record.acknowledged };
+    records[id] = {
+      unlockedAt: record.unlockedAt,
+      acknowledged: record.acknowledged,
+      celebrated: record.celebrated,
+    };
   }
-  return JSON.stringify({ version: BADGES_VERSION, records });
+  return JSON.stringify({
+    version: BADGES_VERSION,
+    collectionCelebrated: ledger.collectionCelebrated,
+    records,
+  });
 }
 
 export function readBadgeLedger(raw: string | null): BadgeLedger {
@@ -78,44 +106,91 @@ export function readBadgeLedger(raw: string | null): BadgeLedger {
   return parseBadgeLedger(raw) ?? emptyBadgeLedger();
 }
 
-/** Anota la primera vez que la regla se cumple. No pisa una fecha ya guardada. */
-export function stampUnlocks(
-  ledger: BadgeLedger,
-  caught: ReadonlySet<string>,
-  nowIso: string,
-): BadgeLedger {
-  let records = ledger.records;
-  let changed = false;
+function withRecord(ledger: BadgeLedger, id: string, record: BadgeRecord): BadgeLedger {
+  return {
+    collectionCelebrated: ledger.collectionCelebrated,
+    records: { ...ledger.records, [id]: record },
+  };
+}
+
+/**
+ * Medallas que ya estaban completas al abrir la página.
+ * No inventa fecha y no arma celebración.
+ */
+export function adoptHeldUnlocks(ledger: BadgeLedger, caught: ReadonlySet<string>): BadgeLedger {
+  let next = ledger;
   for (const badge of BADGES) {
-    if (records[badge.id] || !isBadgeUnlocked(badge, caught)) {
+    if (!isBadgeUnlocked(badge, caught)) {
       continue;
     }
-    if (!changed) {
-      records = { ...records };
-      changed = true;
+    const existing = next.records[badge.id];
+    if (!existing) {
+      next = withRecord(next, badge.id, { unlockedAt: null, acknowledged: true, celebrated: true });
+      continue;
     }
-    records = {
-      ...records,
-      [badge.id]: { unlockedAt: nowIso, acknowledged: false },
-    };
+    if (!existing.celebrated || !existing.acknowledged) {
+      next = withRecord(next, badge.id, {
+        unlockedAt: existing.unlockedAt,
+        acknowledged: true,
+        celebrated: true,
+      });
+    }
   }
-  if (!changed) {
-    return ledger;
+  if (BADGES.every((badge) => isBadgeUnlocked(badge, caught)) && !next.collectionCelebrated) {
+    next = { records: next.records, collectionCelebrated: true };
   }
-  return { records };
+  return next;
+}
+
+/**
+ * Transición real bloqueada → conseguida entre dos conjuntos de capturas.
+ * La fecha es la de este momento. No pisa una fecha ya guardada.
+ */
+export function witnessUnlocks(
+  ledger: BadgeLedger,
+  previous: ReadonlySet<string>,
+  nextCaught: ReadonlySet<string>,
+  nowIso: string,
+): WitnessResult {
+  const medals: string[] = [];
+  let next = ledger;
+  for (const badge of BADGES) {
+    const wasUnlocked = isBadgeUnlocked(badge, previous);
+    const isUnlocked = isBadgeUnlocked(badge, nextCaught);
+    if (!isUnlocked || wasUnlocked || next.records[badge.id]?.celebrated) {
+      continue;
+    }
+    medals.push(badge.id);
+    const existing = next.records[badge.id];
+    next = withRecord(next, badge.id, {
+      unlockedAt: existing?.unlockedAt ?? nowIso,
+      acknowledged: false,
+      celebrated: false,
+    });
+  }
+  const collection = medals.length > 0
+    && !ledger.collectionCelebrated
+    && BADGES.every((badge) => isBadgeUnlocked(badge, nextCaught));
+  return { ledger: next, medals, collection };
 }
 
 export function acknowledgeBadge(ledger: BadgeLedger, id: string): BadgeLedger {
   const record = ledger.records[id];
-  if (!record || record.acknowledged) {
+  if (!record || (record.acknowledged && record.celebrated)) {
     return ledger;
   }
-  return {
-    records: {
-      ...ledger.records,
-      [id]: { unlockedAt: record.unlockedAt, acknowledged: true },
-    },
-  };
+  return withRecord(ledger, id, {
+    unlockedAt: record.unlockedAt,
+    acknowledged: true,
+    celebrated: true,
+  });
+}
+
+export function markCollectionCelebrated(ledger: BadgeLedger): BadgeLedger {
+  if (ledger.collectionCelebrated) {
+    return ledger;
+  }
+  return { records: ledger.records, collectionCelebrated: true };
 }
 
 export function clearStoredBadges(): void {

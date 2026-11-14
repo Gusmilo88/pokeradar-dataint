@@ -15,15 +15,6 @@ function presentationLabel(state: BadgeView["presentation"]): string {
   return "Bloqueada";
 }
 
-function joinList(items: readonly string[]): string {
-  if (items.length <= 1) {
-    return items[0] ?? "";
-  }
-  const head = items.slice(0, -1).join(", ");
-  const last = items[items.length - 1] ?? "";
-  return `${head} y ${last}`;
-}
-
 function formatUnlock(badge: BadgeView): string {
   if (!badge.unlocked) {
     return "Pendiente";
@@ -108,13 +99,15 @@ function MedalBlank() {
 
 function MedalArt({ badge }: { badge: BadgeView }) {
   const [failed, setFailed] = useState(false);
-  const shine = badge.presentation === "fresh" ? "armed" : "idle";
   return (
-    <span className="badge-face" data-state={badge.presentation} data-shine={shine} data-asset={badge.assetPath}>
-      {badge.unlocked && !failed ? (
-        // El archivo lo agrega el proyecto. Hasta entonces queda el engaste.
+    <span className="badge-face" data-state={badge.presentation}>
+      {failed ? (
+        <MedalBlank />
+      ) : (
+        // La gema real. Bloqueada se apaga con CSS, sin otro dibujo.
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          className="badge-photo"
           src={badge.assetPath}
           alt=""
           width={256}
@@ -123,20 +116,24 @@ function MedalArt({ badge }: { badge: BadgeView }) {
           decoding="async"
           onError={() => setFailed(true)}
         />
-      ) : (
-        <MedalBlank />
       )}
     </span>
   );
 }
 
-function MedalOrbit({ badge }: { badge: BadgeView }) {
-  const style = {
+function badgeStyle(badge: BadgeView): CSSProperties {
+  return {
     "--badge-metal": badge.palette.metal,
     "--badge-gem": badge.palette.gem,
     "--badge-glow": badge.palette.glow,
+    "--badge-wash": badge.palette.wash,
+    "--badge-edge": badge.palette.edge,
     "--badge-progress": String(badge.progressPercent),
   } as CSSProperties;
+}
+
+function MedalOrbit({ badge }: { badge: BadgeView }) {
+  const style = badgeStyle(badge);
   return (
     <span className="badge-orbit" style={style}>
       <span className="badge-bezel">
@@ -150,12 +147,17 @@ export function BadgeCase({
   badges,
   summary,
   onClose,
-  onAcknowledge,
+  qa = null,
 }: {
   badges: readonly BadgeView[];
   summary: BadgeSummary;
   onClose: () => void;
-  onAcknowledge: (id: string) => void;
+  qa?: {
+    onComplete: (id: string) => void;
+    onCompleteAll: () => void;
+    onReset: () => void;
+    onExit: () => void;
+  } | null;
 }) {
   const titleId = useId();
   const detailTitleId = useId();
@@ -166,15 +168,11 @@ export function BadgeCase({
   const selected = badges.find((badge) => badge.id === selectedId) ?? null;
 
   const closeDetail = useCallback((id: string) => {
-    const badge = badges.find((item) => item.id === id);
-    if (badge?.presentation === "fresh") {
-      onAcknowledge(id);
-    }
     setSelectedId(null);
     window.setTimeout(() => {
       document.querySelector<HTMLButtonElement>(`[data-badge-slot="${CSS.escape(id)}"]`)?.focus();
     }, 0);
-  }, [badges, onAcknowledge]);
+  }, []);
 
   useEffect(() => {
     if (selectedId) {
@@ -193,6 +191,9 @@ export function BadgeCase({
         return;
       }
       if (document.querySelector('.capture-stage[data-capture="running"]')) {
+        return;
+      }
+      if (document.querySelector("[data-badge-ceremony]")) {
         return;
       }
       event.preventDefault();
@@ -249,16 +250,24 @@ export function BadgeCase({
             Cerrar
           </button>
         </header>
+        {process.env.NODE_ENV === "development" && qa ? (
+          <div className="badge-qa" data-qa="badges">
+            <p className="badge-qa-note">Prueba en memoria</p>
+            <button type="button" onClick={qa.onCompleteAll}>
+              Completar las 8
+            </button>
+            <button type="button" onClick={qa.onReset}>
+              Reiniciar prueba
+            </button>
+            <button type="button" onClick={qa.onExit}>
+              Salir del modo prueba
+            </button>
+          </div>
+        ) : null}
         <div className="badge-scroll">
           <div className="badge-tray">
             <ul className="badge-grid">
               {badges.map((badge) => {
-                const style = {
-                  "--badge-metal": badge.palette.metal,
-                  "--badge-gem": badge.palette.gem,
-                  "--badge-glow": badge.palette.glow,
-                  "--badge-progress": String(badge.progressPercent),
-                } as CSSProperties;
                 return (
                   <li key={badge.id}>
                     <button
@@ -267,7 +276,7 @@ export function BadgeCase({
                       data-badge-slot={badge.id}
                       data-state={badge.presentation}
                       data-rarity={badge.rarity}
-                      style={style}
+                      style={badgeStyle(badge)}
                       aria-label={`${badge.name}, ${presentationLabel(badge.presentation)}, ${badge.captured} de ${badge.total}`}
                       onClick={() => setSelectedId(badge.id)}
                     >
@@ -302,14 +311,7 @@ export function BadgeCase({
             tabIndex={-1}
             className={`badge-detail ${selected.visualClass}`}
             data-state={selected.presentation}
-            style={
-              {
-                "--badge-metal": selected.palette.metal,
-                "--badge-gem": selected.palette.gem,
-                "--badge-glow": selected.palette.glow,
-                "--badge-progress": String(selected.progressPercent),
-              } as CSSProperties
-            }
+            style={badgeStyle(selected)}
             onClick={(event) => event.stopPropagation()}
             onKeyDown={trapTab}
           >
@@ -340,11 +342,17 @@ export function BadgeCase({
                   </li>
                 ))}
               </ul>
-              {!selected.unlocked && selected.missing.length > 0 ? (
-                <p className="badge-missing">Falta: {joinList(selected.missing.map((item) => item.label))}.</p>
-              ) : null}
-              <p className="badge-path">Lugar del arte · {selected.assetPath}</p>
               <div className="badge-detail-actions">
+                {process.env.NODE_ENV === "development" && qa ? (
+                  <button
+                    type="button"
+                    className="badge-qa-button"
+                    disabled={selected.missing.length === 0}
+                    onClick={() => qa.onComplete(selected.id)}
+                  >
+                    Completar medalla
+                  </button>
+                ) : null}
                 <button type="button" className="action-button inline-flex items-center justify-center" onClick={() => closeDetail(selected.id)}>
                   Cerrar
                 </button>

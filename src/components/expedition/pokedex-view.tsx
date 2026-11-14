@@ -138,6 +138,9 @@ export function PokedexView({
       if (document.querySelector("[data-badge-case]")) {
         return;
       }
+      if (document.querySelector("[data-badge-ceremony]")) {
+        return;
+      }
       event.preventDefault();
       event.stopImmediatePropagation();
       if (confirmReset) {

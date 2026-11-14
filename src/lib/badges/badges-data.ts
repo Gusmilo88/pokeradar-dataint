@@ -14,6 +14,8 @@ export interface BadgePalette {
   metal: string;
   gem: string;
   glow: string;
+  wash: string;
+  edge: string;
 }
 
 export interface BadgeSpecies {
@@ -90,7 +92,7 @@ export const BADGES: readonly BadgeDefinition[] = [
     id: "roca",
     name: "Roca",
     description: "Esmalte de pizarra y gema ocre. Se gana en la montaña y en la cueva.",
-    palette: { metal: "#c4bfb6", gem: "#9a7b52", glow: "#ffe0a8" },
+    palette: { metal: "#d5dde8", gem: "#eef3f8", glow: "#f7fbff", wash: "#1a2430", edge: "#c5d0dc" },
     speciesIds: ["kanto-074", "kanto-076", "kanto-095", "kanto-142"],
   }),
   // Cascada: línea de agua de campo, del arroyo a la costa.
@@ -98,7 +100,7 @@ export const BADGES: readonly BadgeDefinition[] = [
     id: "cascada",
     name: "Cascada",
     description: "Agua atrapada en metal claro. Sale del río, la cascada y la costa.",
-    palette: { metal: "#d5e7f5", gem: "#3aa0e0", glow: "#9ad7ff" },
+    palette: { metal: "#b7e4f8", gem: "#3ec4e8", glow: "#d7f6ff", wash: "#062433", edge: "#7fd4f0" },
     speciesIds: ["kanto-007", "kanto-129", "kanto-130", "kanto-131", "kanto-009", "kanto-118"],
   }),
   // Trueno: eléctricos de campo. Zapdos es el enclave de tormenta.
@@ -106,7 +108,7 @@ export const BADGES: readonly BadgeDefinition[] = [
     id: "trueno",
     name: "Trueno",
     description: "Oro eléctrico. El brillo queda listo para el relámpago.",
-    palette: { metal: "#f0d78a", gem: "#ffe14a", glow: "#fff1a8" },
+    palette: { metal: "#f3d56a", gem: "#ffe14a", glow: "#fff6b0", wash: "#2a2208", edge: "#ffe38a" },
     speciesIds: ["kanto-025", "kanto-100", "kanto-125", "kanto-081", "kanto-145"],
   }),
   // Arcoíris: jardín, planta, vuelo y hada.
@@ -114,7 +116,7 @@ export const BADGES: readonly BadgeDefinition[] = [
     id: "arcoiris",
     name: "Arcoíris",
     description: "El arco sobre el jardín. Planta, vuelo y un toque de hada.",
-    palette: { metal: "#f7f1e4", gem: "#ff77c8", glow: "#fff4fb" },
+    palette: { metal: "#f7f1e4", gem: "#ff77c8", glow: "#fff4fb", wash: "#241428", edge: "#ffd0ea" },
     speciesIds: ["kanto-001", "kanto-069", "kanto-103", "kanto-012", "kanto-036"],
   }),
   // Alma: veneno y sombra, la medalla rosa.
@@ -122,7 +124,7 @@ export const BADGES: readonly BadgeDefinition[] = [
     id: "alma",
     name: "Alma",
     description: "Rosa profundo. Veneno, sombra y lo que no se ve de día.",
-    palette: { metal: "#f0c6d8", gem: "#e85aa0", glow: "#ffc1df" },
+    palette: { metal: "#f0b7d8", gem: "#c46bff", glow: "#ffd0f2", wash: "#2a1024", edge: "#e7a0e0" },
     speciesIds: ["kanto-109", "kanto-042", "kanto-015", "kanto-094", "kanto-073"],
   }),
   // Pantano: mente y agua quieta. Mewtwo y Mew son los enclaves de laboratorio y bosque.
@@ -130,7 +132,7 @@ export const BADGES: readonly BadgeDefinition[] = [
     id: "pantano",
     name: "Pantano",
     description: "Oro de ciénaga. Mente quieta, agua lenta y lo que casi no aparece.",
-    palette: { metal: "#e6d39a", gem: "#d4a017", glow: "#ffe7a0" },
+    palette: { metal: "#f0d78a", gem: "#ffd15a", glow: "#fff1b8", wash: "#2a220c", edge: "#ffe08a" },
     speciesIds: ["kanto-079", "kanto-054", "kanto-121", "kanto-150", "kanto-151"],
   }),
   // Volcán: fuego de campo. Moltres es el enclave de brasa.
@@ -138,7 +140,7 @@ export const BADGES: readonly BadgeDefinition[] = [
     id: "volcan",
     name: "Volcán",
     description: "Fuego en el borde del metal. Llama de campo y de leyenda.",
-    palette: { metal: "#f0b089", gem: "#e23b2f", glow: "#ffb199" },
+    palette: { metal: "#ffb199", gem: "#e23b2f", glow: "#ffd0c2", wash: "#2a0c0c", edge: "#ff8a6a" },
     speciesIds: ["kanto-004", "kanto-006", "kanto-058", "kanto-146"],
   }),
   // Tierra: suelo, arena y hueso.
@@ -146,7 +148,7 @@ export const BADGES: readonly BadgeDefinition[] = [
     id: "tierra",
     name: "Tierra",
     description: "Verde de suelo vivo. Arena, hueso y cuerno.",
-    palette: { metal: "#d7e2b8", gem: "#7fbf45", glow: "#d6ff9a" },
+    palette: { metal: "#b7e7c4", gem: "#3dce7a", glow: "#d6ffe4", wash: "#0c2418", edge: "#7dffb0" },
     speciesIds: ["kanto-027", "kanto-050", "kanto-104", "kanto-105", "kanto-111"],
   }),
 ];

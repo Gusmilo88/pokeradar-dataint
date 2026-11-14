@@ -3,6 +3,7 @@
 import { MotionConfig, motion } from "framer-motion";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { BadgeCase } from "@/components/expedition/badge-case";
+import { BadgeCeremony } from "@/components/expedition/badge-ceremony";
 import { DetailDock } from "@/components/expedition/detail-dock";
 import { AnomalyGate } from "@/components/expedition/anomaly-gate";
 import { EncounterModal } from "@/components/expedition/encounter-modal";
@@ -16,6 +17,7 @@ import { useArgentinaNow } from "@/components/expedition/use-clock";
 import { useDossier, type DossierEntry } from "@/components/expedition/use-dossier";
 import { useFieldTypes } from "@/components/expedition/use-field-types";
 import { useBadges } from "@/components/expedition/use-badges";
+import { useBadgeQaMode, useQaBadgeSession } from "@/components/expedition/use-badge-qa";
 import { useProgress } from "@/components/expedition/use-progress";
 import { useRegionWeather } from "@/components/expedition/use-region-weather";
 import { useTeam } from "@/components/expedition/use-team";
@@ -71,7 +73,10 @@ export function ExpeditionScreen() {
   const dexOpener = useRef<HTMLElement | null>(null);
   const badgeOpener = useRef<HTMLElement | null>(null);
   const { progress, hydrated, markSeen, markCaught, reset } = useProgress();
-  const badges = useBadges(progress.caught);
+  const qaMode = useBadgeQaMode();
+  const liveBadges = useBadges(progress.caught);
+  const qaBadges = useQaBadgeSession(qaMode.active);
+  const badges = qaMode.active ? qaBadges : liveBadges;
   const team = useTeam(progress.caught, hydrated);
 
   const rememberName = useCallback((entry: DossierEntry) => {
@@ -246,6 +251,10 @@ export function ExpeditionScreen() {
   }
 
   const zone = selected ? (findZone(selected.zoneId) ?? null) : null;
+  const badgeCeremony = badges.ceremony;
+  const badgeCeremonyMedal = badgeCeremony?.kind === "medal"
+    ? (badges.badges.find((entry) => entry.id === badgeCeremony.id) ?? null)
+    : null;
   const focusedZone = findZone(focusedZoneId ?? "") ?? null;
 
   return (
@@ -397,11 +406,33 @@ export function ExpeditionScreen() {
             onTeam={team.add}
           />
         ) : null}
+        {badgeCeremony ? (
+          <BadgeCeremony
+            item={badgeCeremony}
+            badge={badgeCeremonyMedal}
+            badges={badges.badges}
+            pending={badges.pending}
+            onClose={badges.dismissCeremony}
+            onSkip={badges.skipCeremonies}
+          />
+        ) : null}
         {badgesOpen ? (
           <BadgeCase
             badges={badges.badges}
             summary={badges.summary}
-            onAcknowledge={badges.acknowledge}
+            qa={
+              process.env.NODE_ENV === "development" && qaMode.active
+                ? {
+                    onComplete: qaBadges.completeBadge,
+                    onCompleteAll: qaBadges.completeAll,
+                    onReset: qaBadges.resetQa,
+                    onExit: () => {
+                      qaBadges.resetQa();
+                      qaMode.exit();
+                    },
+                  }
+                : null
+            }
             onClose={() => {
               setBadgesOpen(false);
               const opener = badgeOpener.current;

@@ -57,6 +57,43 @@ export function primeCaptureAudio(): void {
   void next.resume();
 }
 
+/** Fanfarria corta de medalla. El silencio la corta. Reduced motion no la silencia. */
+export function playBadgeFanfare(kind: "medal" | "collection" = "medal"): void {
+  if (!readCaptureAudio()) {
+    return;
+  }
+  const audio = audioContext();
+  if (!audio) {
+    return;
+  }
+  void audio.resume();
+  active?.stop();
+  const mine = ticket + 1;
+  ticket = mine;
+  const started = audio.currentTime;
+  const master = audio.createGain();
+  master.gain.setValueAtTime(0.0001, started);
+  master.connect(audio.destination);
+  chime(audio, master, started, 523, 784, 0.18);
+  chime(audio, master, started + 0.12, 659, 988, 0.22);
+  if (kind === "collection") {
+    chime(audio, master, started + 0.26, 784, 1174, 0.28);
+  }
+  const stop = () => {
+    const at = audio.currentTime;
+    master.gain.cancelScheduledValues(at);
+    master.gain.setTargetAtTime(0.0001, at, 0.02);
+    window.setTimeout(() => master.disconnect(), 180);
+  };
+  active = { stop };
+  window.setTimeout(() => {
+    if (ticket === mine) {
+      active = null;
+      master.disconnect();
+    }
+  }, kind === "collection" ? 900 : 640);
+}
+
 export function playCaptureCue(cue: CaptureCue): void {
   if (!readCaptureAudio()) {
     return;
