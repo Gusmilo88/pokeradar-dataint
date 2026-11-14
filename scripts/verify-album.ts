@@ -1,4 +1,4 @@
-import { albumAccentLabel, albumCounts, albumHitPoints, albumMatches, filterAlbum } from "../src/lib/expedition/album";
+import { albumAccentLabel, albumArtwork, albumCounts, albumHitPoints, albumMatches, filterAlbum } from "../src/lib/expedition/album";
 import { KANTO_CATALOG } from "../src/lib/expedition/kanto";
 import { emptyProgress, markCaught, markSeen } from "../src/lib/expedition/progress";
 
@@ -83,6 +83,20 @@ if (albumHitPoints([{ name: "attack", value: 80 }]) !== null) {
 }
 if (albumHitPoints([{ name: "hp", value: 90 }, { name: "attack", value: 10 }]) !== 90) {
   fail("El PS no salió de la estadística de vida.");
+}
+const sprites = {
+  officialArtwork: "https://example.test/art.png",
+  blackWhite: "https://example.test/bw.png",
+  front_default: "https://example.test/front.png",
+};
+if (albumArtwork(sprites, false) !== null) {
+  fail("Una carta oculta recibió artwork.");
+}
+if (albumArtwork(sprites, true) !== sprites.officialArtwork) {
+  fail("El frente no usó el artwork oficial.");
+}
+if (albumArtwork({ ...sprites, officialArtwork: null }, true) !== sprites.blackWhite) {
+  fail("Sin artwork, el frente no cayó al sprite.");
 }
 
 console.log("OK album total=56 filters=5 aerodactyl=fossil mew=grove");

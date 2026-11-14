@@ -40,7 +40,7 @@ El progreso vive en `localStorage`, clave `pokeradar.progress.v1`, versión 1: l
 
 El índice y la ficha no comparten el panel: con una criatura elegida, Ficha e Índice alternan. Cerrar guarda la selección. En escritorio el mapa ocupa el ancho que deja el panel; un botón Bitácora lo vuelve a abrir. En el teléfono el panel es una hoja inferior, y al cerrarla el mapa crece. El momento (explorar, descubrir, registrar) es un texto de estado, no un botón.
 
-La Pokédex es un álbum de las 56 entradas, ordenadas por número de expedición. Se abre encima del mapa, que sigue montado: el zoom y la selección no se pierden al volver. Una carta se abre centrada sobre la grilla, en escritorio y en teléfono. Escape cierra esa carta y devuelve el foco; otro Escape cierra el álbum. Una entrada desconocida abre una carta sellada con el número, `???` y la silueta, sin el nombre ni los tipos. Las seis reservadas dicen que todavía no tienen región de campo. «Buscar en el mapa» elige el encuentro de campo y cierra el álbum.
+La Pokédex es un álbum de las 56 entradas, ordenadas por número de expedición. Se abre encima del mapa, que sigue montado: el zoom y la selección no se pierden al volver. Una carta se abre centrada sobre la grilla, en escritorio y en teléfono. Escape cierra esa carta y devuelve el foco; otro Escape cierra el álbum. Una entrada desconocida abre una carta sellada con el número, `???` y la silueta, sin el nombre ni los tipos. El frente revelado usa el artwork oficial de la misma ficha; el reverso guarda estadísticas, dificultad y la captura. Las seis reservadas dicen que todavía no tienen región de campo. «Buscar en el mapa» elige el encuentro de campo y cierra el álbum.
 
 Si la API falla, la bitácora muestra el error y un reintento. No se completan tipos ni estadísticas inventadas y no se marca la especie como vista. Una respuesta vieja no pisa la criatura que quedó seleccionada después, ni la descubre.
 
@@ -250,7 +250,7 @@ No se usó un teléfono real. No se abrió la Pokédex en esta pasada. No se ocu
 
 ## Qué queda para el bloque siguiente
 
-No hay clima, gritos de especie ni equipo. La holografía animada de las cartas raras queda pendiente. Cada enclave pide su exterior, su interior, su paleta y su propia revelación; la central eléctrica no recolorea la nevada, el volcán no recolorea la lluvia, la caverna no recolorea el fuego ni el hielo, el laboratorio no recolorea esas ceremonias y el refugio no recolorea el altar. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal. Las islas del Atlántico Sur se dibujan aparte y el encuadre nacional no las mete alejando el zoom. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula.
+No hay clima, gritos de especie ni equipo. El foil de las raras es un velo estático que en escritorio sigue el puntero; no hay un bucle holográfico. Cada enclave pide su exterior, su interior, su paleta y su propia revelación; la central eléctrica no recolorea la nevada, el volcán no recolorea la lluvia, la caverna no recolorea el fuego ni el hielo, el laboratorio no recolorea esas ceremonias y el refugio no recolorea el altar. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal. Las islas del Atlántico Sur se dibujan aparte y el encuadre nacional no las mete alejando el zoom. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula.
 
 ## Decisiones
 
@@ -267,6 +267,8 @@ No hay clima, gritos de especie ni equipo. La holografía animada de las cartas 
 | Caché en memoria, ficha al elegir | Cero fichas al entrar; el detalle, bajo demanda | Prefetch de las 56 fichas |
 | Álbum sobre la Pokédex existente | Las cartas leen el mismo progreso y piden la ficha solo al abrir una revelada | Una tabla nueva o precargar las 56 fichas |
 | Carta centrada, no panel lateral | El PS, los tipos y la dificultad salen de la misma ficha y de la misma fórmula | Una segunda fuente de datos o un panel fijo a la derecha |
+| Frente y reverso en la misma ficha | El artwork es `official-artwork` de PokéAPI y el giro es CSS; la captura queda en el reverso | TCGdex, una segunda ficha o una biblioteca 3D |
+| Velo fijo del modal | El fondo cubre el viewport y solo se desplaza la carta | Un scrim dentro del contenedor que hace scroll |
 | Worker en `public/` | Vercel sirve el estático sin leer `node_modules` en runtime | Mantener la ruta que hacía `fs.readFile` |
 | Sustituto del icono ausente, con `console.warn` | El mapa no se cae y el hueco del sprite queda visible | `hasImage`, que dispara el error, o silenciar la consola |
 | No correr `audit fix --force` | El arreglo baja ESLint un major y no toca producción | Actualizar toda la cadena de lint |

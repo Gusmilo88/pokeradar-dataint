@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { CaptureStage, type CaptureReel } from "@/components/expedition/capture-stage";
 import { prefersReducedMotion } from "@/lib/a11y/motion";
 import { captureAccent } from "@/lib/expedition/capture-accent";
@@ -267,8 +268,9 @@ export function CapturePanel({
 
   return (
     <>
-      {stageOpen ? (
-        <CaptureStage
+      {stageOpen
+        ? createPortal(
+            <CaptureStage
           reel={manual ? "still" : reel}
           step={run.status === "running" ? run.step : 0}
           steps={run.status === "running" ? run.steps : level <= 5 ? 3 : 4}
@@ -299,8 +301,10 @@ export function CapturePanel({
             }
             setRun(complete(stepCapture(current)));
           }}
-        />
-      ) : null}
+        />,
+            document.body,
+          )
+        : null}
       <div className="capture-panel pointer-events-auto mt-4 border border-phosphor/25 bg-abyss/80 px-3 py-3">
         {stageOpen ? (
           <p className="text-sm text-quiet">Captura en curso.</p>

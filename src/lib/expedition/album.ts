@@ -36,6 +36,24 @@ export function albumAccent(entry: CatalogEntry): CaptureAccentId | null {
   return entry.role === "reserved" ? captureAccent(entry.encounterId) : null;
 }
 
+/**
+ * Ilustración del frente. Solo si la carta ya está revelada.
+ * Primero el artwork oficial de la ficha; si falta, el sprite que ya tenemos.
+ */
+export function albumArtwork(
+  sprites: {
+    officialArtwork: string | null;
+    blackWhite: string | null;
+    front_default: string | null;
+  } | null,
+  revealed: boolean,
+): string | null {
+  if (!revealed || sprites === null) {
+    return null;
+  }
+  return sprites.officialArtwork ?? sprites.blackWhite ?? sprites.front_default;
+}
+
 /** El PS de la carta es la estadística `hp`. Si no está, no se inventa. */
 export function albumHitPoints(stats: readonly { name: string; value: number }[]): number | null {
   const hp = stats.find((stat) => stat.name === "hp");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useCallback, useEffect, useId, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { CapturePanel } from "@/components/expedition/capture-panel";
 import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import { useDossier } from "@/components/expedition/use-dossier";
@@ -9,6 +9,7 @@ import {
   albumAccent,
   albumAccentLabel,
   albumCounts,
+  albumArtwork,
   albumHitPoints,
   filterAlbum,
   type AlbumFilter,
@@ -20,6 +21,7 @@ import { KANTO_CATALOG, type CatalogEntry } from "@/lib/expedition/kanto";
 import { findZone } from "@/lib/expedition/pins";
 import { discoveryState, type Progress } from "@/lib/expedition/progress";
 import { speciesLabel, statLabel, STAT_SCALE, typeLabel } from "@/lib/pokeapi/labels";
+import { blackWhiteStill } from "@/lib/pokeapi/sprites";
 import "./album.css";
 
 const ORDERED = [...KANTO_CATALOG].sort(
@@ -104,8 +106,8 @@ export function PokedexView({
     if (focusNumber === null) {
       return;
     }
-    document.getElementById(detailTitleId)?.focus();
-  }, [detailTitleId, focusNumber]);
+    document.querySelector<HTMLButtonElement>(".tcg-front .tcg-flip")?.focus();
+  }, [focusNumber]);
 
   function trapTab(event: ReactKeyboardEvent<HTMLDivElement>) {
     if (event.key !== "Tab" || event.defaultPrevented) {
@@ -138,23 +140,29 @@ export function PokedexView({
       aria-modal="true"
       aria-labelledby={titleId}
       className="album-shell absolute inset-0 z-40 flex min-h-0 flex-col overflow-x-hidden"
+      data-card={focused ? "open" : undefined}
       onKeyDown={trapTab}
     >
       <header className="album-head" inert={focused ? true : undefined}>
-        <svg className="album-ring" viewBox="0 0 36 36" aria-hidden="true">
-          <circle className="album-ring-track" cx="18" cy="18" r="15.5" pathLength="100" />
-          <circle
-            className="album-ring-value"
-            cx="18"
-            cy="18"
-            r="15.5"
-            pathLength="100"
-            strokeDasharray={`${ratio} 100`}
-          />
-          <text className="album-ring-label" x="18" y="19.2" textAnchor="middle">
-            {counts.percent}%
-          </text>
-        </svg>
+        <div className="album-ring-wrap">
+          <svg className="album-ring" viewBox="0 0 36 36" aria-hidden="true">
+            <circle className="album-ring-track" cx="18" cy="18" r="15.5" pathLength="100" />
+            <circle
+              className="album-ring-value"
+              cx="18"
+              cy="18"
+              r="15.5"
+              pathLength="100"
+              strokeDasharray={`${ratio} 100`}
+            />
+          </svg>
+          <p className="album-ring-label">
+            <span className="album-ring-figure">
+              <span>{counts.percent}</span>
+              <span className="album-ring-unit">%</span>
+            </span>
+          </p>
+        </div>
         <div className="min-w-0 flex-1">
           <p className="album-kicker">Colección de campo</p>
           <h2 id={titleId} className="album-title">
@@ -300,6 +308,72 @@ export function PokedexView({
   );
 }
 
+function tiltCard(event: ReactPointerEvent<HTMLElement>, active: boolean) {
+  const node = event.currentTarget;
+  if (!active || event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+  const rect = node.getBoundingClientRect();
+  const px = rect.width === 0 ? 0.5 : (event.clientX - rect.left) / rect.width;
+  const py = rect.height === 0 ? 0.5 : (event.clientY - rect.top) / rect.height;
+  node.style.setProperty("--tilt-x", `${((0.5 - py) * 6).toFixed(2)}deg`);
+  node.style.setProperty("--tilt-y", `${((px - 0.5) * 7).toFixed(2)}deg`);
+  node.style.setProperty("--mx", `${(px * 100).toFixed(1)}%`);
+  node.style.setProperty("--my", `${(py * 100).toFixed(1)}%`);
+}
+
+function resetTilt(event: ReactPointerEvent<HTMLElement>) {
+  const node = event.currentTarget;
+  node.style.removeProperty("--tilt-x");
+  node.style.removeProperty("--tilt-y");
+  node.style.removeProperty("--mx");
+  node.style.removeProperty("--my");
+}
+
+function CardPrint({
+  revealed,
+  artwork,
+  nationalId,
+  label,
+}: {
+  revealed: boolean;
+  artwork: string | null;
+  nationalId: number;
+  label: string | null;
+}) {
+  const fallback = blackWhiteStill(nationalId);
+  const preferred = revealed ? (artwork ?? fallback) : fallback;
+  const [generation, setGeneration] = useState(preferred);
+  const [src, setSrc] = useState(preferred);
+  const [failed, setFailed] = useState(false);
+  if (generation !== preferred) {
+    setGeneration(preferred);
+    setSrc(preferred);
+    setFailed(false);
+  }
+  if (failed) {
+    return <p className="tcg-missing">Sin señal</p>;
+  }
+  return (
+    // El artwork sale de la ficha de PokéAPI. next/image pediría un remotePattern.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={revealed && label ? `Ilustración de ${label}` : ""}
+      data-print={revealed && artwork && src === artwork ? "art" : "sprite"}
+      className={revealed ? "tcg-print" : "tcg-print tcg-silhouette"}
+      draggable={false}
+      onError={() => {
+        if (src !== fallback) {
+          setSrc(fallback);
+          return;
+        }
+        setFailed(true);
+      }}
+    />
+  );
+}
+
 function DexCard({
   entry,
   state,
@@ -338,133 +412,217 @@ function DexCard({
       : null;
   const status =
     state === "caught" ? "En la colección" : state === "seen" ? "Visto" : "Desconocido";
+  const artwork = albumArtwork(
+    ready
+      ? {
+          officialArtwork: ready.pokemon.sprites.officialArtwork,
+          blackWhite: ready.pokemon.sprites.blackWhite,
+          front_default: ready.pokemon.sprites.front_default,
+        }
+      : null,
+    revealed,
+  );
+  const primaryType = accent ? null : (ready?.pokemon.types[0]?.type.name ?? null);
+  const [face, setFace] = useState<"front" | "back">("front");
+  const [faceFor, setFaceFor] = useState(entry.encounterId);
+  if (faceFor !== entry.encounterId) {
+    setFaceFor(entry.encounterId);
+    setFace("front");
+  }
+
+  useEffect(() => {
+    document
+      .querySelector<HTMLButtonElement>(face === "back" ? ".tcg-back .tcg-flip" : ".tcg-front .tcg-flip")
+      ?.focus();
+  }, [face, entry.encounterId]);
+
+  function flip() {
+    setFace((current) => (current === "front" ? "back" : "front"));
+  }
+
+  function mapAction() {
+    if (entry.role === "field") {
+      return (
+        <button type="button" className="action-button tcg-action" onClick={() => onSeek(entry.encounterId)}>
+          {revealed ? "Ver en el mapa" : "Buscar en el mapa"}
+        </button>
+      );
+    }
+    if (revealed && enclave) {
+      return (
+        <button type="button" className="action-button tcg-action" onClick={() => onSeek(entry.encounterId)}>
+          Ver en el mapa
+        </button>
+      );
+    }
+    if (entry.role === "reserved") {
+      return <p className="tcg-note">Sin enclave de campo.</p>;
+    }
+    return null;
+  }
 
   return (
     <div className="album-modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <h3 id={titleId} className="sr-only">
+        {name}. {status}.
+      </h3>
       <button type="button" className="album-scrim" aria-label="Cerrar carta" tabIndex={-1} onClick={onBack} />
+      <div
+        className="album-sheet"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            onBack();
+          }
+        }}
+      >
       <article
         className="tcg-card"
         data-state={state === "undiscovered" ? "unknown" : state}
         data-accent={accent ?? undefined}
         data-holo={accent ? "ready" : undefined}
+        data-type={primaryType ?? undefined}
+        data-face={face}
         data-card="open"
         aria-busy={revealed && dossier.phase === "loading" ? true : undefined}
+        onPointerMove={(event) => tiltCard(event, accent !== null)}
+        onPointerLeave={resetTilt}
       >
-        <header className="tcg-top">
-          <div className="min-w-0">
-            <p className="tcg-kicker">Exp. {pad(entry.expeditionNumber)}</p>
-            <h3 id={titleId} tabIndex={0} className="tcg-name">
-              {name}
-            </h3>
-          </div>
-          {revealed ? (
-            <p className="tcg-hp">
-              <span>PS</span>
-              <strong>{hp === null ? "—" : hp}</strong>
-            </p>
-          ) : null}
-        </header>
-        <div className="tcg-art">
-          <div className="tcg-art-sprite">
-            <CreatureSprite
-              nationalId={entry.nationalId}
-              revealed={revealed}
-              label={revealed ? name : null}
-              stillUrl={ready?.pokemon.sprites.blackWhite}
-              animatedUrl={ready?.pokemon.sprites.blackWhiteAnimated}
-            />
-          </div>
-          {accent ? <p className="tcg-rarity">{albumAccentLabel(entry)}</p> : null}
-          {state === "caught" ? <p className="tcg-stamp">En la colección</p> : null}
-        </div>
-        {revealed && ready ? (
-          <p className="album-types tcg-types">
-            {ready.pokemon.types.map((slot) => (
-              <span key={slot.type.name} className="album-type" data-type={slot.type.name}>
-                {typeLabel(slot.type.name)}
-              </span>
-            ))}
-          </p>
-        ) : null}
-        <div className="tcg-box">
-          {revealed && ready ? (
-            <>
-              {ready.species.varieties.length > 1 ? (
-                <p className="tcg-note">Variedad por defecto.</p>
-              ) : null}
-              <ul className="album-stats">
-                {ready.pokemon.stats.map((stat) => (
-                  <li key={stat.stat.name} className="album-stat">
-                    <span>{statLabel(stat.stat.name)}</span>
-                    <span className="album-stat-track">
-                      <span
-                        className="album-stat-fill block"
-                        style={{ width: `${Math.min(100, (stat.base_stat / STAT_SCALE) * 100)}%` }}
-                      />
+        <div className="tcg-rotor">
+          <div className="tcg-face tcg-front" inert={face === "back" ? true : undefined}>
+            <div className="tcg-frame">
+              <header className="tcg-top">
+                <div className="min-w-0">
+                  <p className="tcg-kicker">{revealed ? `#${String(entry.nationalId).padStart(4, "0")}` : "???"}</p>
+                  <p className="tcg-name">{name}</p>
+                </div>
+                {revealed ? (
+                  <p className="tcg-hp">
+                    <span>PS</span>
+                    <strong>{hp === null ? "—" : hp}</strong>
+                  </p>
+                ) : null}
+              </header>
+              {revealed && ready ? (
+                <p className="album-types tcg-types">
+                  {ready.pokemon.types.map((slot) => (
+                    <span key={slot.type.name} className="album-type" data-type={slot.type.name}>
+                      {typeLabel(slot.type.name)}
                     </span>
-                    <span className="text-right text-ink">{stat.base_stat}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="tcg-note">
-                {difficulty === null ? "La dificultad no está disponible." : `Dificultad ${difficulty} de 10.`}
-              </p>
-              <p className="tcg-note">{place ?? "Sin zona de campo."}</p>
-            </>
-          ) : revealed ? (
-            <p role={dossier.phase === "error" ? "alert" : "status"}>
-              {dossier.phase === "error"
-                ? (dossier.message ?? "La ficha no llegó. Sigue registrada como vista.")
-                : "Consultando tipos y estadísticas."}
-            </p>
-          ) : (
-            <>
-              <p className="tcg-sealed">Carta sellada</p>
-              <p>{explorationHint(entry, zone)}</p>
-              <p>Nombre, tipos y estadísticas bloqueados.</p>
-            </>
-          )}
-        </div>
-        <footer className="tcg-foot">
-          <p>{revealed ? `#${String(entry.nationalId).padStart(4, "0")}` : "???"}</p>
-          <p className="album-state">{status}</p>
-        </footer>
-        {dossier.phase === "error" ? (
-          <button type="button" className="action-button tcg-action" onClick={dossier.retry}>
-            Reintentar
-          </button>
-        ) : null}
-        {state === "seen" && ready ? (
-          <CapturePanel
-            key={entry.encounterId}
-            encounterId={entry.encounterId}
-            captureRate={ready.species.capture_rate}
-            baseStats={ready.pokemon.stats.map((stat) => stat.base_stat)}
-            state="seen"
-            nationalId={ready.species.id}
-            stillUrl={ready.pokemon.sprites.blackWhite ?? ready.pokemon.sprites.front_default}
-            animatedUrl={ready.pokemon.sprites.blackWhiteAnimated}
-            label={name}
-            onCaptured={onCaptured}
-          />
-        ) : null}
-        <div className="tcg-actions">
-          {entry.role === "field" ? (
-            <button type="button" className="action-button tcg-action" onClick={() => onSeek(entry.encounterId)}>
-              {revealed ? "Ver en el mapa" : "Buscar en el mapa"}
-            </button>
-          ) : revealed && enclave ? (
-            <button type="button" className="action-button tcg-action" onClick={() => onSeek(entry.encounterId)}>
-              Ver en el mapa
-            </button>
-          ) : entry.role === "reserved" ? (
-            <p className="tcg-note">Sin enclave de campo.</p>
-          ) : null}
-          <button type="button" className="action-button tcg-action tcg-close" onClick={onBack}>
-            Cerrar
-          </button>
+                  ))}
+                </p>
+              ) : null}
+              <div className="tcg-art">
+                <CardPrint revealed={revealed} artwork={artwork} nationalId={entry.nationalId} label={revealed ? name : null} />
+                {accent ? <p className="tcg-rarity">{albumAccentLabel(entry)}</p> : null}
+                {state === "caught" ? <p className="tcg-stamp">En la colección</p> : null}
+              </div>
+              <p className="tcg-imprint">PokéRadar · Exp. {pad(entry.expeditionNumber)}</p>
+              <p className="album-state">{status}</p>
+              {revealed && !ready ? (
+                <p className="tcg-note" role={dossier.phase === "error" ? "alert" : "status"}>
+                  {dossier.phase === "error"
+                    ? (dossier.message ?? "La ficha no llegó. Sigue registrada como vista.")
+                    : "Consultando la ilustración."}
+                </p>
+              ) : null}
+              {!revealed ? (
+                <p className="tcg-note">{explorationHint(entry, zone)}</p>
+              ) : null}
+              <div className="tcg-actions">
+                <button type="button" className="action-button tcg-action tcg-flip" aria-pressed={face === "back"} onClick={flip}>
+                  Girar carta
+                </button>
+                {dossier.phase === "error" ? (
+                  <button type="button" className="action-button tcg-action" onClick={dossier.retry}>
+                    Reintentar
+                  </button>
+                ) : null}
+                {!revealed ? mapAction() : null}
+                <button type="button" className="action-button tcg-action tcg-close" onClick={onBack}>
+                  Cerrar
+                </button>
+              </div>
+            </div>
+            <span className="tcg-foil" aria-hidden="true" />
+          </div>
+          <div className="tcg-face tcg-back" inert={face === "front" ? true : undefined}>
+            <div className="tcg-frame">
+              <header className="tcg-top">
+                <div className="min-w-0">
+                  <p className="tcg-kicker">Ficha de expedición</p>
+                  <p className="tcg-name">{name}</p>
+                </div>
+                <p className="album-state">{status}</p>
+              </header>
+              {revealed && ready ? (
+                <>
+                  {ready.species.varieties.length > 1 ? <p className="tcg-note">Variedad por defecto.</p> : null}
+                  <ul className="album-stats">
+                    {ready.pokemon.stats.map((stat) => (
+                      <li key={stat.stat.name} className="album-stat">
+                        <span>{statLabel(stat.stat.name)}</span>
+                        <span className="album-stat-track">
+                          <span
+                            className="album-stat-fill block"
+                            style={{ width: `${Math.min(100, (stat.base_stat / STAT_SCALE) * 100)}%` }}
+                          />
+                        </span>
+                        <span className="text-right text-ink">{stat.base_stat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="tcg-note">
+                    {difficulty === null ? "La dificultad no está disponible." : `Dificultad ${difficulty} de 10.`}
+                  </p>
+                  <p className="tcg-note">{place ?? "Sin zona de campo."}</p>
+                </>
+              ) : revealed ? (
+                <p className="tcg-note" role={dossier.phase === "error" ? "alert" : "status"}>
+                  {dossier.phase === "error"
+                    ? (dossier.message ?? "La ficha no llegó. Sigue registrada como vista.")
+                    : "Consultando tipos y estadísticas."}
+                </p>
+              ) : (
+                <>
+                  <p className="tcg-sealed">Carta sellada</p>
+                  <p className="tcg-note">{explorationHint(entry, zone)}</p>
+                  <p className="tcg-note">Nombre, tipos y estadísticas bloqueados.</p>
+                </>
+              )}
+              {dossier.phase === "error" ? (
+                <button type="button" className="action-button tcg-action" onClick={dossier.retry}>
+                  Reintentar
+                </button>
+              ) : null}
+              {state === "seen" && ready ? (
+                <CapturePanel
+                  key={entry.encounterId}
+                  encounterId={entry.encounterId}
+                  captureRate={ready.species.capture_rate}
+                  baseStats={ready.pokemon.stats.map((stat) => stat.base_stat)}
+                  state="seen"
+                  nationalId={ready.species.id}
+                  stillUrl={ready.pokemon.sprites.blackWhite ?? ready.pokemon.sprites.front_default}
+                  animatedUrl={ready.pokemon.sprites.blackWhiteAnimated}
+                  label={name}
+                  onCaptured={onCaptured}
+                />
+              ) : null}
+              <div className="tcg-actions">
+                <button type="button" className="action-button tcg-action tcg-flip" aria-pressed={face === "back"} onClick={flip}>
+                  Girar carta
+                </button>
+                {mapAction()}
+                <button type="button" className="action-button tcg-action tcg-close" onClick={onBack}>
+                  Cerrar
+                </button>
+              </div>
+            </div>
+            <span className="tcg-foil" aria-hidden="true" />
+          </div>
         </div>
       </article>
+      </div>
     </div>
   );
 }
