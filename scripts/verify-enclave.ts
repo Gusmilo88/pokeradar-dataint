@@ -4,6 +4,7 @@ import { containsBounds, isEastOfChile } from "../src/lib/expedition/geography";
 import { KANTO_CATALOG } from "../src/lib/expedition/kanto";
 import { buildFieldSightings } from "../src/lib/expedition/sightings";
 import { ATLAS_FRAMES } from "../src/lib/map/atlas-frames";
+import { globeHomeZoom } from "../src/lib/map/globe";
 import {
   ATLANTIC_LABELS,
   atlanticBounds,
@@ -273,6 +274,18 @@ for (let index = 0; index < ENCLAVES.length; index += 1) {
     if (km(enclave.point, sighting) < 25) {
       fail(`${enclave.id} pisa el encuentro ${sighting.id}.`);
     }
+  }
+}
+
+for (const [name, width, height] of [
+  ["1920x1080", 1920, 1080],
+  ["1440x900", 1440, 900],
+  ["960x600", 960, 600],
+  ["390x844", 390, 844],
+] as const) {
+  const zoom = globeHomeZoom(width, height);
+  if (zoom < 1.15 || zoom > 2.05 || zoom >= ARGENTINA_VIEW.zoom) {
+    fail(`El zoom inicial del globo en ${name} es ${zoom}.`);
   }
 }
 

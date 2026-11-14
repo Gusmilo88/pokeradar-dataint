@@ -30,8 +30,18 @@ import {
   OPENFREEMAP_DARK_STYLE,
 } from "@/lib/map/constants";
 import { ARGENTINA_LAND_NOTE } from "@/lib/map/argentina-land";
-import type { AtlasFrame } from "@/lib/map/atlas-frames";
+import { ATLAS_FRAMES, type AtlasFrame } from "@/lib/map/atlas-frames";
 import { applyExpeditionStyle } from "@/lib/map/expedition-style";
+import {
+  applyPlanet,
+  ARGENTINA_APPROACH_ZOOM,
+  concealHiddenMarkers,
+  globeHomeZoom,
+  readPlanetMode,
+  writePlanetMode,
+  type PlanetMode,
+} from "@/lib/map/globe";
+import { ProjectionToggle } from "@/components/map/projection-toggle";
 import { RegionNav } from "@/components/map/region-nav";
 
 setWorkerUrl(MAPLIBRE_WORKER_URL);
@@ -121,6 +131,13 @@ export function MapView({
   const [detail, setDetail] = useState<string | null>(null);
   const [readout, setReadout] = useState<MapReadout>(initialReadout);
   const [layoutTick, setLayoutTick] = useState(0);
+  const [projection, setProjection] = useState<PlanetMode>(readPlanetMode);
+  const projectionRef = useRef(projection);
+  const markersRef = useRef<Marker[]>([]);
+
+  useEffect(() => {
+    projectionRef.current = projection;
+  }, [projection]);
 
   useEffect(() => {
     selectRef.current = onSelectSighting;
@@ -140,14 +157,17 @@ export function MapView({
     const replacedImages = new Set<string>();
     const warnedImages = new Set<string>();
     const reduceMotion = prefersReducedMotion();
+    const planet = projectionRef.current;
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || window.innerHeight;
 
     try {
       map = new MapLibreMap({
         container,
         style: OPENFREEMAP_DARK_STYLE,
         center: ARGENTINA_VIEW.center,
-        zoom: ARGENTINA_VIEW.zoom,
-        minZoom: 3,
+        zoom: planet === "globe" ? globeHomeZoom(width, height) : ARGENTINA_VIEW.zoom,
+        minZoom: 0,
         maxZoom: 16,
         attributionControl: { compact: true, customAttribution: ARGENTINA_LAND_NOTE },
         locale: MAP_LOCALE,
@@ -196,10 +216,31 @@ export function MapView({
       });
     };
 
+    const homeZoom = globeHomeZoom(width, height);
+    let placedHome = false;
+
+    const paintPlanet = () => {
+      const wantHome = !placedHome && projectionRef.current === "globe";
+      const applied = applyPlanet(activeMap, projectionRef.current);
+      if (wantHome && applied === "globe") {
+        activeMap.jumpTo({ center: ARGENTINA_VIEW.center, zoom: homeZoom });
+        placedHome = true;
+      }
+      if (applied === projectionRef.current) {
+        return;
+      }
+      projectionRef.current = applied;
+      writePlanetMode(applied);
+      if (!cancelled) {
+        setProjection(applied);
+      }
+    };
+
     const onStyleLoad = () => {
       styleLoaded = true;
       if (!cancelled) {
         applyExpeditionStyle(activeMap);
+        paintPlanet();
       }
     };
 
@@ -208,6 +249,7 @@ export function MapView({
         return;
       }
       applyExpeditionStyle(activeMap);
+      paintPlanet();
       setPhase("ready");
       setDetail(null);
       publishReadout();
@@ -268,8 +310,13 @@ export function MapView({
       setLayoutTick((value) => value + 1);
     };
 
+    const onMove = () => {
+      concealHiddenMarkers(activeMap, markersRef.current);
+    };
+
     activeMap.on("style.load", onStyleLoad);
     activeMap.on("load", onLoad);
+    activeMap.on("move", onMove);
     activeMap.on("moveend", onMoveEnd);
     activeMap.on("resize", onResize);
     activeMap.on("error", onError);
@@ -280,6 +327,7 @@ export function MapView({
       activeMap.setMissingStyleImageResolver(null);
       activeMap.off("style.load", onStyleLoad);
       activeMap.off("load", onLoad);
+      activeMap.off("move", onMove);
       activeMap.off("moveend", onMoveEnd);
       activeMap.off("resize", onResize);
       activeMap.off("error", onError);
@@ -403,7 +451,11 @@ export function MapView({
       });
     }
 
+    markersRef.current = markers;
+    concealHiddenMarkers(map, markers);
+
     return () => {
+      markersRef.current = [];
       for (const marker of markers) {
         marker.remove();
       }
@@ -445,9 +497,21 @@ export function MapView({
     }
   }, [camera, phase]);
 
+  function chooseProjection(next: PlanetMode) {
+    const map = mapRef.current;
+    if (!map || next === projection) {
+      return;
+    }
+    const applied = applyPlanet(map, next);
+    projectionRef.current = applied;
+    writePlanetMode(applied);
+    setProjection(applied);
+    setLayoutTick((value) => value + 1);
+  }
+
   const liveMessage =
     phase === "ready"
-      ? `Mapa listo. Latitud ${formatLatitude(readout.latitude)}, longitud ${formatLongitude(readout.longitude)}.`
+      ? `${projection === "globe" ? "Globo" : "Mapa"} listo. Latitud ${formatLatitude(readout.latitude)}, longitud ${formatLongitude(readout.longitude)}.`
       : phase === "error"
         ? `Error del mapa. ${detail ?? "No se pudo cargar el estilo."}`
         : "Cargando el mapa de Argentina.";
@@ -464,9 +528,33 @@ export function MapView({
         {liveMessage}
       </p>
       {phase === "ready" ? (
-        <div className="absolute bottom-14 left-3 z-10">
-          <RegionNav onSelect={onExplore} />
-        </div>
+        <>
+          <div className="absolute top-24 left-2 z-10">
+            <ProjectionToggle
+              mode={projection}
+              showArgentina={false}
+              onMode={chooseProjection}
+              onArgentina={() => undefined}
+            />
+          </div>
+          {readout.zoom < ARGENTINA_APPROACH_ZOOM ? (
+            <button
+              type="button"
+              className="planet-approach absolute right-3 bottom-3 z-10"
+              onClick={() => {
+                const frame = ATLAS_FRAMES[0];
+                if (frame) {
+                  onExplore(frame);
+                }
+              }}
+            >
+              Ver Argentina
+            </button>
+          ) : null}
+          <div className="absolute bottom-14 left-3 z-10">
+            <RegionNav onSelect={onExplore} />
+          </div>
+        </>
       ) : null}
       <div className="pointer-events-none absolute top-3 left-3 z-10 rounded-md border border-phosphor/30 bg-void px-3 py-2 font-mono text-[11px] leading-5 text-phosphor-strong">
         <p>LAT {formatLatitude(readout.latitude)}</p>

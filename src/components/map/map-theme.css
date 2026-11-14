@@ -1,5 +1,6 @@
 .maplibregl-map {
   font-family: var(--font-plex-mono), ui-monospace, monospace;
+  background: radial-gradient(circle at 50% 42%, #10283a 0%, #071018 48%, #04080e 100%);
 }
 
 .maplibregl-ctrl-group {
@@ -220,4 +221,58 @@
 .atlas-nav button:focus-visible {
   outline: 2px solid #8ef6df;
   outline-offset: 2px;
+}
+
+.planet-controls {
+  display: grid;
+  gap: 0.35rem;
+  width: 8rem;
+  max-width: calc(100vw - 4.5rem);
+}
+
+.planet-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.planet-toggle button,
+.planet-approach {
+  min-height: 2.75rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(142, 246, 223, 0.35);
+  background: rgba(6, 20, 28, 0.92);
+  color: #e7f6f2;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.planet-toggle button:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.planet-toggle button:last-child {
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.planet-approach {
+  width: 8rem;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.planet-toggle button[aria-pressed="true"],
+.planet-approach:hover {
+  border-color: #8ef6df;
+  color: #8ef6df;
+}
+
+.planet-toggle button:focus-visible,
+.planet-approach:focus-visible {
+  outline: 2px solid #8ef6df;
+  outline-offset: 2px;
+  z-index: 1;
 }
