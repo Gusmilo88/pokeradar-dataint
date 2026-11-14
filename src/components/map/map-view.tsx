@@ -32,6 +32,8 @@ import {
 import { ARGENTINA_LAND_NOTE } from "@/lib/map/argentina-land";
 import { ATLAS_FRAMES, type AtlasFrame } from "@/lib/map/atlas-frames";
 import { applyExpeditionStyle } from "@/lib/map/expedition-style";
+import { markerBand } from "@/lib/map/marker-band";
+import { StarField } from "@/components/map/star-field";
 import {
   applyPlanet,
   ARGENTINA_APPROACH_ZOOM,
@@ -344,6 +346,7 @@ export function MapView({
     const zoom = map.getZoom();
     const showEncounters = zoom >= REGIONAL_ZOOM;
     const labeled = zoom >= INSPECT_ZOOM - 0.4;
+    const band = markerBand(zoom, Math.min(map.getContainer().clientWidth, map.getContainer().clientHeight));
     const project = (pin: FieldPin) => {
       const point = map.project([pin.longitude, pin.latitude]);
       return { x: point.x, y: point.y };
@@ -370,17 +373,34 @@ export function MapView({
       const button = document.createElement("button");
       button.type = "button";
       const dot = pin.kind === "encounter" && !labeled;
+      const compactZone = pin.kind === "zone" && band === "global";
       button.className =
         pin.kind === "enclave"
-          ? "field-pin field-pin-enclave"
+          ? `field-pin field-pin-enclave${band === "global" ? " field-pin-far" : ""}`
           : pin.kind === "zone"
-            ? "field-pin field-pin-zone"
+            ? `field-pin field-pin-zone${compactZone ? " field-pin-compact" : ""}`
             : pin.kind === "stack"
               ? "field-pin field-pin-stack"
-              : dot
-                ? "field-pin field-pin-dot"
-                : "field-pin field-pin-encounter";
-      button.textContent = dot ? "" : pin.shortLabel;
+              : pin.presence === "caught"
+                ? "field-pin field-pin-caught"
+                : dot
+                  ? "field-pin field-pin-dot"
+                  : "field-pin field-pin-encounter";
+      button.textContent = "";
+      if (pin.presence === "caught" && pin.spriteStill) {
+        const img = document.createElement("img");
+        img.alt = "";
+        img.draggable = false;
+        const still = pin.spriteStill;
+        const animated = prefersReducedMotion() ? still : (pin.spriteAnimated ?? still);
+        img.src = animated;
+        img.addEventListener("error", () => {
+          img.src = still;
+        });
+        button.append(img);
+      } else if (!dot) {
+        button.textContent = compactZone ? String(pin.count ?? "") : pin.shortLabel;
+      }
       button.setAttribute("aria-label", pin.label);
       button.dataset.pinId = pin.id;
       if (pin.focusName) {
@@ -524,6 +544,7 @@ export function MapView({
         role="application"
         aria-label="Mapa interactivo de Argentina"
       />
+      {projection === "globe" && readout.zoom < 4 ? <StarField /> : null}
       <p className="sr-only" aria-live="polite">
         {liveMessage}
       </p>

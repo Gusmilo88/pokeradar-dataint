@@ -8,6 +8,7 @@ import {
 import type { Enclave, EnclavePalette } from "@/lib/expedition/enclaves";
 import { KANTO_CATALOG } from "@/lib/expedition/kanto";
 import { speciesLabel } from "@/lib/pokeapi/labels";
+import { blackWhiteAnimated, blackWhiteStill } from "@/lib/pokeapi/sprites";
 
 export const REGIONAL_ZOOM = 6.5;
 export const INSPECT_ZOOM = 12.2;
@@ -38,6 +39,11 @@ export interface FieldPin {
   palette?: EnclavePalette;
   /** Nombre visible solo al enfocar un enclave ya descubierto. */
   focusName?: string;
+  count?: number;
+  presence?: "hidden" | "seen" | "caught";
+  nationalId?: number;
+  spriteStill?: string;
+  spriteAnimated?: string;
 }
 
 function zoneById(zones: readonly ExpeditionZone[]): Map<string, ExpeditionZone> {
@@ -57,6 +63,7 @@ export function buildZonePins(
       longitude: zone.anchor.longitude,
       latitude: zone.anchor.latitude,
       shortLabel: `${zone.stamp}\n${count}`,
+      count,
       label: `${zone.name}, ${zone.region}. ${count} encuentros de ${HABITAT_LABEL[zone.habitat]}. Acercar.`,
       accent: zone.accent,
     };
@@ -68,6 +75,7 @@ export function buildEncounterPins(
   sightings: readonly Sighting[],
   knownNames: ReadonlyMap<string, string>,
   revealedIds: ReadonlySet<string>,
+  caughtIds: ReadonlySet<string>,
 ): FieldPin[] {
   const zonesById = zoneById(zones);
   return sightings.flatMap((sighting) => {
@@ -75,7 +83,8 @@ export function buildEncounterPins(
     if (!zone) {
       return [];
     }
-    const revealed = revealedIds.has(sighting.id);
+    const caught = caughtIds.has(sighting.id);
+    const revealed = caught || revealedIds.has(sighting.id);
     const name = knownNames.get(sighting.speciesName) ?? speciesLabel(sighting.speciesName);
     return [
       {
@@ -84,6 +93,14 @@ export function buildEncounterPins(
         kind: "encounter" as const,
         longitude: sighting.longitude,
         latitude: sighting.latitude,
+        presence: caught ? "caught" : revealed ? "seen" : "hidden",
+        nationalId: sighting.nationalId,
+        ...(caught
+          ? {
+              spriteStill: blackWhiteStill(sighting.nationalId),
+              spriteAnimated: blackWhiteAnimated(sighting.nationalId),
+            }
+          : {}),
         shortLabel: revealed
           ? (name.split(" ")[0]?.slice(0, 9) ?? HABITAT_CODE[zone.habitat])
           : "???",

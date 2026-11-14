@@ -44,6 +44,22 @@ La Pokédex es un álbum de las 56 entradas, ordenadas por número de expedició
 
 Si la API falla, la bitácora muestra el error y un reintento. No se completan tipos ni estadísticas inventadas y no se marca la especie como vista. Una respuesta vieja no pisa la criatura que quedó seleccionada después, ni la descubre.
 
+Los controles comparten el mismo relieve: borde cian, brillo superior y `cursor: pointer` solo en lo que se puede accionar. En la carta, Girar, Mapa y Cerrar quedan en el marco inferior, con área táctil de 44 px y menos peso visual.
+
+La Pokédex sigue en generación I. Los filtros de estado se combinan con los tipos ya revelados: cualquiera de los elegidos, o todos si se pide la intersección. El orden cubre expediente, nombre, las seis estadísticas y la dificultad existente. Una carta desconocida no entra en un filtro de tipo ni aporta su estadística al orden.
+
+Elegir un marcador abre un encuentro centrado sobre el mapa. La bitácora queda como índice. Un capturado muestra en el marcador el sprite Black & White, con el nombre en el texto accesible. El silencio es uno solo, con icono de parlante, en `sessionStorage` (`pokeradar.audio.v1`). El grito usa `cries.latest` y, si falla, `cries.legacy`.
+
+Cinco especies de Buenos Aires tienen horario propio, calculado en `America/Argentina/Buenos_Aires`: Eevee 05:00–08:00, Voltorb 18:00–22:00, Meowth 20:00–05:00, Koffing 21:00–03:00 y Ditto 00:00–04:00. Fuera de esa ventana no hay encuentro salvaje. El progreso ya guardado permanece. Los seis enclaves no usan horario.
+
+El clima actual sale de Open-Meteo, con las coordenadas de la zona, caché de diez minutos y la observación `current`. Lluvia favorece Agua y Eléctrico, nieve Hielo y sol de día Fuego. Si la consulta falla, el mapa vuelve al encuentro base y la zona dice «Clima no disponible». El hábitat mostrado es el que PokéAPI ya publica para esa zona.
+
+El equipo guarda hasta seis capturados en `pokeradar.team.v1`, aparte de `seen` y `caught`. Reiniciar la expedición también lo vacía.
+
+El cielo del globo sigue en `setSky`. El campo de estrellas es local, no recibe clics y queda quieto con movimiento reducido. El océano sigue siendo el relleno nocturno: el WMS de GEBCO anuncia batimetría y CORS abierto, pero `GetMap` respondió un error del servidor al escribir el PNG. No se inventó otra fuente. Argentina, Tierra del Fuego y los tres grupos insulares llevan un relleno celeste propio, cada polígono separado, más transparente al acercar. Lejos, el sello de zona es un círculo con la cantidad; el nombre vuelve antes del zoom de encuentro.
+
+Una ruta inexistente muestra «404 — Señal no encontrada», con una Pokébola en el cero y sin MapLibre.
+
 ## Arquitectura
 
 - Next.js 16 (App Router) y React 19
@@ -139,6 +155,12 @@ npx tsx scripts/verify-pokeapi.ts
 npx tsx scripts/verify-progress.ts
 npx tsx scripts/verify-enclave.ts
 npx tsx scripts/verify-capture.ts
+npx tsx scripts/verify-schedule.ts
+npx tsx scripts/verify-weather.ts
+npx tsx scripts/verify-team.ts
+npx tsx scripts/verify-dex-query.ts
+npx tsx scripts/verify-audio.ts
+npx tsx scripts/verify-markers.ts
 ```
 
 El script pega a PokéAPI. Comprueba Pikachu, rechaza un objeto inválido, recorre los nueve hábitats y exige que Wormadam resuelva a `wormadam-plant`. Para Kanto exige 56 especies, ids nacionales 1–151, sin duplicados, los seis reservados fuera del mapa, coordenadas iguales si se invierte el catálogo, puntos dentro de la zona y al este de la divisoria, cero `fetch` al colocar, y el estado inicial `undiscovered`. Después contrasta cada ficha con `/pokemon-species/{id}`: nombre, generación I y hábitat.

@@ -78,22 +78,70 @@ body {
 }
 
 @layer components {
+  .action-button,
+  .game-icon,
+  .tcg-control {
+    cursor: pointer;
+  }
+
   .action-button {
     min-height: 2.75rem;
     padding: 0 1rem;
-    border: 1px solid rgba(142, 246, 223, 0.5);
+    border: 1px solid rgba(142, 246, 223, 0.55);
     border-radius: 999px;
-    background: rgba(142, 246, 223, 0.12);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 42%),
+      rgba(8, 28, 38, 0.92);
     color: var(--radar-phosphor-strong);
     font-family: var(--font-mono);
     font-size: 0.72rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
+    box-shadow: inset 0 1px 0 rgba(232, 255, 248, 0.28), 0 1px 0 rgba(0, 0, 0, 0.45);
+    transition: background 120ms ease, transform 80ms ease, border-color 120ms ease;
   }
 }
 
-.action-button:hover {
+.action-button:hover,
+.game-icon:hover,
+.tcg-control:hover {
   background: rgba(142, 246, 223, 0.22);
+}
+
+.action-button:active,
+.game-icon:active,
+.tcg-control:active {
+  transform: translateY(1px);
+}
+
+.action-button:disabled,
+.game-icon:disabled,
+.tcg-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
+}
+
+.game-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid rgba(142, 246, 223, 0.55);
+  border-radius: 999px;
+  background: rgba(8, 28, 38, 0.92);
+  color: var(--radar-phosphor-strong);
+}
+
+.game-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .radar-spinner {

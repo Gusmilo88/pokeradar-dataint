@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { PokeBall } from "@/components/expedition/poke-ball";
+import { SoundToggle } from "@/components/expedition/sound-toggle";
 import type { CaptureAccentId } from "@/lib/expedition/capture-accent";
 import { blackWhiteStill } from "@/lib/pokeapi/sprites";
 import "./capture-stage.css";
@@ -22,8 +23,6 @@ export function CaptureStage({
   sceneCreature = false,
   reduced,
   done,
-  soundOn,
-  onToggleSound,
   onSkip,
   onCancel,
   onNext,
@@ -41,8 +40,6 @@ export function CaptureStage({
   sceneCreature?: boolean;
   reduced: boolean;
   done: boolean;
-  soundOn: boolean;
-  onToggleSound: () => void;
   onSkip: () => void;
   onCancel: () => void;
   onNext: () => void;
@@ -155,14 +152,7 @@ export function CaptureStage({
             Cancelar
           </button>
         )}
-        <button
-          type="button"
-          className="action-button inline-flex items-center justify-center"
-          aria-pressed={soundOn}
-          onClick={onToggleSound}
-        >
-          {soundOn ? "Sonido" : "Silencio"}
-        </button>
+        <SoundToggle />
       </div>
     </div>
   );

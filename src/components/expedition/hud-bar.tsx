@@ -1,4 +1,5 @@
 import { RadarMark } from "@/components/expedition/radar-mark";
+import { SoundToggle } from "@/components/expedition/sound-toggle";
 
 export function HudBar({
   seen,
@@ -32,6 +33,7 @@ export function HudBar({
           <p className="rounded-full border border-amber/40 px-3 py-1 font-mono text-[10px] tracking-[0.14em] text-amber uppercase">
             {label}
           </p>
+          <SoundToggle />
           <button type="button" className="action-button inline-flex items-center justify-center" onClick={onDex}>
             Pokédex
           </button>

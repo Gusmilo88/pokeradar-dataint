@@ -11,10 +11,22 @@ import {
   albumCounts,
   albumArtwork,
   albumHitPoints,
-  filterAlbum,
   type AlbumFilter,
 } from "@/lib/expedition/album";
 import { captureDifficulty } from "@/lib/expedition/capture";
+import { playSpeciesCry } from "@/lib/expedition/cries";
+import {
+  GENERATION_LABEL,
+  queryAlbum,
+  revealedTypeNames,
+  SORT_KEYS,
+  type SortDirection,
+  type SortKey,
+  type TypeMode,
+} from "@/lib/expedition/dex-query";
+import { appearanceHint, isFieldWild, nextWindowHint, timeWindow } from "@/lib/expedition/schedule";
+import { TEAM_LIMIT } from "@/lib/expedition/team";
+import { useRevealedFacts } from "@/components/expedition/use-revealed-facts";
 import { findEnclaveByEncounter } from "@/lib/expedition/enclaves";
 import { explorationHint } from "@/lib/expedition/hints";
 import { KANTO_CATALOG, type CatalogEntry } from "@/lib/expedition/kanto";
@@ -30,6 +42,21 @@ const ORDERED = [...KANTO_CATALOG].sort(
 
 function pad(value: number): string {
   return String(value).padStart(2, "0");
+}
+
+function sortLabel(key: SortKey): string {
+  const labels: Record<SortKey, string> = {
+    expedition: "Expediente",
+    name: "Nombre",
+    hp: "PS",
+    attack: "Ataque",
+    defense: "Defensa",
+    "special-attack": "Ataque especial",
+    "special-defense": "Defensa especial",
+    speed: "Velocidad",
+    difficulty: "Dificultad",
+  };
+  return labels[key];
 }
 
 function stateLabel(state: "undiscovered" | "seen" | "caught"): string {
@@ -48,12 +75,18 @@ export function PokedexView({
   onSeek,
   onCaptured,
   onReset,
+  now,
+  teamMembers,
+  onTeam,
 }: {
   progress: Progress;
   onClose: () => void;
   onSeek: (encounterId: string) => void;
   onCaptured: (encounterId: string) => void;
   onReset: () => void;
+  now: Date;
+  teamMembers: readonly string[];
+  onTeam: (encounterId: string) => void;
 }) {
   const titleId = useId();
   const detailTitleId = useId();
@@ -62,9 +95,25 @@ export function PokedexView({
   const [confirmReset, setConfirmReset] = useState(false);
   const [filter, setFilter] = useState<AlbumFilter>("all");
   const [query, setQuery] = useState("");
+  const [chosenTypes, setChosenTypes] = useState<string[]>([]);
+  const [typeMode, setTypeMode] = useState<TypeMode>("any");
+  const [sortKey, setSortKey] = useState<SortKey>("expedition");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const facts = useRevealedFacts(progress);
+  const typeChoices = revealedTypeNames(facts);
   const focused = ORDERED.find((entry) => entry.expeditionNumber === focusNumber) ?? null;
   const counts = albumCounts(progress);
-  const visible = filterAlbum(ORDERED, progress, filter, query);
+  const visible = queryAlbum(
+    ORDERED,
+    progress,
+    filter,
+    query,
+    chosenTypes,
+    typeMode,
+    sortKey,
+    sortDirection,
+    facts,
+  );
   const ratio = counts.total === 0 ? 0 : (counts.caught / counts.total) * 100;
 
   const closeCard = useCallback(() => {
@@ -201,6 +250,63 @@ export function PokedexView({
                 </button>
               ))}
             </div>
+            <p className="album-generation">{GENERATION_LABEL}</p>
+            <div className="album-sort">
+              <label>
+                <span className="sr-only">Ordenar</span>
+                <select
+                  className="album-search"
+                  value={sortKey}
+                  onChange={(event) => setSortKey(event.target.value as SortKey)}
+                >
+                  {SORT_KEYS.map((key) => (
+                    <option key={key} value={key}>
+                      {sortLabel(key)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                className="album-filter"
+                aria-pressed={sortDirection === "desc"}
+                onClick={() => setSortDirection((current) => (current === "asc" ? "desc" : "asc"))}
+              >
+                {sortDirection === "asc" ? "Ascendente" : "Descendente"}
+              </button>
+            </div>
+            {typeChoices.length > 0 ? (
+              <div className="album-filters" role="toolbar" aria-label="Filtrar por tipo revelado">
+                {typeChoices.map((type) => {
+                  const pressed = chosenTypes.includes(type);
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      className="album-filter"
+                      aria-pressed={pressed}
+                      onClick={() => {
+                        setChosenTypes((current) =>
+                          current.includes(type) ? current.filter((item) => item !== type) : [...current, type],
+                        );
+                      }}
+                    >
+                      {typeLabel(type)}
+                    </button>
+                  );
+                })}
+                {chosenTypes.length > 1 ? (
+                  <button
+                    type="button"
+                    className="album-filter"
+                    aria-pressed={typeMode === "all"}
+                    onClick={() => setTypeMode((current) => (current === "any" ? "all" : "any"))}
+                  >
+                    {typeMode === "any" ? "Cualquiera" : "Todos"}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
             <label className="block" htmlFor={searchId}>
               <span className="sr-only">Buscar por nombre o número visible</span>
               <input
@@ -302,6 +408,10 @@ export function PokedexView({
           onBack={closeCard}
           onSeek={onSeek}
           onCaptured={onCaptured}
+          now={now}
+          inTeam={teamMembers.includes(focused.encounterId)}
+          teamFull={teamMembers.length >= TEAM_LIMIT}
+          onTeam={() => onTeam(focused.encounterId)}
         />
       ) : null}
     </div>
@@ -381,6 +491,10 @@ function DexCard({
   onBack,
   onSeek,
   onCaptured,
+  now,
+  inTeam,
+  teamFull,
+  onTeam,
 }: {
   entry: CatalogEntry;
   state: "undiscovered" | "seen" | "caught";
@@ -388,6 +502,10 @@ function DexCard({
   onBack: () => void;
   onSeek: (encounterId: string) => void;
   onCaptured: (encounterId: string) => void;
+  now: Date;
+  inTeam: boolean;
+  teamFull: boolean;
+  onTeam: () => void;
 }) {
   const revealed = state !== "undiscovered";
   const zone = entry.zoneId ? (findZone(entry.zoneId) ?? null) : null;
@@ -423,6 +541,7 @@ function DexCard({
     revealed,
   );
   const primaryType = accent ? null : (ready?.pokemon.types[0]?.type.name ?? null);
+  const [engaged, setEngaged] = useState<string | null>(null);
   const [face, setFace] = useState<"front" | "back">("front");
   const [faceFor, setFaceFor] = useState(entry.encounterId);
   if (faceFor !== entry.encounterId) {
@@ -436,22 +555,43 @@ function DexCard({
       ?.focus();
   }, [face, entry.encounterId]);
 
+  useEffect(() => {
+    if (!revealed || !ready) {
+      return;
+    }
+    playSpeciesCry(ready.pokemon.cries, `dex:${entry.encounterId}`);
+  }, [entry.encounterId, ready, revealed]);
+
   function flip() {
     setFace((current) => (current === "front" ? "back" : "front"));
   }
 
+  const schedule = timeWindow(entry.encounterId);
+  const wild = !schedule || isFieldWild(entry.encounterId, now);
+  const scheduleNote = !schedule
+    ? null
+    : state === "undiscovered"
+      ? appearanceHint(schedule)
+      : wild
+        ? null
+        : nextWindowHint(schedule, now);
+  const catchAllowed = state === "seen" && ready && (wild || engaged === entry.encounterId);
+
   function mapAction() {
+    if (schedule && !wild) {
+      return null;
+    }
     if (entry.role === "field") {
       return (
-        <button type="button" className="action-button tcg-action" onClick={() => onSeek(entry.encounterId)}>
-          {revealed ? "Ver en el mapa" : "Buscar en el mapa"}
+        <button type="button" className="tcg-control" aria-label={revealed ? "Ver en el mapa" : "Buscar en el mapa"} onClick={() => onSeek(entry.encounterId)}>
+          Mapa
         </button>
       );
     }
     if (revealed && enclave) {
       return (
-        <button type="button" className="action-button tcg-action" onClick={() => onSeek(entry.encounterId)}>
-          Ver en el mapa
+        <button type="button" className="tcg-control" aria-label="Ver en el mapa" onClick={() => onSeek(entry.encounterId)}>
+          Mapa
         </button>
       );
     }
@@ -526,19 +666,20 @@ function DexCard({
                 </p>
               ) : null}
               {!revealed ? (
-                <p className="tcg-note">{explorationHint(entry, zone)}</p>
+                <p className="tcg-note">{schedule ? scheduleNote : explorationHint(entry, zone)}</p>
               ) : null}
+              {revealed && scheduleNote ? <p className="tcg-note">{scheduleNote}</p> : null}
               <div className="tcg-actions">
-                <button type="button" className="action-button tcg-action tcg-flip" aria-pressed={face === "back"} onClick={flip}>
-                  Girar carta
+                <button type="button" className="tcg-control tcg-flip" aria-pressed={face === "back"} aria-label="Girar carta" onClick={flip}>
+                  Girar
                 </button>
                 {dossier.phase === "error" ? (
-                  <button type="button" className="action-button tcg-action" onClick={dossier.retry}>
+                  <button type="button" className="tcg-control" onClick={dossier.retry}>
                     Reintentar
                   </button>
                 ) : null}
                 {!revealed ? mapAction() : null}
-                <button type="button" className="action-button tcg-action tcg-close" onClick={onBack}>
+                <button type="button" className="tcg-control tcg-close" onClick={onBack}>
                   Cerrar
                 </button>
               </div>
@@ -585,16 +726,16 @@ function DexCard({
               ) : (
                 <>
                   <p className="tcg-sealed">Carta sellada</p>
-                  <p className="tcg-note">{explorationHint(entry, zone)}</p>
+                  <p className="tcg-note">{schedule ? scheduleNote : explorationHint(entry, zone)}</p>
                   <p className="tcg-note">Nombre, tipos y estadísticas bloqueados.</p>
                 </>
               )}
               {dossier.phase === "error" ? (
-                <button type="button" className="action-button tcg-action" onClick={dossier.retry}>
+                <button type="button" className="tcg-control" onClick={dossier.retry}>
                   Reintentar
                 </button>
               ) : null}
-              {state === "seen" && ready ? (
+              {catchAllowed && ready ? (
                 <CapturePanel
                   key={entry.encounterId}
                   encounterId={entry.encounterId}
@@ -606,14 +747,26 @@ function DexCard({
                   animatedUrl={ready.pokemon.sprites.blackWhiteAnimated}
                   label={name}
                   onCaptured={onCaptured}
+                  onEngage={() => setEngaged(entry.encounterId)}
+                  onRelease={() => setEngaged(null)}
                 />
               ) : null}
+              {state === "caught" && ready ? (
+                <button type="button" className="tcg-control" disabled={inTeam || teamFull} onClick={onTeam}>
+                  {inTeam ? "En el equipo" : teamFull ? "Equipo lleno" : "Al equipo"}
+                </button>
+              ) : null}
+              {ready ? (
+                <button type="button" className="tcg-control" onClick={() => playSpeciesCry(ready.pokemon.cries, `${entry.encounterId}:replay`, true)}>
+                  Grito
+                </button>
+              ) : null}
               <div className="tcg-actions">
-                <button type="button" className="action-button tcg-action tcg-flip" aria-pressed={face === "back"} onClick={flip}>
-                  Girar carta
+                <button type="button" className="tcg-control tcg-flip" aria-pressed={face === "back"} aria-label="Girar carta" onClick={flip}>
+                  Girar
                 </button>
                 {mapAction()}
-                <button type="button" className="action-button tcg-action tcg-close" onClick={onBack}>
+                <button type="button" className="tcg-control tcg-close" onClick={onBack}>
                   Cerrar
                 </button>
               </div>

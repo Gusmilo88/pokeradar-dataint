@@ -13,12 +13,12 @@ export const ARGENTINA_APPROACH_ZOOM = 2.4;
  * para no velar el mapa detallado. MapLibre pasa de globo a Mercator cerca del zoom 11.
  */
 export const PLANET_SKY: SkySpecification = {
-  "sky-color": "rgba(3, 6, 12, 0)",
-  "horizon-color": "#9ed4f2",
-  "sky-horizon-blend": 0.5,
-  "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 0.78, 2, 0.62, 6, 0.2, 11, 0],
-  "horizon-fog-blend": 0.22,
-  "fog-color": "#14344c",
+  "sky-color": "rgba(4, 10, 22, 0)",
+  "horizon-color": "#7fd4e8",
+  "sky-horizon-blend": 0.55,
+  "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 0.86, 2, 0.7, 6, 0.22, 11, 0],
+  "horizon-fog-blend": 0.2,
+  "fog-color": "#12384c",
 };
 
 export function readPlanetMode(): PlanetMode {

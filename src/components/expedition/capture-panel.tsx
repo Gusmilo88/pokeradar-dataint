@@ -1,18 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CaptureStage, type CaptureReel } from "@/components/expedition/capture-stage";
+import { SoundToggle } from "@/components/expedition/sound-toggle";
 import { prefersReducedMotion } from "@/lib/a11y/motion";
 import { captureAccent } from "@/lib/expedition/capture-accent";
 import {
-  CAPTURE_AUDIO_EVENT,
   playCaptureCue,
   primeCaptureAudio,
-  readCaptureAudio,
   stopCaptureAudio,
-  writeCaptureAudio,
 } from "@/lib/expedition/capture-audio";
+import { stopCry } from "@/lib/expedition/cries";
 import { perchPose, type PerchPose } from "@/lib/expedition/perch-pose";
 import {
   abortCapture,
@@ -41,6 +40,8 @@ export function CapturePanel({
   label,
   onCaptured,
   onScenePose,
+  onEngage,
+  onRelease,
 }: {
   encounterId: string;
   captureRate: number;
@@ -52,6 +53,8 @@ export function CapturePanel({
   label: string;
   onCaptured: (encounterId: string) => void;
   onScenePose?: (pose: PerchPose) => void;
+  onEngage?: () => void;
+  onRelease?: () => void;
 }) {
   const difficulty = captureDifficulty(captureRate, baseStats);
   const difficultyLabel = difficulty === null ? null : resistanceLabel(difficulty);
@@ -59,14 +62,6 @@ export function CapturePanel({
   const [manual, setManual] = useState(false);
   const [reel, setReel] = useState<CaptureReel>("still");
   const [showFlash, setShowFlash] = useState(false);
-  const soundOn = useSyncExternalStore(
-    (onChange) => {
-      window.addEventListener(CAPTURE_AUDIO_EVENT, onChange);
-      return () => window.removeEventListener(CAPTURE_AUDIO_EVENT, onChange);
-    },
-    readCaptureAudio,
-    () => true,
-  );
   const committed = useRef(false);
   const lock = useRef(false);
   const successPlayed = useRef(false);
@@ -76,6 +71,7 @@ export function CapturePanel({
   const completeRef = useRef<(next: CaptureRun) => CaptureRun>((next) => next);
   const flashTimer = useRef<number | null>(null);
   const startRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef<() => void>(() => undefined);
 
   useEffect(() => {
     onCapturedRef.current = onCaptured;
@@ -167,7 +163,7 @@ export function CapturePanel({
       }
       event.preventDefault();
       event.stopImmediatePropagation();
-      cancel();
+      cancelRef.current();
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
@@ -212,10 +208,13 @@ export function CapturePanel({
     }
     lock.current = false;
     stopCaptureAudio();
+    onRelease?.();
     setReel("still");
     setRun(abortCapture(runRef.current));
     window.setTimeout(() => startRef.current?.focus(), 0);
   }
+
+  cancelRef.current = cancel;
 
   if (difficulty === null || difficultyLabel === null) {
     return (
@@ -250,6 +249,8 @@ export function CapturePanel({
       return;
     }
     lock.current = true;
+    onEngage?.();
+    stopCry();
     successPlayed.current = false;
     const calm = prefersReducedMotion();
     setManual(calm);
@@ -260,10 +261,6 @@ export function CapturePanel({
       playCaptureCue("throw");
     }
     setRun(next);
-  }
-
-  function toggleSound() {
-    writeCaptureAudio(!readCaptureAudio());
   }
 
   return (
@@ -284,8 +281,6 @@ export function CapturePanel({
           sceneCreature={onScenePose !== undefined}
           reduced={manual}
           done={run.status === "done"}
-          soundOn={soundOn}
-          onToggleSound={toggleSound}
           onSkip={() => {
             const current = runRef.current;
             if (current.status !== "running") {
@@ -335,14 +330,7 @@ export function CapturePanel({
               >
                 Atrapar
               </button>
-              <button
-                type="button"
-                className="action-button inline-flex items-center justify-center"
-                aria-pressed={soundOn}
-                onClick={toggleSound}
-              >
-                {soundOn ? "Sonido" : "Silencio"}
-              </button>
+              <SoundToggle />
             </div>
           </>
         )}

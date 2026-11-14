@@ -32,7 +32,7 @@ export function EncounterIndex({
                 <span className="ml-2 normal-case">{HABITAT_LABEL[zone.habitat]}</span>
               </h4>
               {items.length === 0 ? (
-                <p className="mt-1 text-xs text-quiet">Sin especies.</p>
+                <p className="mt-1 text-xs text-quiet">Ninguna señal activa en esta ventana.</p>
               ) : (
                 <ul className="mt-1">
                   {items.map((sighting) => {

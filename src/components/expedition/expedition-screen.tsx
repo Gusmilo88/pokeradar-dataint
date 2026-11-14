@@ -4,12 +4,19 @@ import { MotionConfig, motion } from "framer-motion";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { DetailDock } from "@/components/expedition/detail-dock";
 import { AnomalyGate } from "@/components/expedition/anomaly-gate";
+import { EncounterModal } from "@/components/expedition/encounter-modal";
 import { EnclaveInvite } from "@/components/expedition/enclave-invite";
 import { GlacialSanctuary } from "@/components/expedition/glacial-sanctuary";
 import { HudBar } from "@/components/expedition/hud-bar";
 import { PokedexView } from "@/components/expedition/pokedex-view";
+import { RegionBrief } from "@/components/expedition/region-brief";
+import { TeamDock } from "@/components/expedition/team-dock";
+import { useArgentinaNow } from "@/components/expedition/use-clock";
 import { useDossier, type DossierEntry } from "@/components/expedition/use-dossier";
+import { useFieldTypes } from "@/components/expedition/use-field-types";
 import { useProgress } from "@/components/expedition/use-progress";
+import { useRegionWeather } from "@/components/expedition/use-region-weather";
+import { useTeam } from "@/components/expedition/use-team";
 import { MapCanvas } from "@/components/map/map-canvas";
 import { EXPEDITION_ZONES } from "@/lib/expedition/argentina";
 import { loadFieldSightings } from "@/lib/expedition/catalog";
@@ -23,7 +30,10 @@ import {
   INSPECT_ZOOM,
 } from "@/lib/expedition/pins";
 import { discoveryState, tally } from "@/lib/expedition/progress";
+import { argentinaClock, isFieldWild } from "@/lib/expedition/schedule";
 import { findSighting } from "@/lib/expedition/sightings";
+import { activeEncounterIds, moodFromSnapshot } from "@/lib/expedition/weather";
+import { TEAM_LIMIT } from "@/lib/expedition/team";
 import type { AtlasFrame } from "@/lib/map/atlas-frames";
 import { speciesLabel } from "@/lib/pokeapi/labels";
 
@@ -38,7 +48,13 @@ interface CameraRequest {
 export function ExpeditionScreen() {
   const sightings = useMemo(() => loadFieldSightings(), []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [notebookOpen, setNotebookOpen] = useState(true);
+  const [notebookOpen, setNotebookOpen] = useState(false);
+  const [probeId, setProbeId] = useState<string | null>(null);
+  const [catchLock, setCatchLock] = useState<string | null>(null);
+  const [focusedZoneId, setFocusedZoneId] = useState<string | null>(null);
+  const now = useArgentinaNow();
+  const weather = useRegionWeather();
+  const fieldTypes = useFieldTypes();
   const [camera, setCamera] = useState<CameraRequest | null>(null);
   const [dexOpen, setDexOpen] = useState(false);
   const [enclaveId, setEnclaveId] = useState<string | null>(null);
@@ -51,6 +67,7 @@ export function ExpeditionScreen() {
   const cameraRequest = useRef(0);
   const dexOpener = useRef<HTMLElement | null>(null);
   const { progress, hydrated, markSeen, markCaught, reset } = useProgress();
+  const team = useTeam(progress.caught, hydrated);
 
   const rememberName = useCallback((entry: DossierEntry) => {
     const label = entry.species.spanishName ?? speciesLabel(entry.species.name);
@@ -69,7 +86,10 @@ export function ExpeditionScreen() {
   }, [markSeen, sightings]);
 
   const selected = findSighting(sightings, selectedId);
-  const dossier = useDossier(selected?.speciesName ?? null, rememberName);
+  const dossier = useDossier(
+    selected && (progress.seen.has(selected.id) || probeId === selected.id) ? selected.speciesName : null,
+    rememberName,
+  );
   const enclave = findEnclave(enclaveId);
   const enclaveCard = enclave
     ? (KANTO_CATALOG.find(
@@ -106,13 +126,48 @@ export function ExpeditionScreen() {
 
   const enclaveDossier = useDossier(revealSpecies, acceptEnclave);
 
+  const activeSightings = useMemo(() => {
+    const byZone = new Map<string, typeof sightings>();
+    for (const sighting of sightings) {
+      if (!isFieldWild(sighting.id, now) && catchLock !== sighting.id) {
+        continue;
+      }
+      const list = byZone.get(sighting.zoneId) ?? [];
+      list.push(sighting);
+      byZone.set(sighting.zoneId, list);
+    }
+    const kept = new Set<string>();
+    for (const [zoneId, list] of byZone) {
+      const report = weather.get(zoneId);
+      const scheduled = list.map((item) => item.id);
+      if (!report || report.status !== "ready") {
+        for (const id of scheduled) {
+          kept.add(id);
+        }
+        continue;
+      }
+      const ids = activeEncounterIds(
+        scheduled,
+        (id) => fieldTypes.get(id) ?? null,
+        moodFromSnapshot(report.snapshot),
+        argentinaClock(now).dayIndex,
+      );
+      for (const id of ids) {
+        kept.add(id);
+      }
+      if (catchLock && scheduled.includes(catchLock)) {
+        kept.add(catchLock);
+      }
+    }
+    return sightings.filter((sighting) => kept.has(sighting.id));
+  }, [catchLock, fieldTypes, now, sightings, weather]);
   const zonePins = useMemo(
-    () => buildZonePins(EXPEDITION_ZONES, sightings),
-    [sightings],
+    () => buildZonePins(EXPEDITION_ZONES, activeSightings),
+    [activeSightings],
   );
   const encounterPins = useMemo(
-    () => buildEncounterPins(EXPEDITION_ZONES, sightings, knownNames, progress.seen),
-    [knownNames, progress.seen, sightings],
+    () => buildEncounterPins(EXPEDITION_ZONES, activeSightings, knownNames, progress.seen, progress.caught),
+    [activeSightings, knownNames, progress.caught, progress.seen],
   );
   const enclavePins = useMemo(
     () => buildEnclavePins(ENCLAVES, progress.seen, knownNames),
@@ -139,11 +194,14 @@ export function ExpeditionScreen() {
     if (!sighting) {
       return;
     }
+    if (!activeSightings.some((item) => item.id === id) && catchLock !== id) {
+      return;
+    }
     setEnclaveId(null);
     setVisit(null);
     setExamining(false);
+    setProbeId(progress.seen.has(id) ? id : null);
     setSelectedId(id);
-    setNotebookOpen(true);
     focusCamera(sighting.longitude, sighting.latitude, INSPECT_ZOOM);
   }
 
@@ -178,10 +236,12 @@ export function ExpeditionScreen() {
     if (!zone) {
       return;
     }
+    setFocusedZoneId(zoneId);
     focusCamera(zone.anchor.longitude, zone.anchor.latitude, 8);
   }
 
   const zone = selected ? (findZone(selected.zoneId) ?? null) : null;
+  const focusedZone = findZone(focusedZoneId ?? "") ?? null;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -229,6 +289,22 @@ export function ExpeditionScreen() {
             onSelectEnclave={selectEnclave}
             onExplore={exploreRegion}
           />
+          {hydrated ? (
+            <TeamDock
+              members={team.members}
+              names={knownNames}
+              onRemove={team.remove}
+              onMove={team.move}
+            />
+          ) : null}
+          {focusedZone ? (
+            <RegionBrief
+              zone={focusedZone}
+              weather={weather.get(focusedZone.id)}
+              activeCount={activeSightings.filter((item) => item.zoneId === focusedZone.id).length}
+              onClose={() => setFocusedZoneId(null)}
+            />
+          ) : null}
         </main>
         {notebookOpen ? (
           <div className="relative z-30 col-start-1 row-start-3 h-full min-h-0 border-t border-phosphor/20 bg-abyss lg:col-start-2 lg:row-start-2 lg:border-t-0 lg:border-l">
@@ -253,21 +329,12 @@ export function ExpeditionScreen() {
               />
             ) : (
             <DetailDock
-              sightings={sightings}
+              sightings={activeSightings}
               selectedId={selectedId}
-              zone={zone}
-              phase={dossier.phase}
-              entry={dossier.entry}
-              message={dossier.message}
-              speciesName={selected?.speciesName ?? null}
               knownNames={knownNames}
-              expeditionNumber={selected?.expeditionNumber ?? null}
               revealedIds={progress.seen}
-              status={selected && discoveryState(progress, selected.id) === "caught" ? "caught" : "seen"}
               onSelect={selectSighting}
-              onRetry={dossier.retry}
               onClose={() => setNotebookOpen(false)}
-              onCaptured={markCaught}
             />
             )}
           </div>
@@ -284,7 +351,7 @@ export function ExpeditionScreen() {
                 setNotebookOpen(true);
               }}
             >
-              {enclave ? "Abrir anomalía" : selected ? "Abrir ficha" : "Abrir bitácora"}
+              {enclave ? "Abrir anomalía" : "Abrir bitácora"}
             </button>
           </div>
         )}
@@ -309,10 +376,44 @@ export function ExpeditionScreen() {
             onReset={() => {
               reset();
               setSelectedId(null);
+              setProbeId(null);
+              setCatchLock(null);
               setEnclaveId(null);
               setVisit(null);
               setExamining(false);
             }}
+            now={now}
+            teamMembers={team.members}
+            onTeam={team.add}
+          />
+        ) : null}
+        {selected && zone ? (
+          <EncounterModal
+            sighting={selected}
+            zone={zone}
+            phase={dossier.phase}
+            entry={dossier.entry}
+            message={dossier.message}
+            state={discoveryState(progress, selected.id)}
+            wild={isFieldWild(selected.id, now)}
+            now={now}
+            probing={probeId === selected.id || catchLock === selected.id}
+            onInvestigate={() => setProbeId(selected.id)}
+            onRetry={dossier.retry}
+            onClose={() => {
+              const id = selected.id;
+              setSelectedId(null);
+              setProbeId(null);
+              window.setTimeout(() => {
+                document.querySelector<HTMLButtonElement>(`button[data-pin-id="${CSS.escape(id)}"]`)?.focus();
+              }, 0);
+            }}
+            onCaptured={markCaught}
+            onEngage={() => setCatchLock(selected.id)}
+            onRelease={() => setCatchLock(null)}
+            inTeam={team.members.includes(selected.id)}
+            teamFull={team.members.length >= TEAM_LIMIT}
+            onTeam={() => team.add(selected.id)}
           />
         ) : null}
         {visit === "gate" && enclave ? (

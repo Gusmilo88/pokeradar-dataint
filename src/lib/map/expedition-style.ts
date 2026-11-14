@@ -15,7 +15,8 @@ const QUIET_COUNTRY_LABELS = [
  * El canvas aplica contrast(1.16) y brightness(1.2).
  * Este valor es el que ese filtro muestra como #6ec4ea.
  */
-const ARGENTINA_OUTLINE = "#619eba";
+const ARGENTINA_FILL = "#7eb6d6";
+const ARGENTINA_OUTLINE = "#3e7492";
 const OUTLINE_BEFORE = "place_other";
 
 function beforeRoads(map: MapLibreMap): string | undefined {
@@ -158,6 +159,20 @@ function placeIslands(map: MapLibreMap): void {
       data: atlanticIslands as never,
     });
   }
+  if (!map.getLayer("atlantic-fill")) {
+    map.addLayer(
+      {
+        id: "atlantic-fill",
+        type: "fill",
+        source: "atlantic-islands",
+        paint: {
+          "fill-color": ARGENTINA_FILL,
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 3, 0.34, 7, 0.18, 11, 0.06, 13, 0.03],
+        },
+      },
+      before,
+    );
+  }
   if (!map.getLayer("atlantic-outline")) {
     map.addLayer(
       {
@@ -252,8 +267,8 @@ export function applyExpeditionStyle(map: MapLibreMap): void {
         type: "fill",
         source: "argentina-land",
         paint: {
-          "fill-color": "#d9c7a4",
-          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 3, 0.2, 7, 0.12, 11, 0.05],
+          "fill-color": ARGENTINA_FILL,
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 3, 0.32, 7, 0.16, 11, 0.06, 13, 0.03],
         },
       },
       before,
