@@ -82,5 +82,7 @@ export interface PokemonSpecies {
   id: number;
   name: string;
   spanishName: string | null;
+  /** Entero 0–255 publicado por `/pokemon-species`. */
+  capture_rate: number;
   varieties: PokemonVariety[];
 }

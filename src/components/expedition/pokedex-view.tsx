@@ -23,11 +23,13 @@ export function PokedexView({
   progress,
   onClose,
   onSeek,
+  onCaptured,
   onReset,
 }: {
   progress: Progress;
   onClose: () => void;
   onSeek: (encounterId: string) => void;
+  onCaptured: (encounterId: string) => void;
   onReset: () => void;
 }) {
   const titleId = useId();
@@ -170,6 +172,7 @@ export function PokedexView({
               state={discoveryState(progress, focused.encounterId)}
               onBack={() => setFocusNumber(null)}
               onSeek={onSeek}
+              onCaptured={onCaptured}
             />
           ) : (
             <p className="px-5 py-6 text-sm text-quiet">Elegí una entrada del álbum.</p>
@@ -185,11 +188,13 @@ function DexPlate({
   state,
   onBack,
   onSeek,
+  onCaptured,
 }: {
   entry: CatalogEntry;
   state: "undiscovered" | "seen" | "caught";
   onBack: () => void;
   onSeek: (encounterId: string) => void;
+  onCaptured: (encounterId: string) => void;
 }) {
   const revealed = state !== "undiscovered";
   const zone = entry.zoneId ? (findZone(entry.zoneId) ?? null) : null;
@@ -213,6 +218,8 @@ function DexPlate({
           expeditionNumber={entry.expeditionNumber}
           state={state === "caught" ? "caught" : "seen"}
           place={enclave ? `${enclave.place}. ${enclave.region}.` : undefined}
+          encounterId={entry.encounterId}
+          onCaptured={onCaptured}
         />
       ) : (
         <article className="border border-phosphor/20 bg-void/40 px-4 py-4">

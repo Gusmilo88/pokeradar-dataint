@@ -37,6 +37,14 @@ function readNumber(value: unknown, label: string): number {
   return value;
 }
 
+function readBoundedInteger(value: unknown, label: string, min: number, max: number): number {
+  const number = readNumber(value, label);
+  if (!Number.isInteger(number) || number < min || number > max) {
+    fail(label);
+  }
+  return number;
+}
+
 function readNullableString(value: unknown, label: string): string | null {
   if (value === null) {
     return null;
@@ -249,6 +257,7 @@ export function parseSpecies(value: unknown): PokemonSpecies {
     id: readNumber(value.id, "id"),
     name: readString(value.name, "name"),
     spanishName: readSpanishName(value.names),
+    capture_rate: readBoundedInteger(value.capture_rate, "capture_rate", 0, 255),
     varieties,
   };
 }

@@ -49,7 +49,7 @@ export function ExpeditionScreen() {
     () => new Map(),
   );
   const cameraRequest = useRef(0);
-  const { progress, hydrated, markSeen, reset } = useProgress();
+  const { progress, hydrated, markSeen, markCaught, reset } = useProgress();
 
   const rememberName = useCallback((entry: DossierEntry) => {
     const label = entry.species.spanishName ?? speciesLabel(entry.species.name);
@@ -194,6 +194,7 @@ export function ExpeditionScreen() {
         <div className="col-span-full row-start-1">
           <HudBar
             seen={hydrated ? tally(progress).seen : null}
+            caught={hydrated ? tally(progress).caught : null}
             notebookOpen={notebookOpen}
             onOpen={() => setNotebookOpen(true)}
             onDex={() => setDexOpen(true)}
@@ -262,6 +263,7 @@ export function ExpeditionScreen() {
               onSelect={selectSighting}
               onRetry={dossier.retry}
               onClose={() => setNotebookOpen(false)}
+              onCaptured={markCaught}
             />
             )}
           </div>
@@ -295,6 +297,7 @@ export function ExpeditionScreen() {
               }
               selectSighting(encounterId);
             }}
+            onCaptured={markCaught}
             onReset={() => {
               reset();
               setSelectedId(null);
@@ -347,6 +350,8 @@ export function ExpeditionScreen() {
               setCeremony(false);
             }}
             onLeave={leaveEnclave}
+            caught={progress.caught.has(enclave.encounterId)}
+            onCaptured={markCaught}
           />
         ) : null}
       </div>

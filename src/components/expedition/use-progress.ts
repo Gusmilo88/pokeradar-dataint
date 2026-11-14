@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import {
   emptyProgress,
+  markCaught,
   markSeen,
   parseProgress,
   PROGRESS_EVENT,
@@ -38,6 +39,7 @@ export function useProgress(): {
   progress: Progress;
   hydrated: boolean;
   markSeen: (encounterId: string) => void;
+  markCaught: (encounterId: string) => void;
   reset: () => void;
 } {
   const raw = useSyncExternalStore(subscribe, readRaw, () => "");
@@ -74,9 +76,23 @@ export function useProgress(): {
     publish(serializeProgress(next));
   }, []);
 
+  const capture = useCallback((encounterId: string) => {
+    let current = emptyProgress();
+    try {
+      current = readProgress(window.localStorage.getItem(PROGRESS_KEY));
+    } catch {
+      current = emptyProgress();
+    }
+    const next = markCaught(current, encounterId);
+    if (next === current) {
+      return;
+    }
+    publish(serializeProgress(next));
+  }, []);
+
   const reset = useCallback(() => {
     publish(serializeProgress(emptyProgress()));
   }, []);
 
-  return { progress, hydrated, markSeen: reveal, reset };
+  return { progress, hydrated, markSeen: reveal, markCaught: capture, reset };
 }

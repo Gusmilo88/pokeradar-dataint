@@ -1,5 +1,4 @@
 /**
- * Contrato para el bloque siguiente. No hay almacenamiento ni pantalla de captura.
  * El estado vive junto al id estable del encuentro, no junto a la posición en un array.
  */
 export const DISCOVERY_STATES = ["undiscovered", "seen", "caught"] as const;

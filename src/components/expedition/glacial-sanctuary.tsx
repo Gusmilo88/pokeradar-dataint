@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState, type CSSProperties } from "react";
+import { CapturePanel } from "@/components/expedition/capture-panel";
 import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import type { DossierEntry, DossierPhase } from "@/components/expedition/use-dossier";
 import { paletteVars, type Enclave } from "@/lib/expedition/enclaves";
@@ -123,6 +124,8 @@ export function GlacialSanctuary({
   onEnter,
   onExterior,
   onLeave,
+  caught,
+  onCaptured,
 }: {
   stage: "exterior" | "interior";
   enclave: Enclave;
@@ -137,6 +140,8 @@ export function GlacialSanctuary({
   onEnter: () => void;
   onExterior: () => void;
   onLeave: () => void;
+  caught: boolean;
+  onCaptured: (encounterId: string) => void;
 }) {
   const titleId = useId();
   const art = SCENE[enclave.scene];
@@ -287,6 +292,16 @@ export function GlacialSanctuary({
             </p>
           )}
           {sheet && entry ? <DossierSheet entry={entry} /> : null}
+          {stage === "interior" && discovered && !rite && entry ? (
+            <CapturePanel
+              key={enclave.encounterId}
+              encounterId={enclave.encounterId}
+              captureRate={entry.species.capture_rate}
+              baseStats={entry.pokemon.stats.map((stat) => stat.base_stat)}
+              state={caught ? "caught" : "seen"}
+              onCaptured={onCaptured}
+            />
+          ) : null}
           <div className="scene-actions">
             {stage === "exterior" ? (
               <button type="button" className="scene-btn scene-btn-go" onClick={onEnter} autoFocus>

@@ -36,7 +36,7 @@ La ficha muestra el nombre en español cuando PokéAPI lo trae. Hasta entonces e
 
 Argentina lleva un relleno suave y un contorno celeste, debajo de ríos, calles y etiquetas. Malvinas, Georgias del Sur y Sandwich del Sur usan el mismo trazo, cada una en su feature de Natural Earth 1:10.000.000, sin líneas que las unan por el océano y sin cambiar el borde de los demás países. Sus etiquetas son capas de símbolo: ISLAS MALVINAS, ISLAS GEORGIAS DEL SUR e ISLAS SANDWICH DEL SUR, al norte o al este de la tierra. El mapa base deja de rotular esos nombres en inglés para no duplicarlos. Los nombres de países y de provincias del mapa base bajan de opacidad en el zoom nacional; no se borran. Alrededor de cada ancla hay una mancha de color. Es un acento de la expedición, no un bioma ni un límite provincial. No hay fronteras provinciales dibujadas por este proyecto.
 
-El progreso vive en `localStorage`, clave `pokeradar.progress.v1`, versión 1: listas `seen` y `caught` de ids `kanto-NNN`. Un documento con versión distinta, JSON roto, un id ajeno o un id repetido se descarta entero. Capturado implica visto. Marcar visto no baja un capturado. La primera pintura, incluida la hidratación, sale vacía; el almacenamiento se lee después y no muestra una especie bloqueada como descubierta. Reiniciar pide confirmación. No hay botón de captura: el estado capturado está dibujado para el bloque siguiente y se puede leer si el documento ya lo trae.
+El progreso vive en `localStorage`, clave `pokeradar.progress.v1`, versión 1: listas `seen` y `caught` de ids `kanto-NNN`. Un documento con versión distinta, JSON roto, un id ajeno o un id repetido se descarta entero. Capturado implica visto. Marcar visto no baja un capturado. La primera pintura, incluida la hidratación, sale vacía; el almacenamiento se lee después y no muestra una especie bloqueada como descubierta. Reiniciar pide confirmación. Con la ficha vista, «Atrapar» muestra una dificultad de 1 a 10 calculada al llegar `capture_rate` y las seis estadísticas. La secuencia siempre se registra si se completa o se omite; cancelarla o salir no escribe `caught`. Dificultad 1–5 usa 3 movimientos y 6–10 usa 4. En un enclave el botón aparece después del rito, sin cerrar la visita.
 
 El índice y la ficha no comparten el panel: con una criatura elegida, Ficha e Índice alternan. Cerrar guarda la selección. En escritorio el mapa ocupa el ancho que deja el panel; un botón Bitácora lo vuelve a abrir. En el teléfono el panel es una hoja inferior, y al cerrarla el mapa crece. El momento (explorar, descubrir, registrar) es un texto de estado, no un botón.
 
@@ -138,6 +138,7 @@ npm run build
 npx tsx scripts/verify-pokeapi.ts
 npx tsx scripts/verify-progress.ts
 npx tsx scripts/verify-enclave.ts
+npx tsx scripts/verify-capture.ts
 ```
 
 El script pega a PokéAPI. Comprueba Pikachu, rechaza un objeto inválido, recorre los nueve hábitats y exige que Wormadam resuelva a `wormadam-plant`. Para Kanto exige 56 especies, ids nacionales 1–151, sin duplicados, los seis reservados fuera del mapa, coordenadas iguales si se invierte el catálogo, puntos dentro de la zona y al este de la divisoria, cero `fetch` al colocar, y el estado inicial `undiscovered`. Después contrasta cada ficha con `/pokemon-species/{id}`: nombre, generación I y hábitat.
@@ -152,6 +153,8 @@ En el navegador, sobre `npm run dev`, en B2:
 - La atribución, plegada, incluye la nota de Natural Earth 5.1.2.
 
 `scripts/verify-progress.ts` no usa red. Comprueba el arranque en cero, la revelación idempotente, que visto no baja un capturado, el viaje de ida y vuelta del esquema, el rechazo de versión, JSON, id ajeno e id repetido, las seis reservadas sin zona y sin su nombre en la pista, y las URLs de Black & White para el id 25.
+
+`scripts/verify-capture.ts` tampoco usa red. Comprueba la dificultad en los extremos de tasa y estadísticas, que el poder no invierta la tasa, los 3 o 4 movimientos, la cancelación, la omisión, la idempotencia, un progreso anterior y el rechazo de `capture_rate` ausente o fuera de 0–255.
 
 En el navegador, sobre `npm run dev`, en B3, con `localStorage` vacío al empezar:
 
@@ -247,7 +250,7 @@ No se usó un teléfono real. No se abrió la Pokédex en esta pasada. No se ocu
 
 ## Qué queda para el bloque siguiente
 
-No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja y no se obtiene desde la interfaz. No hay cartas holográficas. Cada enclave pide su exterior, su interior, su paleta y su propia revelación; la central eléctrica no recolorea la nevada, el volcán no recolorea la lluvia, la caverna no recolorea el fuego ni el hielo, el laboratorio no recolorea esas ceremonias y el refugio no recolorea el altar. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal. Las islas del Atlántico Sur se dibujan aparte y el encuadre nacional no las mete alejando el zoom. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula.
+No hay clima, gritos, equipo ni filtros. La secuencia de captura es funcional: la animación de la Pokébola queda para después. No hay cartas holográficas. Cada enclave pide su exterior, su interior, su paleta y su propia revelación; la central eléctrica no recolorea la nevada, el volcán no recolorea la lluvia, la caverna no recolorea el fuego ni el hielo, el laboratorio no recolorea esas ceremonias y el refugio no recolorea el altar. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal. Las islas del Atlántico Sur se dibujan aparte y el encuadre nacional no las mete alejando el zoom. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula.
 
 ## Decisiones
 
@@ -266,6 +269,7 @@ No hay clima, gritos, equipo, filtros ni captura. El estado capturado se dibuja 
 | Sustituto del icono ausente, con `console.warn` | El mapa no se cae y el hueco del sprite queda visible | `hasImage`, que dispara el error, o silenciar la consola |
 | No correr `audit fix --force` | El arreglo baja ESLint un major y no toca producción | Actualizar toda la cadena de lint |
 | Progreso en `localStorage`, esquema v1 | Sobrevive al refresco y un documento inválido vuelve a cero | Un backend o guardar el nombre en español |
+| Dificultad `1 + 9 × (0.82 × (1 − tasa/255) + 0.18 × suma/1530)` | La tasa pesa más que las estadísticas y el techo es el del recurso, no una tabla por especie | Usar la probabilidad real de captura o asignar un número a cada Pokémon |
 | Silueta del PNG de Black & White | La forma es la del sprite real y el color no se revela | Generar una imagen o mostrar el GIF oculto |
 | GIF de Black & White al descubrir; PNG si el movimiento está reducido | El recurso es del repositorio PokeAPI/sprites y el GIF no sigue animado cuando se pidió calma | Un `prefers-reduced-motion` que solo pause por CSS |
 | Santuario en -54.638, -67.759 y laboratorio en -51.7002, -58.8259 | Tierra firme junto al Lago Escondido y en el monte Usborne, con los ids de progreso intactos | Dejar Articuno en Santa Cruz o exigir Malvinas dentro del polígono ARG |

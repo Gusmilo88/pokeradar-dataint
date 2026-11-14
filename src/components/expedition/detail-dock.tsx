@@ -30,6 +30,7 @@ export function DetailDock({
   onSelect,
   onRetry,
   onClose,
+  onCaptured,
 }: {
   sightings: readonly Sighting[];
   selectedId: string | null;
@@ -45,6 +46,7 @@ export function DetailDock({
   onSelect: (id: string) => void;
   onRetry: () => void;
   onClose: () => void;
+  onCaptured: (encounterId: string) => void;
 }) {
   const [pinnedView, setPinnedView] = useState<{
     id: string | null;
@@ -171,6 +173,8 @@ export function DetailDock({
                   zone={zone}
                   expeditionNumber={expeditionNumber}
                   state={status}
+                  encounterId={selectedId ?? undefined}
+                  onCaptured={onCaptured}
                 />
               </motion.div>
             ) : null}

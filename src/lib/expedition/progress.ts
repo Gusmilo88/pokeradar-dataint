@@ -42,7 +42,7 @@ export function markSeen(progress: Progress, encounterId: string): Progress {
   return { seen, caught: progress.caught };
 }
 
-/** Preparado para B5. La interfaz de este bloque no lo llama. */
+/** Idempotente. Capturado implica visto y nunca vuelve a un estado anterior. */
 export function markCaught(progress: Progress, encounterId: string): Progress {
   if (!CATALOG_IDS.has(encounterId) || progress.caught.has(encounterId)) {
     return progress;

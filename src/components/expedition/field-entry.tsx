@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useId } from "react";
+import { CapturePanel } from "@/components/expedition/capture-panel";
 import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import type { DossierEntry } from "@/components/expedition/use-dossier";
 import { HABITAT_LABEL, type ExpeditionZone } from "@/lib/expedition/argentina";
@@ -18,12 +19,16 @@ export function FieldEntry({
   expeditionNumber,
   state = "seen",
   place,
+  encounterId,
+  onCaptured,
 }: {
   entry: DossierEntry;
   zone: ExpeditionZone | null;
   expeditionNumber: number | null;
   state?: Extract<DiscoveryState, "seen" | "caught">;
   place?: string;
+  encounterId?: string;
+  onCaptured?: (encounterId: string) => void;
 }) {
   const titleId = useId();
   const { species, pokemon } = entry;
@@ -96,6 +101,16 @@ export function FieldEntry({
           ? `${zone.name} · ${HABITAT_LABEL[zone.habitat]}. Encuentro simulado.`
           : (place ?? "Sin zona de campo.")}
       </p>
+      {encounterId && onCaptured ? (
+        <CapturePanel
+          key={encounterId}
+          encounterId={encounterId}
+          captureRate={entry.species.capture_rate}
+          baseStats={entry.pokemon.stats.map((stat) => stat.base_stat)}
+          state={state}
+          onCaptured={onCaptured}
+        />
+      ) : null}
     </article>
   );
 }

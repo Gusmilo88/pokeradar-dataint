@@ -2,16 +2,19 @@ import { RadarMark } from "@/components/expedition/radar-mark";
 
 export function HudBar({
   seen,
+  caught,
   notebookOpen,
   onOpen,
   onDex,
 }: {
   seen: number | null;
+  caught: number | null;
   notebookOpen: boolean;
   onOpen: () => void;
   onDex: () => void;
 }) {
-  const label = seen === null ? "…" : `${seen} vistas`;
+  const label =
+    seen === null || caught === null ? "…" : `${seen} vistas · ${caught} capturadas`;
 
   return (
     <header className="relative z-20 border-b border-phosphor/20 bg-abyss px-4 py-3 sm:px-6">
