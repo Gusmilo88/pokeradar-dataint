@@ -36,6 +36,15 @@ export function albumAccent(entry: CatalogEntry): CaptureAccentId | null {
   return entry.role === "reserved" ? captureAccent(entry.encounterId) : null;
 }
 
+/** El PS de la carta es la estadística `hp`. Si no está, no se inventa. */
+export function albumHitPoints(stats: readonly { name: string; value: number }[]): number | null {
+  const hp = stats.find((stat) => stat.name === "hp");
+  if (!hp || !Number.isInteger(hp.value) || hp.value < 0) {
+    return null;
+  }
+  return hp.value;
+}
+
 export function albumAccentLabel(entry: CatalogEntry): string | null {
   const accent = albumAccent(entry);
   if (!accent) {

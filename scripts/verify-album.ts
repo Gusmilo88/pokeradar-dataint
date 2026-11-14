@@ -1,4 +1,4 @@
-import { albumAccentLabel, albumCounts, albumMatches, filterAlbum } from "../src/lib/expedition/album";
+import { albumAccentLabel, albumCounts, albumHitPoints, albumMatches, filterAlbum } from "../src/lib/expedition/album";
 import { KANTO_CATALOG } from "../src/lib/expedition/kanto";
 import { emptyProgress, markCaught, markSeen } from "../src/lib/expedition/progress";
 
@@ -77,6 +77,12 @@ if (mew.habitat !== "rare" || albumAccentLabel(mew) !== "Esmeralda") {
 }
 if (albumAccentLabel(aerodactyl)?.toLowerCase().includes("legend") || albumAccentLabel(mew)?.toLowerCase().includes("legend")) {
   fail("Una carta recibió una etiqueta de legendario.");
+}
+if (albumHitPoints([{ name: "attack", value: 80 }]) !== null) {
+  fail("La carta inventó PS sin la estadística.");
+}
+if (albumHitPoints([{ name: "hp", value: 90 }, { name: "attack", value: 10 }]) !== 90) {
+  fail("El PS no salió de la estadística de vida.");
 }
 
 console.log("OK album total=56 filters=5 aerodactyl=fossil mew=grove");

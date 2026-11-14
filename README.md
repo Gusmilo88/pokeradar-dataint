@@ -40,7 +40,7 @@ El progreso vive en `localStorage`, clave `pokeradar.progress.v1`, versión 1: l
 
 El índice y la ficha no comparten el panel: con una criatura elegida, Ficha e Índice alternan. Cerrar guarda la selección. En escritorio el mapa ocupa el ancho que deja el panel; un botón Bitácora lo vuelve a abrir. En el teléfono el panel es una hoja inferior, y al cerrarla el mapa crece. El momento (explorar, descubrir, registrar) es un texto de estado, no un botón.
 
-La Pokédex es un álbum de las 56 entradas, ordenadas por número de expedición. Se abre encima del mapa, que sigue montado: el zoom y la selección no se pierden al volver. En el teléfono el álbum o la ficha ocupan la pantalla, no los dos a la vez. Escape cierra el álbum. Una entrada desconocida muestra el número, `???`, la silueta y una pista del hábitat o de la región, sin el nombre ni los tipos. Las seis reservadas dicen que todavía no tienen región de campo. «Buscar en el mapa» elige el encuentro de campo y cierra el álbum.
+La Pokédex es un álbum de las 56 entradas, ordenadas por número de expedición. Se abre encima del mapa, que sigue montado: el zoom y la selección no se pierden al volver. Una carta se abre centrada sobre la grilla, en escritorio y en teléfono. Escape cierra esa carta y devuelve el foco; otro Escape cierra el álbum. Una entrada desconocida abre una carta sellada con el número, `???` y la silueta, sin el nombre ni los tipos. Las seis reservadas dicen que todavía no tienen región de campo. «Buscar en el mapa» elige el encuentro de campo y cierra el álbum.
 
 Si la API falla, la bitácora muestra el error y un reintento. No se completan tipos ni estadísticas inventadas y no se marca la especie como vista. Una respuesta vieja no pisa la criatura que quedó seleccionada después, ni la descubre.
 
@@ -266,6 +266,7 @@ No hay clima, gritos de especie ni equipo. La holografía animada de las cartas 
 | Paleta del enclave en variables CSS | El pulso y el sello cambian de color sin copiar reglas por especie | Una hoja de pulso para cada criatura |
 | Caché en memoria, ficha al elegir | Cero fichas al entrar; el detalle, bajo demanda | Prefetch de las 56 fichas |
 | Álbum sobre la Pokédex existente | Las cartas leen el mismo progreso y piden la ficha solo al abrir una revelada | Una tabla nueva o precargar las 56 fichas |
+| Carta centrada, no panel lateral | El PS, los tipos y la dificultad salen de la misma ficha y de la misma fórmula | Una segunda fuente de datos o un panel fijo a la derecha |
 | Worker en `public/` | Vercel sirve el estático sin leer `node_modules` en runtime | Mantener la ruta que hacía `fs.readFile` |
 | Sustituto del icono ausente, con `console.warn` | El mapa no se cae y el hueco del sprite queda visible | `hasImage`, que dispara el error, o silenciar la consola |
 | No correr `audit fix --force` | El arreglo baja ESLint un major y no toca producción | Actualizar toda la cadena de lint |

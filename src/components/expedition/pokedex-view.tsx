@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useCallback, useEffect, useId, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { CapturePanel } from "@/components/expedition/capture-panel";
 import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import { useDossier } from "@/components/expedition/use-dossier";
@@ -9,9 +9,11 @@ import {
   albumAccent,
   albumAccentLabel,
   albumCounts,
+  albumHitPoints,
   filterAlbum,
   type AlbumFilter,
 } from "@/lib/expedition/album";
+import { captureDifficulty } from "@/lib/expedition/capture";
 import { findEnclaveByEncounter } from "@/lib/expedition/enclaves";
 import { explorationHint } from "@/lib/expedition/hints";
 import { KANTO_CATALOG, type CatalogEntry } from "@/lib/expedition/kanto";
@@ -63,6 +65,17 @@ export function PokedexView({
   const visible = filterAlbum(ORDERED, progress, filter, query);
   const ratio = counts.total === 0 ? 0 : (counts.caught / counts.total) * 100;
 
+  const closeCard = useCallback(() => {
+    if (focusNumber === null) {
+      return;
+    }
+    const number = focusNumber;
+    setFocusNumber(null);
+    window.requestAnimationFrame(() => {
+      document.querySelector<HTMLButtonElement>(`[data-album-card="${number}"]`)?.focus();
+    });
+  }, [focusNumber]);
+
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key !== "Escape") {
@@ -78,27 +91,20 @@ export function PokedexView({
         return;
       }
       if (focusNumber !== null) {
-        const number = focusNumber;
-        setFocusNumber(null);
-        window.requestAnimationFrame(() => {
-          document.querySelector<HTMLButtonElement>(`[data-album-card="${number}"]`)?.focus();
-        });
+        closeCard();
         return;
       }
       onClose();
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [confirmReset, focusNumber, onClose]);
+  }, [closeCard, confirmReset, focusNumber, onClose]);
 
   useEffect(() => {
     if (focusNumber === null) {
       return;
     }
-    const back = document.querySelector<HTMLButtonElement>(".album-back");
-    const title = document.getElementById(detailTitleId);
-    const target = back && back.getClientRects().length > 0 ? back : title;
-    target?.focus();
+    document.getElementById(detailTitleId)?.focus();
   }, [detailTitleId, focusNumber]);
 
   function trapTab(event: ReactKeyboardEvent<HTMLDivElement>) {
@@ -108,8 +114,10 @@ export function PokedexView({
     if (event.target instanceof Element && event.target.closest(".capture-stage")) {
       return;
     }
-    const items = [...event.currentTarget.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled])")]
-      .filter((item) => item.getClientRects().length > 0);
+    const items = [...event.currentTarget.querySelectorAll<HTMLElement>(
+      "button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex='-1'])",
+    )]
+      .filter((item) => item.getClientRects().length > 0 && !item.closest("[inert]"));
     const first = items[0];
     const last = items[items.length - 1];
     if (!first || !last) {
@@ -132,7 +140,7 @@ export function PokedexView({
       className="album-shell absolute inset-0 z-40 flex min-h-0 flex-col overflow-x-hidden"
       onKeyDown={trapTab}
     >
-      <header className="album-head">
+      <header className="album-head" inert={focused ? true : undefined}>
         <svg className="album-ring" viewBox="0 0 36 36" aria-hidden="true">
           <circle className="album-ring-track" cx="18" cy="18" r="15.5" pathLength="100" />
           <circle
@@ -170,7 +178,7 @@ export function PokedexView({
         </button>
       </header>
       <div className="album-body">
-        <div className="album-grid-wrap" data-open={focused ? "true" : "false"}>
+        <div className="album-grid-wrap" inert={focused ? true : undefined}>
           <div className="album-tools">
             <div className="album-filters" role="toolbar" aria-label="Filtrar la colección">
               {ALBUM_FILTERS.map((item) => (
@@ -277,32 +285,22 @@ export function PokedexView({
             )}
           </div>
         </div>
-        <div className="album-detail" data-open={focused ? "true" : "false"}>
-          {focused ? (
-            <DexPlate
-              entry={focused}
-              state={discoveryState(progress, focused.encounterId)}
-              titleId={detailTitleId}
-              onBack={() => {
-                const number = focused.expeditionNumber;
-                setFocusNumber(null);
-                window.requestAnimationFrame(() => {
-                  document.querySelector<HTMLButtonElement>(`[data-album-card="${number}"]`)?.focus();
-                });
-              }}
-              onSeek={onSeek}
-              onCaptured={onCaptured}
-            />
-          ) : (
-            <p className="px-2 py-4 text-sm text-quiet">Elegí una carta del álbum.</p>
-          )}
-        </div>
       </div>
+      {focused ? (
+        <DexCard
+          entry={focused}
+          state={discoveryState(progress, focused.encounterId)}
+          titleId={detailTitleId}
+          onBack={closeCard}
+          onSeek={onSeek}
+          onCaptured={onCaptured}
+        />
+      ) : null}
     </div>
   );
 }
 
-function DexPlate({
+function DexCard({
   entry,
   state,
   titleId,
@@ -322,89 +320,117 @@ function DexPlate({
   const enclave = findEnclaveByEncounter(entry.encounterId);
   const dossier = useDossier(revealed ? entry.speciesName : null);
   const accent = revealed ? albumAccent(entry) : null;
-  const name = revealed ? (dossier.entry?.species.spanishName ?? speciesLabel(entry.speciesName)) : "???";
   const ready = dossier.entry;
+  const name = revealed ? (ready?.species.spanishName ?? speciesLabel(entry.speciesName)) : "???";
+  const hp = ready
+    ? albumHitPoints(ready.pokemon.stats.map((stat) => ({ name: stat.stat.name, value: stat.base_stat })))
+    : null;
+  const difficulty = ready
+    ? captureDifficulty(
+        ready.species.capture_rate,
+        ready.pokemon.stats.map((stat) => stat.base_stat),
+      )
+    : null;
+  const place = zone
+    ? `${zone.name}. ${zone.region}.`
+    : enclave
+      ? `${enclave.place}. ${enclave.region}.`
+      : null;
+  const status =
+    state === "caught" ? "En la colección" : state === "seen" ? "Visto" : "Desconocido";
 
   return (
-    <div>
-      <button type="button" className="album-back action-button mb-3 inline-flex items-center justify-center lg:hidden" onClick={onBack}>
-        Álbum
-      </button>
+    <div className="album-modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <button type="button" className="album-scrim" aria-label="Cerrar carta" tabIndex={-1} onClick={onBack} />
       <article
-        className="album-plate"
+        className="tcg-card"
         data-state={state === "undiscovered" ? "unknown" : state}
         data-accent={accent ?? undefined}
         data-holo={accent ? "ready" : undefined}
-        aria-labelledby={titleId}
+        data-card="open"
+        aria-busy={revealed && dossier.phase === "loading" ? true : undefined}
       >
-        <p className="album-kicker">
-          Exp. {pad(entry.expeditionNumber)}
-          {revealed ? ` · #${String(entry.nationalId).padStart(4, "0")}` : ""}
-        </p>
-        {accent ? <p className="album-theme mt-2">{albumAccentLabel(entry)}</p> : null}
-        <h3 id={titleId} tabIndex={-1} className="album-title mt-1 outline-none">
-          {name}
-        </h3>
-        <p className="album-state mt-2">
-          {state === "caught" ? "En la colección" : state === "seen" ? "Visto · puede capturarse" : "Desconocido"}
-        </p>
-        <div className="album-plate-sprite">
-          <CreatureSprite
-            nationalId={entry.nationalId}
-            revealed={revealed}
-            label={revealed ? name : null}
-            stillUrl={ready?.pokemon.sprites.blackWhite}
-            animatedUrl={ready?.pokemon.sprites.blackWhiteAnimated}
-          />
+        <header className="tcg-top">
+          <div className="min-w-0">
+            <p className="tcg-kicker">Exp. {pad(entry.expeditionNumber)}</p>
+            <h3 id={titleId} tabIndex={0} className="tcg-name">
+              {name}
+            </h3>
+          </div>
+          {revealed ? (
+            <p className="tcg-hp">
+              <span>PS</span>
+              <strong>{hp === null ? "—" : hp}</strong>
+            </p>
+          ) : null}
+        </header>
+        <div className="tcg-art">
+          <div className="tcg-art-sprite">
+            <CreatureSprite
+              nationalId={entry.nationalId}
+              revealed={revealed}
+              label={revealed ? name : null}
+              stillUrl={ready?.pokemon.sprites.blackWhite}
+              animatedUrl={ready?.pokemon.sprites.blackWhiteAnimated}
+            />
+          </div>
+          {accent ? <p className="tcg-rarity">{albumAccentLabel(entry)}</p> : null}
+          {state === "caught" ? <p className="tcg-stamp">En la colección</p> : null}
         </div>
         {revealed && ready ? (
-          <>
-            <p className="album-types">
-              {ready.pokemon.types.map((slot) => (
-                <span key={slot.type.name} className="album-type" data-type={slot.type.name}>
-                  {typeLabel(slot.type.name)}
-                </span>
-              ))}
-            </p>
-            {ready.species.varieties.length > 1 ? (
-              <p className="mt-3 font-mono text-[11px] text-quiet">Variedad por defecto.</p>
-            ) : null}
-            <ul className="album-stats">
-              {ready.pokemon.stats.map((stat) => (
-                <li key={stat.stat.name} className="album-stat">
-                  <span>{statLabel(stat.stat.name)}</span>
-                  <span className="album-stat-track">
-                    <span
-                      className="album-stat-fill block"
-                      style={{ width: `${Math.min(100, (stat.base_stat / STAT_SCALE) * 100)}%` }}
-                    />
-                  </span>
-                  <span className="text-right text-ink">{stat.base_stat}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-4 text-sm text-quiet">
-              {zone
-                ? `${zone.name}. ${zone.region}.`
-                : enclave
-                  ? `${enclave.place}. ${enclave.region}.`
-                  : "Sin zona de campo."}
-            </p>
-          </>
-        ) : revealed ? (
-          <p className="mt-3 text-sm text-quiet" role={dossier.phase === "error" ? "alert" : "status"} aria-busy={dossier.phase === "loading" || undefined}>
-            {dossier.phase === "error"
-              ? (dossier.message ?? "La ficha no llegó. Sigue registrada como vista.")
-              : "Consultando tipos y estadísticas."}
+          <p className="album-types tcg-types">
+            {ready.pokemon.types.map((slot) => (
+              <span key={slot.type.name} className="album-type" data-type={slot.type.name}>
+                {typeLabel(slot.type.name)}
+              </span>
+            ))}
           </p>
-        ) : (
-          <>
-            <p className="mt-3 text-sm text-quiet">{explorationHint(entry, zone)}</p>
-            <p className="mt-2 text-sm text-quiet">Nombre, tipos y estadísticas bloqueados.</p>
-          </>
-        )}
+        ) : null}
+        <div className="tcg-box">
+          {revealed && ready ? (
+            <>
+              {ready.species.varieties.length > 1 ? (
+                <p className="tcg-note">Variedad por defecto.</p>
+              ) : null}
+              <ul className="album-stats">
+                {ready.pokemon.stats.map((stat) => (
+                  <li key={stat.stat.name} className="album-stat">
+                    <span>{statLabel(stat.stat.name)}</span>
+                    <span className="album-stat-track">
+                      <span
+                        className="album-stat-fill block"
+                        style={{ width: `${Math.min(100, (stat.base_stat / STAT_SCALE) * 100)}%` }}
+                      />
+                    </span>
+                    <span className="text-right text-ink">{stat.base_stat}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="tcg-note">
+                {difficulty === null ? "La dificultad no está disponible." : `Dificultad ${difficulty} de 10.`}
+              </p>
+              <p className="tcg-note">{place ?? "Sin zona de campo."}</p>
+            </>
+          ) : revealed ? (
+            <p role={dossier.phase === "error" ? "alert" : "status"}>
+              {dossier.phase === "error"
+                ? (dossier.message ?? "La ficha no llegó. Sigue registrada como vista.")
+                : "Consultando tipos y estadísticas."}
+            </p>
+          ) : (
+            <>
+              <p className="tcg-sealed">Carta sellada</p>
+              <p>{explorationHint(entry, zone)}</p>
+              <p>Nombre, tipos y estadísticas bloqueados.</p>
+            </>
+          )}
+        </div>
+        <footer className="tcg-foot">
+          <p>{revealed ? `#${String(entry.nationalId).padStart(4, "0")}` : "???"}</p>
+          <p className="album-state">{status}</p>
+        </footer>
         {dossier.phase === "error" ? (
-          <button type="button" className="action-button mt-3 inline-flex items-center justify-center" onClick={dossier.retry}>
+          <button type="button" className="action-button tcg-action" onClick={dossier.retry}>
             Reintentar
           </button>
         ) : null}
@@ -422,17 +448,22 @@ function DexPlate({
             onCaptured={onCaptured}
           />
         ) : null}
-        {entry.role === "field" ? (
-          <button type="button" className="action-button mt-4 inline-flex items-center justify-center" onClick={() => onSeek(entry.encounterId)}>
-            {revealed ? "Ver en el mapa" : "Buscar en el mapa"}
+        <div className="tcg-actions">
+          {entry.role === "field" ? (
+            <button type="button" className="action-button tcg-action" onClick={() => onSeek(entry.encounterId)}>
+              {revealed ? "Ver en el mapa" : "Buscar en el mapa"}
+            </button>
+          ) : revealed && enclave ? (
+            <button type="button" className="action-button tcg-action" onClick={() => onSeek(entry.encounterId)}>
+              Ver en el mapa
+            </button>
+          ) : entry.role === "reserved" ? (
+            <p className="tcg-note">Sin enclave de campo.</p>
+          ) : null}
+          <button type="button" className="action-button tcg-action tcg-close" onClick={onBack}>
+            Cerrar
           </button>
-        ) : revealed && enclave ? (
-          <button type="button" className="action-button mt-4 inline-flex items-center justify-center" onClick={() => onSeek(entry.encounterId)}>
-            Ver en el mapa
-          </button>
-        ) : entry.role === "reserved" ? (
-          <p className="mt-4 text-sm text-quiet">Sin enclave de campo.</p>
-        ) : null}
+        </div>
       </article>
     </div>
   );
