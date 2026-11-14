@@ -250,7 +250,7 @@ No se usó un teléfono real. No se abrió la Pokédex en esta pasada. No se ocu
 
 ## Qué queda para el bloque siguiente
 
-No hay clima, gritos de especie, equipo ni filtros. No hay cartas holográficas. Cada enclave pide su exterior, su interior, su paleta y su propia revelación; la central eléctrica no recolorea la nevada, el volcán no recolorea la lluvia, la caverna no recolorea el fuego ni el hielo, el laboratorio no recolorea esas ceremonias y el refugio no recolorea el altar. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal. Las islas del Atlántico Sur se dibujan aparte y el encuadre nacional no las mete alejando el zoom. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula.
+No hay clima, gritos de especie ni equipo. La holografía animada de las cartas raras queda pendiente. Cada enclave pide su exterior, su interior, su paleta y su propia revelación; la central eléctrica no recolorea la nevada, el volcán no recolorea la lluvia, la caverna no recolorea el fuego ni el hielo, el laboratorio no recolorea esas ceremonias y el refugio no recolorea el altar. Los avisos de `circle-11` y `wood-pattern` siguen. El contorno 1:50.000.000 no alcanza para un límite legal. Las islas del Atlántico Sur se dibujan aparte y el encuadre nacional no las mete alejando el zoom. Los acentos de color no son biomas. Clefable figura en montaña porque así lo publica PokéAPI, no porque describa el glaciar. El nombre en español del álbum, antes de abrir la ficha, es el nombre de especie con mayúscula.
 
 ## Decisiones
 
@@ -265,6 +265,7 @@ No hay clima, gritos de especie, equipo ni filtros. No hay cartas holográficas.
 | Georgia del Sur aparte del polígono ARG | El refugio cae en tierra insular de Natural Earth sin fingir el continente | Fusionar SGS al contorno o mover el punto a Santa Cruz |
 | Paleta del enclave en variables CSS | El pulso y el sello cambian de color sin copiar reglas por especie | Una hoja de pulso para cada criatura |
 | Caché en memoria, ficha al elegir | Cero fichas al entrar; el detalle, bajo demanda | Prefetch de las 56 fichas |
+| Álbum sobre la Pokédex existente | Las cartas leen el mismo progreso y piden la ficha solo al abrir una revelada | Una tabla nueva o precargar las 56 fichas |
 | Worker en `public/` | Vercel sirve el estático sin leer `node_modules` en runtime | Mantener la ruta que hacía `fs.readFile` |
 | Sustituto del icono ausente, con `console.warn` | El mapa no se cae y el hueco del sprite queda visible | `hasImage`, que dispara el error, o silenciar la consola |
 | No correr `audit fix --force` | El arreglo baja ESLint un major y no toca producción | Actualizar toda la cadena de lint |

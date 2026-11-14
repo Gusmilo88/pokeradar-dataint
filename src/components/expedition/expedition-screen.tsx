@@ -49,6 +49,7 @@ export function ExpeditionScreen() {
     () => new Map(),
   );
   const cameraRequest = useRef(0);
+  const dexOpener = useRef<HTMLElement | null>(null);
   const { progress, hydrated, markSeen, markCaught, reset } = useProgress();
 
   const rememberName = useCallback((entry: DossierEntry) => {
@@ -197,7 +198,10 @@ export function ExpeditionScreen() {
             caught={hydrated ? tally(progress).caught : null}
             notebookOpen={notebookOpen}
             onOpen={() => setNotebookOpen(true)}
-            onDex={() => setDexOpen(true)}
+            onDex={() => {
+              dexOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+              setDexOpen(true);
+            }}
           />
           <motion.div
             aria-hidden="true"
@@ -287,7 +291,11 @@ export function ExpeditionScreen() {
         {dexOpen ? (
           <PokedexView
             progress={progress}
-            onClose={() => setDexOpen(false)}
+            onClose={() => {
+              setDexOpen(false);
+              const opener = dexOpener.current;
+              window.setTimeout(() => opener?.focus(), 0);
+            }}
             onSeek={(encounterId) => {
               setDexOpen(false);
               const linked = findEnclaveByEncounter(encounterId);
