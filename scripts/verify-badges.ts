@@ -19,7 +19,7 @@ import {
   serializeBadgeLedger,
   witnessUnlocks,
 } from "../src/lib/badges/ledger";
-import { allBadgeSpecies, badgeQaEnabled, badgeQaRequested, missingSpecies, qaCatch } from "../src/lib/badges/qa";
+import { allBadgeSpecies, missingSpecies, qaCatch } from "../src/lib/badges/qa";
 
 function fail(message: string): never {
   throw new Error(message);
@@ -231,17 +231,13 @@ if (!serializeBadgeLedger(kept).includes("\"futura\"")) {
   fail("Una medalla extra no se volvió a guardar.");
 }
 
-if (!badgeQaRequested("?qaBadges=1") || !badgeQaRequested("qaBadges=1&otro=2")) {
-  fail("El modo prueba no reconoce ?qaBadges=1.");
+const demoHook = readFileSync(join(process.cwd(), "src", "components", "expedition", "use-badge-demo.ts"), "utf8");
+if (/localStorage|sessionStorage|document\.cookie|BADGES_KEY|markCaught/.test(demoHook)) {
+  fail("La demostración puede escribir la partida.");
 }
-if (badgeQaRequested("") || badgeQaRequested("?qaBadges=0") || badgeQaRequested("?qaBadges=1x")) {
-  fail("El modo prueba se activó con un query inválido.");
-}
-if (badgeQaEnabled("?qaBadges=1") !== (process.env.NODE_ENV === "development")) {
-  fail("El modo prueba no respeta el entorno.");
-}
-if (process.env.NODE_ENV === "production" && badgeQaEnabled("?qaBadges=1")) {
-  fail("El modo prueba quedó disponible en producción.");
+const demoCase = readFileSync(join(process.cwd(), "src", "components", "expedition", "badge-case.tsx"), "utf8");
+if (!demoCase.includes("Probar demostración") || !demoCase.includes("Modo demostración") || demoCase.includes("qaBadges")) {
+  fail("La vitrina no ofrece la demostración pública.");
 }
 
 const rocaMissing = rocaIds[rocaIds.length - 1];

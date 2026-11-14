@@ -17,7 +17,7 @@ import { useArgentinaNow } from "@/components/expedition/use-clock";
 import { useDossier, type DossierEntry } from "@/components/expedition/use-dossier";
 import { useFieldTypes } from "@/components/expedition/use-field-types";
 import { useBadges } from "@/components/expedition/use-badges";
-import { useBadgeQaMode, useQaBadgeSession } from "@/components/expedition/use-badge-qa";
+import { useDemoBadgeSession } from "@/components/expedition/use-badge-demo";
 import { useProgress } from "@/components/expedition/use-progress";
 import { useRegionWeather } from "@/components/expedition/use-region-weather";
 import { useTeam } from "@/components/expedition/use-team";
@@ -62,6 +62,7 @@ export function ExpeditionScreen() {
   const [camera, setCamera] = useState<CameraRequest | null>(null);
   const [dexOpen, setDexOpen] = useState(false);
   const [badgesOpen, setBadgesOpen] = useState(false);
+  const [demoActive, setDemoActive] = useState(false);
   const [enclaveId, setEnclaveId] = useState<string | null>(null);
   const [visit, setVisit] = useState<"gate" | "exterior" | "interior" | null>(null);
   const [examining, setExamining] = useState(false);
@@ -73,10 +74,9 @@ export function ExpeditionScreen() {
   const dexOpener = useRef<HTMLElement | null>(null);
   const badgeOpener = useRef<HTMLElement | null>(null);
   const { progress, hydrated, markSeen, markCaught, reset } = useProgress();
-  const qaMode = useBadgeQaMode();
   const liveBadges = useBadges(progress.caught);
-  const qaBadges = useQaBadgeSession(qaMode.active);
-  const badges = qaMode.active ? qaBadges : liveBadges;
+  const demoBadges = useDemoBadgeSession(demoActive);
+  const badges = demoActive ? demoBadges : liveBadges;
   const team = useTeam(progress.caught, hydrated);
 
   const rememberName = useCallback((entry: DossierEntry) => {
@@ -420,19 +420,17 @@ export function ExpeditionScreen() {
           <BadgeCase
             badges={badges.badges}
             summary={badges.summary}
-            qa={
-              process.env.NODE_ENV === "development" && qaMode.active
-                ? {
-                    onComplete: qaBadges.completeBadge,
-                    onCompleteAll: qaBadges.completeAll,
-                    onReset: qaBadges.resetQa,
-                    onExit: () => {
-                      qaBadges.resetQa();
-                      qaMode.exit();
-                    },
-                  }
-                : null
-            }
+            demo={{
+              active: demoActive,
+              onEnter: () => setDemoActive(true),
+              onComplete: demoBadges.completeBadge,
+              onCompleteAll: demoBadges.completeAll,
+              onReset: demoBadges.resetDemo,
+              onExit: () => {
+                demoBadges.resetDemo();
+                setDemoActive(false);
+              },
+            }}
             onClose={() => {
               setBadgesOpen(false);
               const opener = badgeOpener.current;

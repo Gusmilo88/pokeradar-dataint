@@ -385,6 +385,16 @@
   text-transform: uppercase;
 }
 
+.badge-demo-copy {
+  flex: 1 1 100%;
+  margin: 0;
+  color: #f6efe2;
+  font-size: 0.82rem;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-transform: none;
+}
+
 .badge-qa button,
 .badge-qa-button {
   min-height: 2.25rem;

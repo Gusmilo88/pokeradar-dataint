@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { badgeSummary, evaluateBadges, type BadgeSummary, type BadgeView } from "@/lib/badges/evaluate";
 import {
   acknowledgeBadge,
@@ -8,40 +8,14 @@ import {
   markCollectionCelebrated,
   type BadgeLedger,
 } from "@/lib/badges/ledger";
-import { allBadgeSpecies, badgeQaEnabled, missingSpecies, qaCatch } from "@/lib/badges/qa";
+import { allBadgeSpecies, missingSpecies, qaCatch } from "@/lib/badges/qa";
 import type { BadgeCeremony } from "@/components/expedition/use-badges";
 
-const QA_EVENT = "pokeradar-qa-badges";
-
-function subscribe(onStoreChange: () => void): () => void {
-  window.addEventListener("popstate", onStoreChange);
-  window.addEventListener(QA_EVENT, onStoreChange);
-  return () => {
-    window.removeEventListener("popstate", onStoreChange);
-    window.removeEventListener(QA_EVENT, onStoreChange);
-  };
-}
-
-function readSearch(): string {
-  return window.location.search;
-}
-
-export function useBadgeQaMode(): { active: boolean; exit: () => void } {
-  const search = useSyncExternalStore(subscribe, readSearch, () => "");
-  const active = badgeQaEnabled(search);
-  const exit = useCallback(() => {
-    if (process.env.NODE_ENV !== "development") {
-      return;
-    }
-    const url = new URL(window.location.href);
-    url.searchParams.delete("qaBadges");
-    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-    window.dispatchEvent(new Event(QA_EVENT));
-  }, []);
-  return { active, exit };
-}
-
-export function useQaBadgeSession(active: boolean): {
+/**
+ * Sesión de demostración. El conjunto y la bitácora viven en memoria:
+ * no se publican en el almacenamiento de la partida.
+ */
+export function useDemoBadgeSession(active: boolean): {
   badges: readonly BadgeView[];
   summary: BadgeSummary;
   ceremony: BadgeCeremony | null;
@@ -50,7 +24,7 @@ export function useQaBadgeSession(active: boolean): {
   skipCeremonies: () => void;
   completeBadge: (id: string) => void;
   completeAll: () => void;
-  resetQa: () => void;
+  resetDemo: () => void;
 } {
   const caughtRef = useRef<ReadonlySet<string>>(new Set());
   const ledgerRef = useRef<BadgeLedger>(emptyBadgeLedger());
@@ -64,7 +38,7 @@ export function useQaBadgeSession(active: boolean): {
     queueRef.current = queue;
   }, [queue]);
 
-  const resetQa = useCallback(() => {
+  const resetDemo = useCallback(() => {
     const blankCaught = new Set<string>();
     const blank = emptyBadgeLedger();
     caughtRef.current = blankCaught;
@@ -76,10 +50,10 @@ export function useQaBadgeSession(active: boolean): {
 
   useEffect(() => {
     if (active && !wasActive.current) {
-      resetQa();
+      resetDemo();
     }
     wasActive.current = active;
-  }, [active, resetQa]);
+  }, [active, resetDemo]);
 
   const enqueue = useCallback((medals: readonly string[], collection: boolean) => {
     if (medals.length === 0 && !collection) {
@@ -93,7 +67,7 @@ export function useQaBadgeSession(active: boolean): {
   }, []);
 
   const complete = useCallback((speciesIds: readonly string[]) => {
-    if (!active || process.env.NODE_ENV !== "development") {
+    if (!active) {
       return;
     }
     const step = qaCatch(caughtRef.current, ledgerRef.current, speciesIds, new Date().toISOString());
@@ -152,6 +126,6 @@ export function useQaBadgeSession(active: boolean): {
     skipCeremonies,
     completeBadge,
     completeAll,
-    resetQa,
+    resetDemo,
   };
 }

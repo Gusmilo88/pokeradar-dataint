@@ -1,16 +1,6 @@
 import { BADGES } from "@/lib/badges/badges-data";
 import { witnessUnlocks, type BadgeLedger, type WitnessResult } from "@/lib/badges/ledger";
 
-/** El query solo cuenta en desarrollo. En producción queda apagado. */
-export function badgeQaRequested(search: string): boolean {
-  const raw = search.startsWith("?") ? search.slice(1) : search;
-  return new URLSearchParams(raw).get("qaBadges") === "1";
-}
-
-export function badgeQaEnabled(search: string): boolean {
-  return process.env.NODE_ENV === "development" && badgeQaRequested(search);
-}
-
 export function missingSpecies(badgeId: string, caught: ReadonlySet<string>): readonly string[] {
   const badge = BADGES.find((item) => item.id === badgeId);
   if (!badge || badge.rule.kind !== "allCaptured") {

@@ -147,17 +147,19 @@ export function BadgeCase({
   badges,
   summary,
   onClose,
-  qa = null,
+  demo,
 }: {
   badges: readonly BadgeView[];
   summary: BadgeSummary;
   onClose: () => void;
-  qa?: {
+  demo: {
+    active: boolean;
+    onEnter: () => void;
     onComplete: (id: string) => void;
     onCompleteAll: () => void;
     onReset: () => void;
     onExit: () => void;
-  } | null;
+  };
 }) {
   const titleId = useId();
   const detailTitleId = useId();
@@ -250,20 +252,27 @@ export function BadgeCase({
             Cerrar
           </button>
         </header>
-        {process.env.NODE_ENV === "development" && qa ? (
-          <div className="badge-qa" data-qa="badges">
-            <p className="badge-qa-note">Prueba en memoria</p>
-            <button type="button" onClick={qa.onCompleteAll}>
-              Completar las 8
+        <div className="badge-qa" data-badge-demo={demo.active ? "on" : "off"}>
+          {demo.active ? (
+            <>
+              <p className="badge-qa-note">Modo demostración</p>
+              <p className="badge-demo-copy">Los logros simulados quedan en memoria y no modifican la partida.</p>
+              <button type="button" onClick={demo.onCompleteAll}>
+                Completar las 8
+              </button>
+              <button type="button" onClick={demo.onReset}>
+                Reiniciar demostración
+              </button>
+              <button type="button" onClick={demo.onExit}>
+                Salir de demostración
+              </button>
+            </>
+          ) : (
+            <button type="button" onClick={demo.onEnter}>
+              Probar demostración
             </button>
-            <button type="button" onClick={qa.onReset}>
-              Reiniciar prueba
-            </button>
-            <button type="button" onClick={qa.onExit}>
-              Salir del modo prueba
-            </button>
-          </div>
-        ) : null}
+          )}
+        </div>
         <div className="badge-scroll">
           <div className="badge-tray">
             <ul className="badge-grid">
@@ -331,7 +340,7 @@ export function BadgeCase({
                 </dd>
                 <dt>Estado</dt>
                 <dd>{presentationLabel(selected.presentation)}</dd>
-                <dt>Fecha del logro</dt>
+                <dt>{demo.active ? "Fecha simulada" : "Fecha del logro"}</dt>
                 <dd>{formatUnlock(selected)}</dd>
               </dl>
               <h4 className="badge-species-title">Pokémon del conjunto</h4>
@@ -343,12 +352,12 @@ export function BadgeCase({
                 ))}
               </ul>
               <div className="badge-detail-actions">
-                {process.env.NODE_ENV === "development" && qa ? (
+                {demo.active ? (
                   <button
                     type="button"
                     className="badge-qa-button"
                     disabled={selected.missing.length === 0}
-                    onClick={() => qa.onComplete(selected.id)}
+                    onClick={() => demo.onComplete(selected.id)}
                   >
                     Completar medalla
                   </button>
