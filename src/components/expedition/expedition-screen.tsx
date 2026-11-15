@@ -16,8 +16,10 @@ import { TeamDock } from "@/components/expedition/team-dock";
 import { useArgentinaNow } from "@/components/expedition/use-clock";
 import { useDossier, type DossierEntry } from "@/components/expedition/use-dossier";
 import { useFieldTypes } from "@/components/expedition/use-field-types";
+import { LevelCeremony } from "@/components/expedition/level-ceremony";
 import { useBadges } from "@/components/expedition/use-badges";
 import { useDemoBadgeSession } from "@/components/expedition/use-badge-demo";
+import { useLevelCeremonies } from "@/components/expedition/use-level-ceremony";
 import { useProgress } from "@/components/expedition/use-progress";
 import { useRegionWeather } from "@/components/expedition/use-region-weather";
 import { useTeam } from "@/components/expedition/use-team";
@@ -74,6 +76,7 @@ export function ExpeditionScreen() {
   const dexOpener = useRef<HTMLElement | null>(null);
   const badgeOpener = useRef<HTMLElement | null>(null);
   const { progress, hydrated, markSeen, markCaught, reset } = useProgress();
+  const levels = useLevelCeremonies(progress.caught, hydrated);
   const liveBadges = useBadges(progress.caught);
   const demoBadges = useDemoBadgeSession(demoActive);
   const badges = demoActive ? demoBadges : liveBadges;
@@ -410,7 +413,14 @@ export function ExpeditionScreen() {
             onTeam={team.add}
           />
         ) : null}
-        {badgeCeremony ? (
+        {levels.ceremony ? (
+          <LevelCeremony
+            item={levels.ceremony}
+            pending={levels.pending}
+            onClose={levels.dismiss}
+            onSkip={levels.skip}
+          />
+        ) : badgeCeremony ? (
           <BadgeCeremony
             item={badgeCeremony}
             badge={badgeCeremonyMedal}

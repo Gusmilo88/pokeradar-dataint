@@ -94,6 +94,48 @@ export function playBadgeFanfare(kind: "medal" | "collection" = "medal"): void {
   }, kind === "collection" ? 900 : 640);
 }
 
+/**
+ * Fanfarria breve de nivel. La variante con recompensa añade dos notas.
+ * Corta el sonido activo para no sonar junto a la captura o a una medalla.
+ * El silencio la omite. Reduced motion no la silencia.
+ */
+export function playLevelFanfare(kind: "level" | "reward" = "level"): void {
+  if (!readCaptureAudio()) {
+    return;
+  }
+  const audio = audioContext();
+  if (!audio) {
+    return;
+  }
+  void audio.resume();
+  active?.stop();
+  const mine = ticket + 1;
+  ticket = mine;
+  const started = audio.currentTime;
+  const master = audio.createGain();
+  master.gain.setValueAtTime(0.0001, started);
+  master.connect(audio.destination);
+  chime(audio, master, started, 392, 523, 0.16);
+  chime(audio, master, started + 0.12, 523, 784, 0.2);
+  if (kind === "reward") {
+    chime(audio, master, started + 0.26, 659, 988, 0.22);
+    chime(audio, master, started + 0.4, 880, 1318, 0.26);
+  }
+  const stop = () => {
+    const at = audio.currentTime;
+    master.gain.cancelScheduledValues(at);
+    master.gain.setTargetAtTime(0.0001, at, 0.02);
+    window.setTimeout(() => master.disconnect(), 180);
+  };
+  active = { stop };
+  window.setTimeout(() => {
+    if (ticket === mine) {
+      active = null;
+      master.disconnect();
+    }
+  }, kind === "reward" ? 920 : 520);
+}
+
 export function playCaptureCue(cue: CaptureCue): void {
   if (!readCaptureAudio()) {
     return;
