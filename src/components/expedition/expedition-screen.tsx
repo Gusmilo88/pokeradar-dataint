@@ -19,6 +19,7 @@ import { useFieldTypes } from "@/components/expedition/use-field-types";
 import { LevelCeremony } from "@/components/expedition/level-ceremony";
 import { useBadges } from "@/components/expedition/use-badges";
 import { useDemoBadgeSession } from "@/components/expedition/use-badge-demo";
+import { useExpeditionDemo } from "@/components/expedition/use-expedition-demo";
 import { useLevelCeremonies } from "@/components/expedition/use-level-ceremony";
 import { useProgress } from "@/components/expedition/use-progress";
 import { useRegionWeather } from "@/components/expedition/use-region-weather";
@@ -40,6 +41,8 @@ import { argentinaClock, isFieldWild } from "@/lib/expedition/schedule";
 import { findSighting } from "@/lib/expedition/sightings";
 import { activeEncounterIds, moodFromSnapshot } from "@/lib/expedition/weather";
 import { TEAM_LIMIT } from "@/lib/expedition/team";
+import { badgeSummary, evaluateBadges } from "@/lib/badges/evaluate";
+import { adoptHeldUnlocks, emptyBadgeLedger } from "@/lib/badges/ledger";
 import type { AtlasFrame } from "@/lib/map/atlas-frames";
 import { speciesLabel } from "@/lib/pokeapi/labels";
 
@@ -80,6 +83,15 @@ export function ExpeditionScreen() {
   const liveBadges = useBadges(progress.caught);
   const demoBadges = useDemoBadgeSession(demoActive);
   const badges = demoActive ? demoBadges : liveBadges;
+  const expeditionDemo = useExpeditionDemo();
+  const simulatedBadges = useMemo(() => {
+    if (!expeditionDemo.active) {
+      return null;
+    }
+    const ledger = adoptHeldUnlocks(emptyBadgeLedger(), expeditionDemo.caught);
+    const views = evaluateBadges(expeditionDemo.caught, ledger);
+    return { badges: views, summary: badgeSummary(views) };
+  }, [expeditionDemo.active, expeditionDemo.caught]);
   const team = useTeam(progress.caught, hydrated);
 
   const rememberName = useCallback((entry: DossierEntry) => {
@@ -382,8 +394,8 @@ export function ExpeditionScreen() {
           <PokedexView
             progress={progress}
             seen={progress.seen.size}
-            badgesEarned={liveBadges.summary.earned}
-            badgesTotal={liveBadges.summary.total}
+            badgesEarned={expeditionDemo.active && simulatedBadges ? simulatedBadges.summary.earned : liveBadges.summary.earned}
+            badgesTotal={expeditionDemo.active && simulatedBadges ? simulatedBadges.summary.total : liveBadges.summary.total}
             onClose={() => {
               setDexOpen(false);
               const opener = dexOpener.current;
@@ -411,6 +423,16 @@ export function ExpeditionScreen() {
             now={now}
             teamMembers={team.members}
             onTeam={team.add}
+            demo={{
+              ...expeditionDemo,
+              enter: () => {
+                if (demoActive) {
+                  demoBadges.resetDemo();
+                  setDemoActive(false);
+                }
+                expeditionDemo.enter();
+              },
+            }}
           />
         ) : null}
         {levels.ceremony ? (
@@ -419,6 +441,13 @@ export function ExpeditionScreen() {
             pending={levels.pending}
             onClose={levels.dismiss}
             onSkip={levels.skip}
+          />
+        ) : expeditionDemo.ceremony ? (
+          <LevelCeremony
+            item={expeditionDemo.ceremony}
+            pending={1}
+            onClose={expeditionDemo.dismissCeremony}
+            onSkip={expeditionDemo.dismissCeremony}
           />
         ) : badgeCeremony ? (
           <BadgeCeremony
@@ -432,11 +461,19 @@ export function ExpeditionScreen() {
         ) : null}
         {badgesOpen ? (
           <BadgeCase
-            badges={badges.badges}
-            summary={badges.summary}
+            badges={expeditionDemo.active && simulatedBadges && !demoActive ? simulatedBadges.badges : badges.badges}
+            summary={expeditionDemo.active && simulatedBadges && !demoActive ? simulatedBadges.summary : badges.summary}
+            notice={
+              expeditionDemo.active && !demoActive
+                ? "MODO DEMOSTRACIÓN. Estas medallas salen de la expedición de prueba y no modifican la partida."
+                : null
+            }
             demo={{
               active: demoActive,
-              onEnter: () => setDemoActive(true),
+              onEnter: () => {
+                expeditionDemo.exit();
+                setDemoActive(true);
+              },
               onComplete: demoBadges.completeBadge,
               onCompleteAll: demoBadges.completeAll,
               onReset: demoBadges.resetDemo,

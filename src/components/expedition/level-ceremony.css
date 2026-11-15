@@ -91,12 +91,6 @@
   text-shadow: 0 0 22px rgba(255, 214, 150, 0.8);
 }
 
-.level-from {
-  margin: 0.35rem 0 0;
-  color: rgba(246, 239, 226, 0.62);
-  font-size: 0.95rem;
-}
-
 .level-ceremony[data-intensity="gold"] .level-now {
   text-shadow:
     0 0 18px rgba(255, 236, 180, 0.95),
@@ -141,7 +135,6 @@
   line-height: 1.15;
 }
 
-.level-reached,
 .level-phrase,
 .level-equip {
   margin: 0.4rem auto 0;

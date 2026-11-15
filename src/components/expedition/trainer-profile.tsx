@@ -25,6 +25,7 @@ export function TrainerProfile({
   equipped,
   onEquip,
   onClose,
+  demonstration = false,
 }: {
   progress: TrainerLevelProgress | null;
   seen: number;
@@ -35,6 +36,7 @@ export function TrainerProfile({
   equipped: CardFinishId;
   onEquip: (id: CardFinishId) => void;
   onClose: () => void;
+  demonstration?: boolean;
 }) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -68,6 +70,11 @@ export function TrainerProfile({
       <article className="trainer-plaque" data-plate={plate}>
         <div className="trainer-identity">
           <p className="trainer-kicker">Entrenador de campo</p>
+          {demonstration ? (
+            <p className="trainer-next" role="status">
+              MODO DEMOSTRACIÓN. Esta prueba no modifica tu partida.
+            </p>
+          ) : null}
           <div className="trainer-seal" data-plate={plate} data-digits={digits} aria-hidden="true">
             <strong>{progress ? progress.level : "—"}</strong>
             <span>NV</span>

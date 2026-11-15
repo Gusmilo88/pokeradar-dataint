@@ -68,7 +68,7 @@ const firstPlan = first.queue[0];
 if (!firstPlan || first.queue.length !== 1 || firstPlan.fromLevel !== 1 || firstPlan.toLevel !== 2 || firstPlan.rewards.length !== 0) {
   fail("La primera captura no subió un solo nivel sin recompensa.");
 }
-if (firstPlan.rank !== rankForLevel(2) || firstPlan.intensity !== "rise" || firstPlan.specimenId !== "kanto-052") {
+if (firstPlan.rank !== rankForLevel(2) || firstPlan.intensity !== "rise" || firstPlan.specimenId !== "kanto-052" || firstPlan.phrase !== "¡Subiste de nivel!") {
   fail("La subida simple no conservó rango, intensidad o especie.");
 }
 if (noteCaught(first, new Set(["kanto-052"])) !== first) {
@@ -126,7 +126,7 @@ if (
   || diamondPlan.toLevel !== 10
   || diamondPlan.rank !== "Cronista"
   || diamondPlan.intensity !== "diamond"
-  || diamondPlan.phrase !== "La expedición alcanza su crónica."
+  || diamondPlan.phrase !== "¡Subiste de nivel!"
 ) {
   fail("Diamante no se desbloqueó al completar el nivel 10.");
 }

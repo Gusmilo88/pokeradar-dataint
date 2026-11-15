@@ -54,7 +54,6 @@ function LevelStage({
   const summary = [
     `Nivel ${item.toLevel}.`,
     `Rango ${item.rank}.`,
-    item.reached.length > 1 ? `${item.reachedLabel}.` : "",
     item.phrase,
     rewardNames ? `${rewardNames}. Disponible para equipar en tu perfil.` : "",
   ].filter((part) => part.length > 0).join(" ");
@@ -197,9 +196,7 @@ function LevelStage({
           ) : null}
           <p className="level-kicker">Entrenador</p>
           <p className="level-now" aria-hidden="true" data-live={displayed === item.toLevel ? "true" : "false"}>{displayed}</p>
-          <p className="level-from">Desde el nivel {item.fromLevel}</p>
           <p className="level-rank">{item.rank}</p>
-          {item.reached.length > 1 ? <p className="level-reached">{item.reachedLabel}</p> : null}
           <p id={phraseId} className="level-phrase">{item.phrase}</p>
         </div>
         {item.rewards.length > 0 ? (

@@ -30,6 +30,7 @@ import {
 import { appearanceHint, isFieldWild, nextWindowHint, timeWindow } from "@/lib/expedition/schedule";
 import { TEAM_LIMIT } from "@/lib/expedition/team";
 import { useRevealedFacts } from "@/components/expedition/use-revealed-facts";
+import type { ExpeditionDemoController } from "@/components/expedition/use-expedition-demo";
 import { findEnclaveByEncounter } from "@/lib/expedition/enclaves";
 import { explorationHint } from "@/lib/expedition/hints";
 import { KANTO_CATALOG, type CatalogEntry } from "@/lib/expedition/kanto";
@@ -72,6 +73,7 @@ export function PokedexView({
   now,
   teamMembers,
   onTeam,
+  demo,
 }: {
   progress: Progress;
   seen: number;
@@ -84,6 +86,7 @@ export function PokedexView({
   now: Date;
   teamMembers: readonly string[];
   onTeam: (encounterId: string) => void;
+  demo: ExpeditionDemoController;
 }) {
   const titleId = useId();
   const detailTitleId = useId();
@@ -97,16 +100,20 @@ export function PokedexView({
   const [typeMode, setTypeMode] = useState<TypeMode>("any");
   const [sortKey, setSortKey] = useState<SortKey>("expedition");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const facts = useRevealedFacts(progress);
-  const trainer = assessExpedition(progress.caught);
-  const trainerLevel = trainer.complete ? trainer.progress.level : 1;
-  const finishes = useFinishes(trainerLevel);
+  const realReport = assessExpedition(progress.caught);
+  const realLevel = realReport.complete ? realReport.progress.level : 1;
+  const finishes = useFinishes(realLevel);
+  const view = demo.active ? demo.progress : progress;
+  const facts = useRevealedFacts(view);
+  const trainer = assessExpedition(view.caught);
   const typeChoices = revealedTypeNames(facts);
   const focused = ORDERED.find((entry) => entry.expeditionNumber === focusNumber) ?? null;
-  const counts = albumCounts(progress);
+  const equipped = demo.active ? demo.equipped : finishes.equipped;
+  const onEquip = demo.active ? demo.equip : finishes.equip;
+  const counts = albumCounts(view);
   const visible = queryAlbum(
     ORDERED,
-    progress,
+    view,
     filter,
     query,
     chosenTypes,
@@ -140,6 +147,9 @@ export function PokedexView({
         return;
       }
       if (document.querySelector("[data-badge-ceremony]")) {
+        return;
+      }
+      if (document.querySelector("[data-level-ceremony]")) {
         return;
       }
       if (document.querySelector(".album-sort-list")) {
@@ -204,6 +214,7 @@ export function PokedexView({
       aria-labelledby={titleId}
       className="album-shell absolute inset-0 z-40 flex min-h-0 flex-col overflow-x-hidden"
       data-card={focused ? "open" : undefined}
+      data-expedition-demo={demo.active ? "on" : "off"}
       onKeyDown={trapTab}
     >
       <header className="album-head" inert={focused || profileOpen ? true : undefined}>
@@ -243,7 +254,12 @@ export function PokedexView({
             <span>Vistos <strong>{counts.seen}</strong></span>
             <span>Capturados <strong>{counts.caught}</strong></span>
           </p>
-          <TrainerXpReadout caught={progress.caught} />
+          <TrainerXpReadout caught={view.caught} />
+          {demo.active ? (
+            <p className="text-sm text-quiet" role="status">
+              <strong>MODO DEMOSTRACIÓN.</strong> Esta prueba no modifica tu partida.
+            </p>
+          ) : null}
         </div>
         <div className="album-head-actions">
           <button type="button" className="action-button inline-flex items-center justify-center" onClick={() => setProfileOpen(true)}>
@@ -336,7 +352,7 @@ export function PokedexView({
           ) : (
             <ul className="album-grid" data-album="grid">
               {visible.map((entry) => {
-                const state = discoveryState(progress, entry.encounterId);
+                const state = discoveryState(view, entry.encounterId);
                 const revealed = state !== "undiscovered";
                 const accent = revealed ? albumAccent(entry) : null;
                 const zone = entry.zoneId ? (findZone(entry.zoneId) ?? null) : null;
@@ -375,7 +391,38 @@ export function PokedexView({
             </ul>
           )}
           <div className="album-reset">
-            {confirmReset ? (
+            {demo.active ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className="action-button inline-flex items-center justify-center"
+                  onClick={demo.complete}
+                >
+                  Completar las 56 capturas
+                </button>
+                <button
+                  type="button"
+                  className="action-button inline-flex items-center justify-center opacity-80"
+                  onClick={() => {
+                    demo.reset();
+                    setFocusNumber(null);
+                  }}
+                >
+                  Reiniciar demostración
+                </button>
+                <button
+                  type="button"
+                  className="action-button inline-flex items-center justify-center opacity-70"
+                  onClick={() => {
+                    demo.exit();
+                    setFocusNumber(null);
+                    setProfileOpen(false);
+                  }}
+                >
+                  Salir de demostración
+                </button>
+              </div>
+            ) : confirmReset ? (
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm text-quiet">Se borran las vistas, las capturas y los acabados de esta expedición.</p>
                 <button
@@ -398,13 +445,22 @@ export function PokedexView({
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                className="action-button inline-flex items-center justify-center opacity-80"
-                onClick={() => setConfirmReset(true)}
-              >
-                Reiniciar expedición
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className="action-button inline-flex items-center justify-center opacity-80"
+                  onClick={() => setConfirmReset(true)}
+                >
+                  Reiniciar expedición
+                </button>
+                <button
+                  type="button"
+                  className="action-button inline-flex items-center justify-center opacity-60"
+                  onClick={demo.enter}
+                >
+                  Probar expedición completa
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -412,28 +468,29 @@ export function PokedexView({
       {focused ? (
         <DexCard
           entry={focused}
-          state={discoveryState(progress, focused.encounterId)}
+          state={discoveryState(view, focused.encounterId)}
           titleId={detailTitleId}
           onBack={closeCard}
           onSeek={onSeek}
-          onCaptured={onCaptured}
+          onCaptured={demo.active ? () => undefined : onCaptured}
           now={now}
-          inTeam={teamMembers.includes(focused.encounterId)}
+          inTeam={demo.active ? false : teamMembers.includes(focused.encounterId)}
           teamFull={teamMembers.length >= TEAM_LIMIT}
-          onTeam={() => onTeam(focused.encounterId)}
-          finish={finishes.equipped}
+          onTeam={demo.active ? () => undefined : () => onTeam(focused.encounterId)}
+          finish={equipped}
         />
       ) : null}
       {profileOpen ? (
         <TrainerProfile
           progress={trainer.complete ? trainer.progress : null}
-          seen={seen}
-          caught={progress.caught.size}
+          seen={demo.active ? view.seen.size : seen}
+          caught={view.caught.size}
           badgesEarned={badgesEarned}
           badgesTotal={badgesTotal}
-          sample={ORDERED.find((entry) => progress.caught.has(entry.encounterId)) ?? null}
-          equipped={finishes.equipped}
-          onEquip={finishes.equip}
+          sample={ORDERED.find((entry) => view.caught.has(entry.encounterId)) ?? null}
+          equipped={equipped}
+          onEquip={onEquip}
+          demonstration={demo.active}
           onClose={() => setProfileOpen(false)}
         />
       ) : null}
@@ -526,6 +583,22 @@ function TurnIcon() {
       />
       <path d="M6.2 5.2v3.8h3.8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M17.8 18.8v-3.8h-3.8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CryIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M4.5 9.4h2.8L11.2 6v12l-3.9-3.4H4.5z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="M14.2 9.2a3.1 3.1 0 0 1 0 5.6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M16.4 7a5.6 5.6 0 0 1 0 10" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   );
 }
@@ -870,6 +943,20 @@ function DexCard({
                 </button>
               ) : null}
               <div className="tcg-edge">
+                {ready ? (
+                  <button
+                    type="button"
+                    className="tcg-icon tcg-cry"
+                    aria-label="Reproducir grito"
+                    title="Reproducir grito"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      playSpeciesCry(ready.pokemon.cries, `dex:${entry.encounterId}:cry`, true);
+                    }}
+                  >
+                    <CryIcon />
+                  </button>
+                ) : null}
                 {turnControl(true)}
                 {canSeek ? (
                   <button

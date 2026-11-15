@@ -56,19 +56,6 @@ export function formatReached(levels: readonly number[]): string {
   return `Niveles ${levels.slice(0, -1).join(", ")} y ${last}`;
 }
 
-function phraseFor(toLevel: number, rewardCount: number): string {
-  if (toLevel >= TRAINER_LEVEL_CAP) {
-    return "La expedición alcanza su crónica.";
-  }
-  if (rewardCount > 1) {
-    return "Este salto deja varios acabados listos.";
-  }
-  if (rewardCount === 1) {
-    return "Un acabado nuevo espera en tu perfil.";
-  }
-  return "La ruta se afirma un poco más.";
-}
-
 export function intensityFor(rewards: readonly CardFinish[]): LevelCeremonyIntensity {
   if (rewards.some((finish) => finish.id === "diamond")) {
     return "diamond";
@@ -112,7 +99,7 @@ export function describeLevelRise(
     reached,
     reachedLabel: formatReached(reached),
     rewards,
-    phrase: phraseFor(toLevel, rewards.length),
+    phrase: "¡Subiste de nivel!",
     specimenId,
     intensity: intensityFor(rewards),
   };

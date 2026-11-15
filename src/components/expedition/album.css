@@ -639,6 +639,11 @@
   background: linear-gradient(180deg, rgba(20, 17, 14, 0), #14110e 55%);
 }
 
+.tcg-cry {
+  grid-column: 1;
+  justify-self: start;
+}
+
 .tcg-flip {
   grid-column: 2;
   justify-self: center;

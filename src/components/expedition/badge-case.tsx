@@ -148,10 +148,12 @@ export function BadgeCase({
   summary,
   onClose,
   demo,
+  notice = null,
 }: {
   badges: readonly BadgeView[];
   summary: BadgeSummary;
   onClose: () => void;
+  notice?: string | null;
   demo: {
     active: boolean;
     onEnter: () => void;
@@ -253,6 +255,7 @@ export function BadgeCase({
           </button>
         </header>
         <div className="badge-qa" data-badge-demo={demo.active ? "on" : "off"}>
+          {notice ? <p className="badge-demo-copy">{notice}</p> : null}
           {demo.active ? (
             <>
               <p className="badge-qa-note">Modo demostración</p>
