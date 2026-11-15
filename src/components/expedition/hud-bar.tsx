@@ -1,4 +1,3 @@
-import { RadarMark } from "@/components/expedition/radar-mark";
 import { SoundToggle } from "@/components/expedition/sound-toggle";
 
 export function HudBar({
@@ -15,17 +14,18 @@ export function HudBar({
   onBadges: () => void;
 }) {
   return (
-    <header className="relative z-20 border-b border-phosphor/20 bg-abyss px-4 py-3 sm:px-6">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <RadarMark />
-          <div className="min-w-0">
-            <p className="truncate font-mono text-[10px] tracking-[0.18em] text-phosphor uppercase">
-              DataInt · Argentina
-            </p>
-            <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">PokéRadar</h1>
-          </div>
-        </div>
+    <header className="brand-header relative z-20 border-b border-cobalt/40 px-3 py-2 sm:px-6">
+      <div className="flex items-center justify-between gap-2 sm:gap-3">
+        <h1 className="min-w-0 flex-1">
+          <img
+            src="/branding/pokeradar-logo.webp"
+            alt="PokéRadar — Expedición Argentina"
+            width={1448}
+            height={1086}
+            className="brand-logo"
+            decoding="async"
+          />
+        </h1>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <SoundToggle />
           <button type="button" className="action-button inline-flex items-center justify-center px-3 sm:px-4" onClick={onDex}>
@@ -33,7 +33,7 @@ export function HudBar({
           </button>
           <button
             type="button"
-            className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-phosphor/55 bg-[rgba(8,28,38,0.92)] text-phosphor-strong sm:hidden"
+            className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-phosphor/55 bg-abyss text-phosphor-strong sm:hidden"
             aria-label="Medallas"
             aria-haspopup="dialog"
             aria-expanded={badgesOpen}

@@ -4,7 +4,10 @@ import type {
   ExpressionSpecification,
   HillshadeLayerSpecification,
   Map as MapLibreMap,
+  SkySpecification,
 } from "maplibre-gl";
+import { PLANET_SKY } from "@/lib/map/globe";
+import { flattenPolarDem, isPolarDemTile } from "@/lib/map/planet-poles";
 
 /**
  * Prototipo de superficie, solo con ?planetPreview=1 en desarrollo.
@@ -18,6 +21,12 @@ export const PLANET_PREVIEW_PARAM = "planetPreview";
 /** Terrain Tiles de AWS Open Data. Teselas Terrarium de 256 px, CC BY 4.0 (Mapzen). */
 export const PLANET_DEM_TILES =
   "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";
+
+/**
+ * La tesela pasa por el protocolo para aplanar solo el borde polar.
+ * El interior y el resto de los zooms siguen siendo el PNG de AWS.
+ */
+const PLANET_DEM_URL = "planetdem://dem/{z}/{x}/{y}.png";
 
 export const PLANET_DEM_ENCODING = "terrarium" as const;
 
@@ -39,6 +48,19 @@ const PLANET_DEM_ATTRIBUTION =
   "Relieve: Terrain Tiles de AWS Open Data, © Mapzen (CC BY 4.0). SRTM, ETOPO1 y GMTED2010.";
 
 const FAILURE_LIMIT = 12;
+
+/**
+ * Halo del prototipo. Más ancho y más pálido que el cielo de la expedición,
+ * y casi sin niebla sobre el suelo para no apagar Argentina.
+ */
+const PREVIEW_SKY: SkySpecification = {
+  "sky-color": "rgba(2, 6, 14, 0)",
+  "horizon-color": "#d4f1fa",
+  "sky-horizon-blend": 0.88,
+  "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 0.95, 2, 0.72, 4.5, 0.22, 7.5, 0],
+  "horizon-fog-blend": 0.04,
+  "fog-color": "#b7dbe8",
+};
 
 const RELIEF_OPACITY: ExpressionSpecification = [
   "interpolate",
@@ -97,9 +119,11 @@ const SHADE_EXAGGERATION: ExpressionSpecification = [
   ["linear"],
   ["zoom"],
   0,
-  0.14,
-  2,
-  0.22,
+  0,
+  2.4,
+  0,
+  3.4,
+  0.35,
   4.2,
   0.58,
   7,
@@ -141,10 +165,16 @@ const OCEAN_VEIL: ExpressionSpecification = [
   "interpolate",
   ["linear"],
   ["zoom"],
+  // Por debajo de 1.7 el abanico del polo ocupa el centro. El velo ahí
+  // dibuja un círculo. El agua de abajo ya es continua.
   0,
-  0.76,
+  0,
+  1.7,
+  0,
+  2.15,
+  0.9,
   5,
-  0.72,
+  0.84,
   9,
   0.66,
 ];
@@ -175,26 +205,100 @@ const EXPEDITION_WATER: ExpressionSpecification = [
   "rgb(27, 27, 29)",
 ];
 
-/** Deja ver la batimetría lejos y vuelve al océano plano del estilo al acercar. */
-const OCEAN_OPACITY: ExpressionSpecification = [
-  "interpolate",
-  ["linear"],
-  ["zoom"],
-  0,
-  0.42,
-  4,
-  0.38,
-  7,
-  0.58,
-  10,
-  0.9,
-  12,
-  1,
-];
+/**
+ * Opacidad constante. En 6.18 un valor que no es constante pasa al pase
+ * translúcido, con profundidad de solo lectura: los triángulos del polo
+ * se superponen y el casquete sale más oscuro que el océano de al lado.
+ * Con 1 el pase es opaco, la profundidad descarta la segunda pasada y el
+ * casquete queda del mismo azul. La batimetría la pinta el velo de arriba.
+ */
+const OCEAN_FILL_OPACITY = 1;
 
 const pending = new WeakSet<MapLibreMap>();
 const retired = new WeakSet<MapLibreMap>();
 const listeners = new WeakMap<MapLibreMap, (event: ErrorEvent) => void>();
+const demLoads = new Map<string, Promise<ArrayBuffer>>();
+let demProtocolReady = false;
+
+function loadDemTile(z: string, x: string, y: string, signal: AbortSignal): Promise<ArrayBuffer> {
+  const key = `${z}/${x}/${y}`;
+  const cached = demLoads.get(key);
+  if (cached) {
+    return cached;
+  }
+  const url = PLANET_DEM_TILES.replace("{z}", z).replace("{x}", x).replace("{y}", y);
+  const job = fetch(url, { signal, mode: "cors" }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(`terrarium HTTP ${response.status}`);
+    }
+    return response.arrayBuffer();
+  });
+  demLoads.set(key, job);
+  void job.finally(() => {
+    setTimeout(() => demLoads.delete(key), 20000);
+  }).catch(() => undefined);
+  return job;
+}
+
+/** Solo corre en el navegador, antes de agregar la fuente. */
+async function registerDemProtocol(): Promise<void> {
+  if (demProtocolReady || typeof document === "undefined") {
+    return;
+  }
+  const { addProtocol } = await import("maplibre-gl");
+  if (demProtocolReady) {
+    return;
+  }
+  demProtocolReady = true;
+  addProtocol("planetdem", async (params, abortController) => {
+    const match = /^planetdem:\/\/dem\/(\d+)\/(\d+)\/(\d+)\.png$/.exec(params.url);
+    if (!match) {
+      throw new Error("terrarium: tesela no reconocida");
+    }
+    const z = match[1];
+    const x = match[2];
+    const y = match[3];
+    if (z === undefined || x === undefined || y === undefined) {
+      throw new Error("terrarium: tesela no reconocida");
+    }
+    const zoom = Number(z);
+    const row = Number(y);
+    const original = await loadDemTile(z, x, y, abortController.signal);
+    if (!isPolarDemTile(zoom, row)) {
+      return { data: original };
+    }
+    try {
+      const blob = new Blob([original], { type: "image/png" });
+      const bitmap = await createImageBitmap(blob, {
+        colorSpaceConversion: "none",
+        premultiplyAlpha: "none",
+      });
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) {
+        bitmap.close();
+        return { data: original };
+      }
+      context.drawImage(bitmap, 0, 0);
+      bitmap.close();
+      const image = context.getImageData(0, 0, canvas.width, canvas.height);
+      flattenPolarDem(image.data, canvas.width, canvas.height, row === 0);
+      context.putImageData(image, 0, 0);
+      const encoded = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, "image/png");
+      });
+      if (!encoded) {
+        return { data: original };
+      }
+      return { data: await encoded.arrayBuffer() };
+    } catch (error) {
+      console.warn("No se pudo aplanar el borde polar. Se usa la tesela original.", error);
+      return { data: original };
+    }
+  });
+}
 
 export function planetPreviewEnabled(): boolean {
   if (process.env.NODE_ENV !== "development") {
@@ -224,12 +328,23 @@ function shadeAnchor(map: MapLibreMap): string | undefined {
   return undefined;
 }
 
+function paintPreviewSky(map: MapLibreMap): void {
+  if (map.getProjection()?.type !== "globe") {
+    return;
+  }
+  try {
+    map.setSky(PREVIEW_SKY);
+  } catch (error) {
+    console.warn("La atmósfera del prototipo no se aplicó.", error);
+  }
+}
+
 function paintOceanFill(map: MapLibreMap): void {
   if (!map.getLayer("water")) {
     return;
   }
   map.setPaintProperty("water", "fill-color", OCEAN_FILL);
-  map.setPaintProperty("water", "fill-opacity", OCEAN_OPACITY);
+  map.setPaintProperty("water", "fill-opacity", OCEAN_FILL_OPACITY);
 }
 
 function restoreOcean(map: MapLibreMap): void {
@@ -238,6 +353,11 @@ function restoreOcean(map: MapLibreMap): void {
   }
   map.setPaintProperty("water", "fill-color", EXPEDITION_WATER);
   map.setPaintProperty("water", "fill-opacity", 1);
+  try {
+    map.setSky(PLANET_SKY);
+  } catch (error) {
+    console.warn("No se pudo devolver el cielo de la expedición.", error);
+  }
 }
 
 function removePlanetPreview(map: MapLibreMap): void {
@@ -300,7 +420,7 @@ function addPlanetLayers(map: MapLibreMap): void {
   if (!map.getSource(PLANET_DEM_SOURCE)) {
     map.addSource(PLANET_DEM_SOURCE, {
       type: "raster-dem",
-      tiles: [PLANET_DEM_TILES],
+      tiles: [PLANET_DEM_URL],
       encoding: PLANET_DEM_ENCODING,
       tileSize: PLANET_DEM_TILE_SIZE,
       minzoom: 0,
@@ -331,7 +451,9 @@ function addPlanetLayers(map: MapLibreMap): void {
       "hillshade-method": "multidirectional",
       "hillshade-exaggeration": SHADE_EXAGGERATION,
       "hillshade-illumination-direction": 315,
-      "hillshade-illumination-altitude": 50,
+      // 30°: en terreno plano el sombreado sale con alfa 0. Más alto, el
+      // casquete plano del polo se apila y queda un disco gris.
+      "hillshade-illumination-altitude": 30,
       "hillshade-shadow-color": "#03060c",
       "hillshade-highlight-color": "#5e6d66",
       "hillshade-accent-color": "#3d4a44",
@@ -374,7 +496,9 @@ async function mountPlanetPreview(map: MapLibreMap): Promise<void> {
     if (!map.getStyle() || retired.has(map) || map.getLayer(OCEAN_ID)) {
       return;
     }
+    await registerDemProtocol();
     addPlanetLayers(map);
+    paintPreviewSky(map);
   } catch (error) {
     console.warn("MapLibre rechazó el relieve. Se vuelve a la superficie original.", error);
     try {
@@ -386,9 +510,13 @@ async function mountPlanetPreview(map: MapLibreMap): Promise<void> {
 }
 
 export function applyPlanetPreview(map: MapLibreMap): void {
+  if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+    (window as Window & { __planetMap?: MapLibreMap }).__planetMap = map;
+  }
   if (!planetPreviewEnabled() || retired.has(map)) {
     return;
   }
+  paintPreviewSky(map);
   if (map.getLayer(OCEAN_ID)) {
     paintOceanFill(map);
     return;

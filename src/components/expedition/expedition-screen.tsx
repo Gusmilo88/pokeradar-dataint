@@ -3,6 +3,7 @@
 import { MotionConfig, motion } from "framer-motion";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { BadgeCase } from "@/components/expedition/badge-case";
+import { CinematicIntro } from "@/components/expedition/cinematic-intro";
 import { BadgeCeremony } from "@/components/expedition/badge-ceremony";
 import { DetailDock } from "@/components/expedition/detail-dock";
 import { AnomalyGate } from "@/components/expedition/anomaly-gate";
@@ -275,6 +276,7 @@ export function ExpeditionScreen() {
   return (
     <MotionConfig reducedMotion="user">
       <div
+        id="expedicion"
         className={
           notebookOpen
             ? "relative grid h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(10rem,1fr)_minmax(8.5rem,42dvh)] overflow-hidden lg:grid-cols-[minmax(0,1fr)_22.5rem] lg:grid-rows-[auto_minmax(0,1fr)]"
@@ -566,6 +568,7 @@ export function ExpeditionScreen() {
           />
         ) : null}
       </div>
+      <CinematicIntro />
     </MotionConfig>
   );
 }

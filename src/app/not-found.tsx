@@ -11,7 +11,7 @@ export default function NotFound() {
           <span className="not-found-ball" />
           <span>4</span>
         </p>
-        <h1 className="mt-2 text-2xl font-semibold">404 — Señal no encontrada</h1>
+        <h1 className="mt-2 font-brand text-2xl font-extrabold">404 — Señal no encontrada</h1>
         <p className="mx-auto mt-2 max-w-sm text-sm text-quiet">
           Esta frecuencia no pertenece a la expedición.
         </p>

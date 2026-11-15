@@ -10,11 +10,7 @@ const MapView = dynamic(
     ssr: false,
     loading: () => (
       <div className="grid h-full min-h-[16rem] place-items-center bg-void/80 px-6">
-        <StatusPanel
-          tone="loading"
-          title="Cargando mapa interactivo"
-          description="MapLibre arranca en el navegador. El servidor no toca window."
-        />
+        <StatusPanel tone="loading" title="Cargando mapa interactivo" />
       </div>
     ),
   },

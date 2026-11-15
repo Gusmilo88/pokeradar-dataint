@@ -7,6 +7,15 @@ import {
   PLANET_PREVIEW_PARAM,
   planetPreviewEnabled,
 } from "../src/lib/map/planet-preview";
+import {
+  NORTH_CAP_ELEVATION,
+  POLAR_BLEND_ROWS,
+  SOUTH_CAP_ELEVATION,
+  decodeTerrarium,
+  encodeTerrarium,
+  flattenPolarDem,
+  isPolarDemTile,
+} from "../src/lib/map/planet-poles";
 
 if (planetPreviewEnabled()) {
   throw new Error("el prototipo no debe activarse fuera del navegador de desarrollo");
@@ -49,6 +58,50 @@ if (calls.length !== 2) {
 }
 if (view.includes("setTerrain") || view.includes("planet-dem")) {
   throw new Error("la vista no debe cargar el DEM por su cuenta");
+}
+
+if (/cloud|nube|clouds\.webp|getCameraAltitude/i.test(preview)) {
+  throw new Error("la capa de nubes sigue en el prototipo");
+}
+if (!preview.includes("planetdem://dem/") || !preview.includes("OCEAN_FILL_OPACITY = 1")) {
+  throw new Error("el borde polar o el océano opaco del prototipo no quedaron aislados");
+}
+if (!isPolarDemTile(0, 0) || !isPolarDemTile(3, 7) || isPolarDemTile(3, 1) || isPolarDemTile(3, 8)) {
+  throw new Error("la tesela polar no se reconoce");
+}
+const packed = new Uint8ClampedArray(4);
+encodeTerrarium(NORTH_CAP_ELEVATION, packed, 0);
+if (Math.abs(decodeTerrarium(packed[0] ?? 0, packed[1] ?? 0, packed[2] ?? 0) - NORTH_CAP_ELEVATION) > 0.01) {
+  throw new Error("la cota del polo norte no sobrevive el Terrarium");
+}
+encodeTerrarium(SOUTH_CAP_ELEVATION, packed, 0);
+if (Math.abs(decodeTerrarium(packed[0] ?? 0, packed[1] ?? 0, packed[2] ?? 0) - SOUTH_CAP_ELEVATION) > 0.01) {
+  throw new Error("la cota del polo sur no sobrevive el Terrarium");
+}
+const width = 8;
+const height = 64;
+const tile = new Uint8ClampedArray(width * height * 4);
+for (let y = 0; y < height; y += 1) {
+  for (let x = 0; x < width; x += 1) {
+    encodeTerrarium(1000 + x * 50, tile, (y * width + x) * 4);
+  }
+}
+flattenPolarDem(tile, width, height, true);
+const edgeLeft = decodeTerrarium(tile[0] ?? 0, tile[1] ?? 0, tile[2] ?? 0);
+const edgeRight = decodeTerrarium(tile[28] ?? 0, tile[29] ?? 0, tile[30] ?? 0);
+if (Math.abs(edgeLeft - edgeRight) > 0.05) {
+  throw new Error("el borde norte no quedó plano");
+}
+const inlandIndex = 50 * width * 4 + 3 * 4;
+const inland = decodeTerrarium(tile[inlandIndex] ?? 0, tile[inlandIndex + 1] ?? 0, tile[inlandIndex + 2] ?? 0);
+if (Math.abs(inland - 1150) > 0.05) {
+  throw new Error("el aplanado polar modificó el interior de la tesela");
+}
+if (POLAR_BLEND_ROWS < 8) {
+  throw new Error("el borde plano no cubre la fila que el globo estira");
+}
+if (Math.abs(edgeLeft - NORTH_CAP_ELEVATION) > 0.05) {
+  throw new Error("el borde norte no usa la cota única del casquete");
 }
 
 console.log("OK planet-preview aislado terrarium maxzoom=" + String(PLANET_DEM_MAX_ZOOM));

@@ -1,0 +1,26 @@
+Nubes del prototipo ?planetPreview=1. No es el clima del juego.
+
+Archivo: clouds.webp, 4096×2048, solo nubosidad con transparencia.
+Instantánea descargada el 15 de noviembre de 2026 desde
+https://clouds.matteason.co.uk/images/4096x2048/clouds-alpha.png
+
+Datos de satélite: EUMETSAT. Atribución exigida:
+Contains modified EUMETSAT data 2026.
+Política: https://www.eumetsat.int/eumetsat-data-licensing
+
+Mapa procesado (alfa y proyección): Matt Eason, live-cloud-maps, publicado como CC0 1.0.
+https://github.com/matteason/live-cloud-maps
+
+No es una observación en vivo: la app no vuelve a pedir el servicio.
+Los polos no los cubre el satélite; el mapa de origen los espeja.
+
+Tratamiento local, sin inventar nubes:
+- La fuente es equirectangular. Para la fuente image de MapLibre se remuestrea
+  a Mercator: cada fila queda en la latitud que le corresponde entre ±85.05°.
+- El alfa sale de la densidad ya extraída. Una curva potencia baja las nubes
+  finas y conserva los núcleos. No hay desenfoque.
+- El color es un blanco frío fijo, 198 206 214, también donde el alfa es 0,
+  para que el filtro lineal no mezcle un color residual.
+- Desde 68° de latitud el alfa baja y llega a 0 en 80°, antes del borde
+  Mercator. La fuente image no cubre de 85.05° al polo; ese casquete lo pinta
+  el relieve, no un disco de nubes.

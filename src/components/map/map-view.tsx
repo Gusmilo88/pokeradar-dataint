@@ -539,6 +539,7 @@ export function MapView({
     const applied = applyPlanet(map, next);
     projectionRef.current = applied;
     writePlanetMode(applied);
+    applyPlanetPreview(map);
     setProjection(applied);
     setLayoutTick((value) => value + 1);
   }
@@ -596,11 +597,7 @@ export function MapView({
       </div>
       {phase === "loading" ? (
         <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center bg-void/55 px-6">
-          <StatusPanel
-            tone="loading"
-            title="Sintonizando el terreno"
-            description="OpenFreeMap está trayendo el estilo oscuro centrado en Argentina."
-          />
+          <StatusPanel tone="loading" title="Sintonizando el terreno" />
         </div>
       ) : null}
       {phase === "error" ? (

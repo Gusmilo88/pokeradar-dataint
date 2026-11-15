@@ -17,7 +17,7 @@ export function StatusPanel({
 }: {
   tone: StatusTone;
   title: string;
-  description: string;
+  description?: string;
   action?: ReactNode;
   align?: "center" | "start";
 }) {
@@ -44,11 +44,13 @@ export function StatusPanel({
           }
         />
       )}
-      <p className="font-mono text-[10px] tracking-[0.22em] text-phosphor uppercase">
-        {toneLabel[tone]}
-      </p>
+      {description ? (
+        <p className="font-mono text-[10px] tracking-[0.22em] text-phosphor uppercase">
+          {toneLabel[tone]}
+        </p>
+      ) : null}
       <h2 className="text-lg font-semibold tracking-tight text-ink">{title}</h2>
-      <p className="text-sm leading-6 text-quiet">{description}</p>
+      {description ? <p className="text-sm leading-6 text-quiet">{description}</p> : null}
       {action}
     </div>
   );
