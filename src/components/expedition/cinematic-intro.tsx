@@ -13,11 +13,10 @@ export function CinematicIntro() {
 
   useEffect(() => {
     if (document.documentElement.dataset.intro !== "play") {
-      setPhase("done");
-      return;
+      const frame = window.requestAnimationFrame(() => setPhase("done"));
+      return () => window.cancelAnimationFrame(frame);
     }
 
-    setPhase("play");
     const root = document.getElementById("expedicion");
     root?.setAttribute("inert", "");
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
