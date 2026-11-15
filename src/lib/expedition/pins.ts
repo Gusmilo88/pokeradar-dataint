@@ -7,6 +7,7 @@ import {
 } from "@/lib/expedition/argentina";
 import type { Enclave, EnclavePalette } from "@/lib/expedition/enclaves";
 import { KANTO_CATALOG } from "@/lib/expedition/kanto";
+import { isZoneCompleted } from "@/lib/expedition/zone-completion";
 import { speciesLabel } from "@/lib/pokeapi/labels";
 import { blackWhiteAnimated, blackWhiteStill } from "@/lib/pokeapi/sprites";
 
@@ -40,7 +41,7 @@ export interface FieldPin {
   /** Nombre visible solo al enfocar un enclave ya descubierto. */
   focusName?: string;
   count?: number;
-  /** Todas las presencias de la zona están capturadas. */
+  /** Todas las especies asignadas a la zona están capturadas. */
   complete?: boolean;
   presence?: "hidden" | "seen" | "caught";
   nationalId?: number;
@@ -56,14 +57,10 @@ export function buildZonePins(
   zones: readonly ExpeditionZone[],
   sightings: readonly Sighting[],
   caughtIds?: ReadonlySet<string>,
-  roster?: readonly Sighting[],
 ): FieldPin[] {
-  const catalog = roster ?? sightings;
   return zones.map((zone) => {
     const count = sightings.filter((sighting) => sighting.zoneId === zone.id).length;
-    const members = catalog.filter((sighting) => sighting.zoneId === zone.id);
-    const complete =
-      Boolean(caughtIds) && members.length > 0 && members.every((sighting) => caughtIds?.has(sighting.id));
+    const complete = caughtIds !== undefined && isZoneCompleted(zone.id, caughtIds);
     return {
       id: `zone:${zone.id}`,
       zoneId: zone.id,

@@ -1,4 +1,5 @@
-import type { LngLat, Map as MapLibreMap, Marker, SkySpecification } from "maplibre-gl";
+import { type Map as MapLibreMap, type Marker, type SkySpecification } from "maplibre-gl";
+import { markerVisualScale } from "@/lib/map/marker-lod";
 
 export type PlanetMode = "globe" | "mercator";
 
@@ -91,32 +92,15 @@ export function applyPlanet(map: MapLibreMap, mode: PlanetMode): PlanetMode {
   return applied;
 }
 
-type PlacedMarker = Pick<Marker, "getLngLat" | "getElement">;
+type PlacedMarker = Pick<Marker, "getElement">;
 
-/** Oculta el sello cuando el planeta tapa esa coordenada. En Mercator no oculta. */
-export function concealHiddenMarkers(map: MapLibreMap, markers: readonly PlacedMarker[]): void {
-  const transform = map._camera?.transform;
-  if (!transform) {
-    return;
-  }
+/**
+ * Ajusta solo la escala del símbolo interno.
+ * MapLibre conserva el transform del contenedor y marca el reverso con `maplibregl-marker-covered`.
+ */
+export function frameFieldMarkers(map: MapLibreMap, markers: readonly PlacedMarker[]): void {
+  const scale = markerVisualScale(map.getZoom()).toFixed(2);
   for (const marker of markers) {
-    let hidden = false;
-    try {
-      hidden = transform.isLocationOccluded(marker.getLngLat() as LngLat);
-    } catch {
-      hidden = false;
-    }
-    const element = marker.getElement();
-    element.style.visibility = hidden ? "hidden" : "";
-    element.style.pointerEvents = hidden ? "none" : "";
-    if (hidden) {
-      element.setAttribute("aria-hidden", "true");
-      element.tabIndex = -1;
-      continue;
-    }
-    element.removeAttribute("aria-hidden");
-    if (element.tabIndex === -1) {
-      element.tabIndex = 0;
-    }
+    marker.getElement().style.setProperty("--pin-scale", scale);
   }
 }

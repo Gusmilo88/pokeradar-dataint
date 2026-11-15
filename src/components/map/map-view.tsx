@@ -20,7 +20,6 @@ import {
   collapsePins,
   INSPECT_ZOOM,
   REGIONAL_ZOOM,
-  separateZoneOffsets,
   type FieldPin,
 } from "@/lib/expedition/pins";
 import { errorMessage } from "@/lib/errors/message";
@@ -33,11 +32,12 @@ import { ARGENTINA_LAND_NOTE } from "@/lib/map/argentina-land";
 import { ATLAS_FRAMES, type AtlasFrame } from "@/lib/map/atlas-frames";
 import { applyExpeditionStyle } from "@/lib/map/expedition-style";
 import { markerBand } from "@/lib/map/marker-band";
+import { markerLod, type MarkerLod } from "@/lib/map/marker-lod";
 import { StarField } from "@/components/map/star-field";
 import {
   applyPlanet,
   ARGENTINA_APPROACH_ZOOM,
-  concealHiddenMarkers,
+  frameFieldMarkers,
   globeHomeZoom,
   readPlanetMode,
   writePlanetMode,
@@ -136,6 +136,7 @@ export function MapView({
   const [projection, setProjection] = useState<PlanetMode>(readPlanetMode);
   const projectionRef = useRef(projection);
   const markersRef = useRef<Marker[]>([]);
+  const detailLodRef = useRef<MarkerLod | null>(null);
 
   useEffect(() => {
     projectionRef.current = projection;
@@ -264,7 +265,12 @@ export function MapView({
 
     const onMoveEnd = () => {
       publishReadout();
-      setLayoutTick((value) => value + 1);
+      const lod = markerLod(activeMap.getZoom());
+      frameFieldMarkers(activeMap, markersRef.current);
+      if (lod === "near" || lod !== detailLodRef.current) {
+        detailLodRef.current = lod;
+        setLayoutTick((value) => value + 1);
+      }
     };
 
     const onError = (event: ErrorEvent) => {
@@ -313,7 +319,7 @@ export function MapView({
     };
 
     const onMove = () => {
-      concealHiddenMarkers(activeMap, markersRef.current);
+      frameFieldMarkers(activeMap, markersRef.current);
     };
 
     activeMap.on("style.load", onStyleLoad);
@@ -344,9 +350,11 @@ export function MapView({
     }
 
     const zoom = map.getZoom();
-    const showEncounters = zoom >= REGIONAL_ZOOM;
+    const lod = markerLod(zoom);
+    detailLodRef.current = lod;
+    const showEncounters = lod === "near";
     const labeled = zoom >= INSPECT_ZOOM - 0.4;
-    const band = markerBand(zoom, Math.min(map.getContainer().clientWidth, map.getContainer().clientHeight));
+    const band = markerBand(zoom);
     const project = (pin: FieldPin) => {
       const point = map.project([pin.longitude, pin.latitude]);
       return { x: point.x, y: point.y };
@@ -372,21 +380,22 @@ export function MapView({
     for (const pin of pins) {
       const button = document.createElement("button");
       button.type = "button";
+      const face = document.createElement("span");
+      face.className = "field-pin-face";
       const dot = pin.kind === "encounter" && !labeled;
-      const compactZone = pin.kind === "zone" && band === "global";
+      const compact = band === "global" && (pin.kind === "zone" || pin.kind === "enclave");
       button.className =
         pin.kind === "enclave"
-          ? `field-pin field-pin-enclave${band === "global" ? " field-pin-far" : ""}`
+          ? `field-pin field-pin-enclave field-pin-lod-${lod}${compact ? " field-pin-compact" : ""}`
           : pin.kind === "zone"
-            ? `field-pin field-pin-zone${compactZone ? " field-pin-compact" : ""}`
+            ? `field-pin field-pin-zone field-pin-lod-${lod}${compact ? " field-pin-compact" : ""}`
             : pin.kind === "stack"
-              ? "field-pin field-pin-stack"
+              ? `field-pin field-pin-stack field-pin-lod-${lod}`
               : pin.presence === "caught"
-                ? "field-pin field-pin-caught"
+                ? `field-pin field-pin-caught field-pin-lod-${lod}`
                 : dot
-                  ? "field-pin field-pin-dot"
-                  : "field-pin field-pin-encounter";
-      button.textContent = "";
+                  ? `field-pin field-pin-dot field-pin-lod-${lod}`
+                  : `field-pin field-pin-encounter field-pin-lod-${lod}`;
       if (pin.presence === "caught" && pin.spriteStill) {
         const img = document.createElement("img");
         img.alt = "";
@@ -397,24 +406,23 @@ export function MapView({
         img.addEventListener("error", () => {
           img.src = still;
         });
-        button.append(img);
-      } else if (pin.kind === "enclave") {
-        button.textContent = "";
+        face.append(img);
       } else if (pin.kind === "zone" && pin.complete) {
         button.classList.add("field-pin-complete");
-        if (!compactZone) {
+        if (!compact) {
           const stamp = document.createElement("span");
           stamp.textContent = pin.shortLabel.split("\n")[0] ?? "";
-          button.append(stamp);
+          face.append(stamp);
         }
         const star = document.createElement("span");
         star.className = "field-pin-star";
         star.setAttribute("aria-hidden", "true");
         star.textContent = "★";
-        button.append(star);
-      } else if (!dot) {
-        button.textContent = compactZone ? String(pin.count ?? "") : pin.shortLabel;
+        face.append(star);
+      } else if (!dot && pin.kind !== "enclave") {
+        face.textContent = compact ? String(pin.count ?? "") : pin.shortLabel;
       }
+      button.append(face);
       button.setAttribute("aria-label", pin.label);
       button.dataset.pinId = pin.id;
       if (pin.focusName) {
@@ -457,36 +465,19 @@ export function MapView({
       button.addEventListener("touchstart", stop, { passive: true });
       button.addEventListener("click", onClick);
       button.addEventListener("keydown", onKeyDown);
-      const marker = new Marker({ element: button, anchor: "center" })
+      const marker = new Marker({
+        element: button,
+        anchor: "center",
+        offset: [0, 0],
+        opacityWhenCovered: "0",
+      })
         .setLngLat([pin.longitude, pin.latitude])
         .addTo(map);
       markers.push(marker);
     }
 
-    if (!showEncounters) {
-      const measured = pins.map((pin, index) => {
-        const button = markers[index]?.getElement();
-        const box = button?.getBoundingClientRect();
-        return {
-          id: pin.id,
-          x: box ? box.x + box.width / 2 : 0,
-          y: box ? box.y + box.height / 2 : 0,
-          w: box?.width ?? 0,
-          h: box?.height ?? 0,
-        };
-      });
-      const zoneOffsets = separateZoneOffsets(measured);
-      markers.forEach((marker, index) => {
-        const id = pins[index]?.id;
-        if (!id) {
-          return;
-        }
-        marker.setOffset(zoneOffsets.get(id) ?? [0, 0]);
-      });
-    }
-
     markersRef.current = markers;
-    concealHiddenMarkers(map, markers);
+    frameFieldMarkers(map, markers);
 
     return () => {
       markersRef.current = [];

@@ -1,14 +1,18 @@
-import { REGIONAL_ZOOM } from "@/lib/expedition/pins";
+import { markerLod } from "@/lib/map/marker-lod";
 
 export type MarkerBand = "global" | "regional" | "detail";
 
-/** El detalle sigue en 6.5. El salto a nombres depende del lado corto de la ventana. */
-export function markerBand(zoom: number, shortSide: number): MarkerBand {
-  const names = shortSide < 720 ? 2.6 : 3.6;
-  if (zoom >= REGIONAL_ZOOM) {
+/**
+ * Tres bandas, alineadas con la distancia del globo.
+ * `shortSide` se conserva para los llamadores; la banda ya no cambia con el ancho.
+ */
+export function markerBand(zoom: number, shortSide?: number): MarkerBand {
+  void shortSide;
+  const lod = markerLod(zoom);
+  if (lod === "near") {
     return "detail";
   }
-  if (zoom >= names) {
+  if (lod === "mid") {
     return "regional";
   }
   return "global";
