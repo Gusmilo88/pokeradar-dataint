@@ -3,18 +3,18 @@ import { readFileSync } from "node:fs";
 import { qaCatch } from "../src/lib/badges/qa";
 import { emptyBadgeLedger } from "../src/lib/badges/ledger";
 import {
-  applicableFinishes,
-  assignFinish,
-  emptyFinishes,
-  finishOf,
-  parseFinishes,
-  readFinishes,
-  serializeFinishes,
+  equippedFinish,
+  equipFinish,
+  FINISH_KEY,
+  FINISH_KEY_V1,
+  parseEquipped,
+  serializeFinish,
 } from "../src/lib/expedition/finishes";
 import { emptyProgress, markCaught, markSeen, parseProgress, serializeProgress } from "../src/lib/expedition/progress";
 import {
   CARD_FINISHES,
   equipableFinishes,
+  FINISH_SCOPE,
   plateForLevel,
   rankForLevel,
   TRAINER_RANKS,
@@ -29,8 +29,11 @@ function idsAt(level: number): string {
   return equipableFinishes(level).map((finish) => finish.id).join();
 }
 
-if (CARD_FINISHES.map((finish) => finish.id).join() !== "base,bronze,silver,gold,prismatic") {
+if (CARD_FINISHES.map((finish) => finish.id).join() !== "base,bronze,silver,gold,diamond") {
   fail("Los cinco acabados no están en orden.");
+}
+if (FINISH_SCOPE !== "Disponible para las especies capturadas. No cambia tipo, poder ni estadísticas.") {
+  fail("La descripción del acabado cambió.");
 }
 if (idsAt(1) !== "base") {
   fail(`El nivel 1 no queda solo en Base: ${idsAt(1)}.`);
@@ -54,10 +57,10 @@ if (idsAt(8) !== "base,bronze,silver,gold") {
   fail(`El nivel 8 no abre Oro: ${idsAt(8)}.`);
 }
 if (idsAt(9) !== "base,bronze,silver,gold") {
-  fail("El nivel 9 adelantó el Prismático.");
+  fail("El nivel 9 adelantó el Diamante.");
 }
-if (idsAt(10) !== "base,bronze,silver,gold,prismatic") {
-  fail(`El nivel 10 no abre Prismático: ${idsAt(10)}.`);
+if (idsAt(10) !== "base,bronze,silver,gold,diamond") {
+  fail(`El nivel 10 no abre Diamante: ${idsAt(10)}.`);
 }
 if (idsAt(0) !== "" || idsAt(11) !== "") {
   fail("Un nivel fuera de rango equipó acabados.");
@@ -73,106 +76,109 @@ if (rankForLevel(1) !== "Viajero" || rankForLevel(10) !== "Cronista" || rankForL
 if (titles.some((title) => /gimnasio|líder|campeón/i.test(title) || title.length > 16)) {
   fail("Hay un rango ajeno a la expedición o demasiado largo.");
 }
-if (plateForLevel(1) !== "base" || plateForLevel(3) !== "bronze" || plateForLevel(5) !== "silver" || plateForLevel(8) !== "gold" || plateForLevel(10) !== "prismatic") {
+if (plateForLevel(1) !== "base" || plateForLevel(3) !== "bronze" || plateForLevel(5) !== "silver" || plateForLevel(8) !== "gold" || plateForLevel(10) !== "diamond") {
   fail("El sello del perfil no sigue el metal del nivel.");
 }
 
-const caught = new Set(["kanto-025", "kanto-144"]);
-const none = emptyFinishes();
-if (finishOf(none, "kanto-025") !== "base") {
-  fail("Sin preferencia la carta no quedó en Base.");
+if (equippedFinish(null, 10) !== "base") {
+  fail("Sin preferencia la colección no quedó en Base.");
 }
-
-const blocked = assignFinish(none, "kanto-025", "gold", caught, 3);
-if (blocked !== none || finishOf(blocked, "kanto-025") !== "base") {
+if (equipFinish("base", "gold", 3) !== "base") {
   fail("Un acabado de nivel superior se equipó.");
 }
-const seenOnly = assignFinish(none, "kanto-129", "bronze", new Set(["kanto-025"]), 10);
-if (seenOnly !== none) {
-  fail("Una especie no capturada recibió acabado.");
+if (equipFinish("bronze", "gold", 8) !== "gold" || equipFinish("gold", "base", 8) !== "base") {
+  fail("El equipamiento global no reemplaza el acabado anterior.");
 }
 
-const bronze = assignFinish(none, "kanto-025", "bronze", caught, 3);
-const silver = assignFinish(bronze, "kanto-144", "silver", caught, 5);
-if (finishOf(silver, "kanto-025") !== "bronze" || finishOf(silver, "kanto-144") !== "silver") {
-  fail("La personalización no es individual.");
+const stored = serializeFinish("gold");
+if (parseEquipped(stored) !== "gold" || !stored.includes("\"version\":2") || stored.includes("kanto-")) {
+  fail("La selección global no sobrevivió el guardado.");
 }
-const back = assignFinish(silver, "kanto-025", "base", caught, 5);
-if (finishOf(back, "kanto-025") !== "base" || finishOf(back, "kanto-144") !== "silver") {
-  fail("Volver a Base borró el acabado de otra especie.");
+if (equippedFinish(stored, 8) !== "gold" || equippedFinish(stored, 3) !== "base") {
+  fail("Un acabado guardado por encima del nivel no volvió a Base.");
 }
-
-const stored = serializeFinishes(silver);
-const parsed = parseFinishes(stored);
-if (!parsed || finishOf(applicableFinishes(parsed, caught, 5), "kanto-025") !== "bronze") {
-  fail("La selección no sobrevivió el guardado.");
-}
-if (stored.includes("base") || !stored.includes("\"version\":1")) {
-  fail("El documento guardó Base o perdió la versión.");
+const renamed = JSON.stringify({ version: 2, finish: "prismatic" });
+if (parseEquipped(renamed) !== "diamond" || equippedFinish(renamed, 10) !== "diamond") {
+  fail("El acabado Prismático guardado no se leyó como Diamante.");
 }
 
-const legacy = parseProgress(JSON.stringify({ version: 1, seen: ["kanto-025"], caught: ["kanto-025"] }));
-const prior = legacy ? readFinishes(null, legacy.caught, 2) : null;
-if (!legacy || !prior || finishOf(prior, "kanto-025") !== "base" || Object.keys(prior).length !== 0) {
+const legacy = JSON.stringify({
+  version: 1,
+  choices: [
+    { id: "kanto-025", finish: "gold" },
+    { id: "kanto-144", finish: "silver" },
+  ],
+});
+if (parseEquipped(legacy) !== "legacy" || equippedFinish(legacy, 10) !== "base") {
+  fail("Las preferencias por especie se convirtieron en un acabado global.");
+}
+if (parseEquipped("no es json") !== null || parseEquipped(JSON.stringify({ version: 2, finish: "mythic" })) !== null) {
+  fail("Un documento roto se aceptó.");
+}
+
+const prior = parseProgress(JSON.stringify({ version: 1, seen: ["kanto-025"], caught: ["kanto-025"] }));
+if (!prior || equippedFinish(null, 2) !== "base") {
   fail("Un progreso anterior no sigue en Base.");
 }
-const legacyDocument: unknown = JSON.parse(serializeProgress(legacy ?? emptyProgress()));
+const legacyDocument: unknown = JSON.parse(serializeProgress(prior ?? emptyProgress()));
 if (typeof legacyDocument !== "object" || legacyDocument === null || "finish" in legacyDocument || "finishes" in legacyDocument) {
   fail("El progreso v1 absorbió los acabados.");
 }
 
-const dirty = JSON.stringify({
-  version: 1,
-  choices: [
-    { id: "kanto-025", finish: "prismatic" },
-    { id: "kanto-999", finish: "gold" },
-    { id: "kanto-144", finish: "mythic" },
-  ],
-});
-const dirtyParsed = parseFinishes(dirty);
-if (!dirtyParsed) {
-  fail("Una entrada mala invalidó las demás.");
-}
-const cleaned = applicableFinishes(dirtyParsed, caught, 8);
-if (finishOf(cleaned, "kanto-025") !== "base" || finishOf(cleaned, "kanto-144") !== "base" || "kanto-999" in cleaned) {
-  fail("Un acabado inválido no volvió a Base.");
-}
-if (parseFinishes("no es json") !== null || parseFinishes(JSON.stringify({ version: 2, choices: [] })) !== null) {
-  fail("Un documento roto o de otra versión se aceptó.");
-}
-
 const again = markCaught(markCaught(emptyProgress(), "kanto-025"), "kanto-025");
-if (again.caught.size !== 1 || finishOf(bronze, "kanto-025") !== "bronze") {
-  fail("Repetir la captura cambió el acabado.");
-}
 const revealed = markSeen(emptyProgress(), "kanto-025");
-if (revealed.caught.size !== 0 || finishOf(assignFinish(none, "kanto-025", "bronze", revealed.caught, 10), "kanto-025") !== "base") {
-  fail("Ver una especie desbloqueó un acabado.");
+if (again.caught.size !== 1 || revealed.caught.size !== 0 || equipFinish("base", "bronze", 1) !== "base") {
+  fail("Ver o repetir una captura cambió el acabado.");
 }
 
-const player = serializeFinishes(bronze);
+const player = serializeFinish("bronze");
 const simulated = qaCatch(new Set<string>(), emptyBadgeLedger(), ["kanto-144"], "2026-11-14T00:00:00.000Z");
-if (serializeFinishes(bronze) !== player || simulated.caught.has("kanto-025")) {
+if (player !== serializeFinish("bronze") || simulated.caught.has("kanto-025")) {
   fail("La demostración de medallas escribió acabados.");
 }
 
 const demoSource = readFileSync(new URL("../src/components/expedition/use-badge-demo.ts", import.meta.url), "utf8");
-if (demoSource.includes("FINISH_KEY") || demoSource.includes("finishes") || demoSource.includes("localStorage")) {
+if (demoSource.includes("FINISH_KEY") || demoSource.includes("localStorage")) {
   fail("La demostración pública toca los acabados.");
 }
 const resetSource = readFileSync(new URL("../src/components/expedition/use-progress.ts", import.meta.url), "utf8");
-if (!resetSource.includes("clearStoredFinishes()")) {
-  fail("Reiniciar la expedición no limpia los acabados.");
+const finishSource = readFileSync(new URL("../src/lib/expedition/finishes.ts", import.meta.url), "utf8");
+const hookSource = readFileSync(new URL("../src/components/expedition/use-finishes.ts", import.meta.url), "utf8");
+if (
+  !resetSource.includes("clearStoredFinishes()")
+  || !hookSource.includes("FINISH_KEY_V1")
+  || !hookSource.includes("FINISH_KEY")
+  || !finishSource.includes(FINISH_KEY)
+  || !finishSource.includes(FINISH_KEY_V1)
+) {
+  fail("Reiniciar la expedición no limpia los acabados viejos y nuevos.");
+}
+if (finishSource.includes("kanto-") || hookSource.includes("assignFinish")) {
+  fail("El acabado sigue eligiendo por especie.");
 }
 
 const cardSource = readFileSync(new URL("../src/components/expedition/pokedex-view.tsx", import.meta.url), "utf8");
-if (!cardSource.includes("tcg-front") || !cardSource.includes("tcg-back") || !cardSource.includes("album-stats") || !cardSource.includes("data-finish")) {
+if (!cardSource.includes("tcg-front") || !cardSource.includes("tcg-back") || !cardSource.includes("album-stats") || !cardSource.includes("data-finish={shown")) {
   fail("El frente o el reverso de la carta dejó de estar.");
+}
+if (cardSource.includes("data-finish={state") || cardSource.includes("Cualquiera") || !cardSource.includes("Limpiar filtros")) {
+  fail("La grilla sigue el acabado o el filtro Cualquiera sigue presente.");
+}
+const chooserSource = readFileSync(new URL("../src/components/expedition/finish-chooser.tsx", import.meta.url), "utf8");
+const profileSource = readFileSync(new URL("../src/components/expedition/trainer-profile.tsx", import.meta.url), "utf8");
+if (!chooserSource.includes("Equipar") || !profileSource.includes("FinishChooser")) {
+  fail("Falta el botón Equipar en el perfil.");
+}
+if (cardSource.includes("FinishChooser")) {
+  fail("La carta abierta todavía elige acabados.");
 }
 const albumCss = readFileSync(new URL("../src/components/expedition/album.css", import.meta.url), "utf8");
 const profileCss = readFileSync(new URL("../src/components/expedition/trainer-profile.css", import.meta.url), "utf8");
 if (!albumCss.includes("finish-prism") || !albumCss.includes("prefers-reduced-motion") || !albumCss.includes("animation: none")) {
-  fail("El brillo prismático no se apaga con movimiento reducido.");
+  fail("El brillo de Diamante no se apaga con movimiento reducido.");
+}
+if (albumCss.includes(".album-card[data-state=\"caught\"][data-finish")) {
+  fail("La ficha pequeña todavía pinta un acabado.");
 }
 if (!profileCss.includes("max-width: 720px") || !profileCss.includes("prefers-reduced-motion")) {
   fail("El perfil no declara teléfono ni movimiento reducido.");
@@ -183,13 +189,12 @@ const levels: Array<[number, CardFinishId]> = [
   [3, "bronze"],
   [5, "silver"],
   [8, "gold"],
-  [10, "prismatic"],
+  [10, "diamond"],
 ];
 for (const [level, finish] of levels) {
-  const equipped = assignFinish(emptyFinishes(), "kanto-025", finish, new Set(["kanto-025"]), level);
-  if (finishOf(equipped, "kanto-025") !== finish) {
+  if (equipFinish("base", finish, level) !== finish) {
     fail(`El nivel ${level} no permite ${finish}.`);
   }
 }
 
-console.log("OK finishes base=1 bronze=3 silver=5 gold=8 prism=10");
+console.log("OK finishes base=1 bronze=3 silver=5 gold=8 diamond=10");

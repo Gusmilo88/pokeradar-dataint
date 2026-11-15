@@ -94,9 +94,13 @@ export async function readZoneWeather(
   if (hit && now() - hit.at < WEATHER_TTL_MS) {
     return hit.value;
   }
-  const pending = inflight.get(key);
-  if (pending) {
-    return pending;
+  // Una señal propia no puede compartir la promesa: si el primer pedido se aborta,
+  // el siguiente recibiría ese rechazo y la zona quedaría sin observación.
+  if (!request.signal) {
+    const pending = inflight.get(key);
+    if (pending) {
+      return pending;
+    }
   }
   const job = fetchSnapshot(latitude, longitude, request)
     .then((value) => {
@@ -108,7 +112,9 @@ export async function readZoneWeather(
       inflight.delete(key);
       throw error;
     });
-  inflight.set(key, job);
+  if (!request.signal) {
+    inflight.set(key, job);
+  }
   return job;
 }
 
@@ -133,6 +139,9 @@ async function fetchSnapshot(
   } catch (error) {
     if (parent?.aborted) {
       throw new WeatherError("La consulta de clima se canceló.");
+    }
+    if (controller.signal.aborted) {
+      throw new WeatherError("Open-Meteo no respondió a tiempo.");
     }
     if (error instanceof WeatherError) {
       throw error;

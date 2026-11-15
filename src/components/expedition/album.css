@@ -377,7 +377,7 @@
   align-items: safe center;
   justify-content: center;
   justify-content: safe center;
-  padding: 0.75rem;
+  padding: 1.35rem;
   overflow: auto;
   overscroll-behavior: contain;
   container-type: size;
@@ -393,6 +393,7 @@
   aspect-ratio: 63 / 88;
   margin: auto;
   perspective: 1400px;
+  overflow: visible;
   animation: tcg-rise 180ms ease-out;
 }
 
@@ -435,6 +436,73 @@
 
 .tcg-back {
   transform: rotateY(180deg);
+  overflow: hidden;
+}
+
+.tcg-back .tcg-frame {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.55rem 0.58rem 0.42rem;
+}
+
+.tcg-back .tcg-kicker {
+  margin-top: 0;
+}
+
+.tcg-back .tcg-name {
+  font-size: 1.05rem;
+}
+
+.tcg-back .album-state {
+  max-width: 6.2rem;
+  font-size: 0.62rem;
+  line-height: 1.2;
+  text-align: right;
+}
+
+.tcg-back .album-stats {
+  margin-top: 0.35rem;
+}
+
+.tcg-back .album-stat {
+  margin-top: 0.14rem;
+  gap: 0.28rem;
+  font-size: 0.64rem;
+}
+
+.tcg-back .tcg-note,
+.tcg-back .tcg-sealed {
+  margin-top: 0.2rem;
+  font-size: 0.62rem;
+  line-height: 1.25;
+}
+
+.tcg-back .tcg-team {
+  min-height: 2rem;
+  margin-top: 0.28rem;
+}
+
+.tcg-back .capture-panel {
+  margin-top: 0.28rem;
+  padding: 0.4rem 0.5rem;
+}
+
+.tcg-back .capture-panel .mt-3,
+.tcg-back .capture-panel .mt-1 {
+  margin-top: 0.25rem;
+}
+
+.tcg-back .capture-panel .text-sm {
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.tcg-back .tcg-edge {
+  position: static;
+  margin-top: auto;
+  padding-top: 0.15rem;
+  background: none;
 }
 
 .tcg-card[data-face="front"] .tcg-back,
@@ -857,6 +925,14 @@
   margin: 0.55rem 0.35rem 0;
 }
 
+.tcg-card[data-finish="bronze"] .album-type,
+.tcg-card[data-finish="silver"] .album-type,
+.tcg-card[data-finish="gold"] .album-type {
+  color: color-mix(in srgb, var(--type) 42%, #1a140c);
+  border-color: color-mix(in srgb, var(--type) 28%, #1a140c);
+  background: rgba(255, 255, 255, 0.38);
+}
+
 .album-type {
   border: 1px solid color-mix(in srgb, var(--type, var(--radar-phosphor)) 65%, transparent);
   border-radius: 999px;
@@ -994,7 +1070,7 @@
   .tcg-card,
   .tcg-rotor,
   .tcg-foil,
-  .tcg-card[data-finish="prismatic"] .tcg-foil {
+  .card-sheen {
     transition: none;
     animation: none;
   }
@@ -1004,162 +1080,334 @@
   }
 }
 
-.album-card[data-state="caught"][data-finish="bronze"] {
-  border-color: #c9854a;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 220, 186, 0.4),
-    inset 0 0 0 1px rgba(92, 48, 22, 0.8),
-    0 14px 28px rgba(0, 0, 0, 0.34);
+.card-skin,
+.card-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
 }
 
-.album-card[data-state="caught"][data-finish="silver"] {
-  border-color: #d5dee8;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    inset 0 0 0 1px rgba(36, 46, 58, 0.75),
-    0 14px 28px rgba(0, 0, 0, 0.34);
+.card-skin {
+  z-index: 0;
 }
 
-.album-card[data-state="caught"][data-finish="gold"] {
-  border-color: #f0c14e;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 244, 210, 0.65),
-    inset 0 0 0 1px rgba(92, 64, 12, 0.75),
-    0 14px 28px rgba(0, 0, 0, 0.34);
+.tcg-card[data-finish] .tcg-frame,
+.finish-mini .tcg-frame {
+  position: relative;
+  z-index: 1;
 }
 
-.album-card[data-state="caught"][data-finish="prismatic"] {
-  border-color: #d7c6ff;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 0 0 1px rgba(180, 150, 255, 0.4),
-    0 14px 28px rgba(0, 0, 0, 0.34);
+.card-sheen {
+  opacity: 0;
 }
 
-.album-card[data-state="caught"][data-finish="prismatic"]::after {
-  border-color: rgba(158, 239, 255, 0.55);
+.tcg-card[data-finish="base"] .tcg-face {
+  background: linear-gradient(180deg, #241f1a 0%, #100e0c 100%);
+  border: 1px solid rgba(176, 164, 144, 0.38);
+  border-radius: 0.85rem;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.72),
+    0 18px 36px rgba(0, 0, 0, 0.45);
 }
 
 .tcg-card[data-finish="bronze"] .tcg-face {
-  border-color: #c9854a;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 236, 214, 0.08) 0 1px, transparent 1px 5px),
+    linear-gradient(155deg, #f2c9a2 0%, #c4844c 24%, #8a4c28 68%, #d7a06a 100%);
+  border: 1px solid #f6d7b8;
+  border-radius: 0.42rem;
+  color: #2a140c;
   box-shadow:
-    inset 0 1px 0 rgba(255, 220, 186, 0.5),
-    inset 0 0 0 1px rgba(62, 28, 8, 0.85),
-    inset 0 0 0 0.42rem #2a1a12,
-    inset 0 0 0 0.55rem #a86b3a,
-    0 22px 48px rgba(0, 0, 0, 0.5);
+    inset 0 1px 0 rgba(255, 236, 214, 0.85),
+    inset 0 0 0 1px rgba(74, 32, 14, 0.55),
+    inset 0 0 0 0.22rem rgba(90, 42, 18, 0.28),
+    0 18px 36px rgba(40, 16, 6, 0.4);
+}
+
+.tcg-card[data-finish="bronze"] .card-skin {
+  background:
+    radial-gradient(circle at 0.62rem 0.62rem, #f6d7b4 0 1.6px, #5a3018 1.8px 2.6px, transparent 2.8px),
+    radial-gradient(circle at calc(100% - 0.62rem) 0.62rem, #f6d7b4 0 1.6px, #5a3018 1.8px 2.6px, transparent 2.8px),
+    radial-gradient(circle at 0.62rem calc(100% - 0.62rem), #f6d7b4 0 1.6px, #5a3018 1.8px 2.6px, transparent 2.8px),
+    radial-gradient(circle at calc(100% - 0.62rem) calc(100% - 0.62rem), #f6d7b4 0 1.6px, #5a3018 1.8px 2.6px, transparent 2.8px);
+}
+
+.tcg-card[data-finish="bronze"] .tcg-name,
+.tcg-card[data-finish="bronze"] .tcg-hp,
+.tcg-card[data-finish="bronze"] .album-state,
+.tcg-card[data-finish="bronze"] .tcg-imprint,
+.tcg-card[data-finish="bronze"] .tcg-kicker,
+.tcg-card[data-finish="bronze"] .tcg-note,
+.tcg-card[data-finish="bronze"] .album-stat,
+.tcg-card[data-finish="bronze"] .album-stat span {
+  color: #2a140c;
+}
+
+.tcg-card[data-finish="bronze"] .tcg-art {
+  border-color: rgba(74, 36, 16, 0.45);
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 214, 170, 0.16), transparent 62%),
+    linear-gradient(180deg, #2a1a12, #120c0a);
+}
+
+.tcg-card[data-finish="bronze"] .album-stat-fill {
+  background: linear-gradient(90deg, #6a3418, #f2c9a2);
 }
 
 .tcg-card[data-finish="silver"] .tcg-face {
-  border-color: #d5dee8;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.28) 0%, transparent 18% 62%, rgba(255, 255, 255, 0.16) 100%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #e7eef5 0%, #8ea0b4 38%, #d5dee8 100%);
+  border: 1px solid #f7fbff;
+  border-radius: 1.05rem;
+  color: #14202c;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.62),
-    inset 0 0 0 1px rgba(28, 36, 44, 0.85),
-    inset 0 0 0 0.42rem #161a20,
-    inset 0 0 0 0.55rem #b7c3d0,
-    0 22px 48px rgba(0, 0, 0, 0.5);
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 0 0 1px #5d7186,
+    inset 0 0 0 0.28rem #eef3f8,
+    inset 0 0 0 0.4rem #9aafc2,
+    0 18px 36px rgba(12, 22, 32, 0.4);
+}
+
+.tcg-card[data-finish="silver"] .tcg-name,
+.tcg-card[data-finish="silver"] .tcg-hp,
+.tcg-card[data-finish="silver"] .album-state,
+.tcg-card[data-finish="silver"] .tcg-imprint,
+.tcg-card[data-finish="silver"] .tcg-kicker,
+.tcg-card[data-finish="silver"] .tcg-note {
+  color: #14202c;
+}
+
+.tcg-card[data-finish="silver"] .tcg-art {
+  border-color: rgba(255, 255, 255, 0.7);
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.2), transparent 62%),
+    linear-gradient(180deg, #243646, #101820);
+}
+
+.tcg-card[data-finish="silver"] .album-stat,
+.tcg-card[data-finish="silver"] .album-stat span {
+  color: #1a2a38;
 }
 
 .tcg-card[data-finish="gold"] .tcg-face {
-  border-color: #f0c14e;
+  background:
+    radial-gradient(80% 40% at 50% 0%, rgba(255, 244, 210, 0.45), transparent 52%),
+    linear-gradient(165deg, #fff1c2 0%, #e2b340 28%, #8a6414 62%, #f0d078 100%);
+  border: 1px solid #fff6d4;
+  border-radius: 0.72rem;
+  color: #2a1c08;
   box-shadow:
-    inset 0 1px 0 rgba(255, 246, 214, 0.7),
-    inset 0 0 0 1px rgba(72, 46, 8, 0.85),
-    inset 0 0 0 0.42rem #241a08,
-    inset 0 0 0 0.55rem #e2b340,
-    0 22px 48px rgba(0, 0, 0, 0.5);
+    inset 0 1px 0 rgba(255, 250, 230, 0.9),
+    inset 0 0 0 1px #6d4c10,
+    inset 0 0 0 0.22rem #fff1c4,
+    inset 0 0 0 0.38rem #c9962e,
+    inset 0 0 0 0.5rem #5c3e0c,
+    0 20px 40px rgba(48, 30, 6, 0.42);
 }
 
-.tcg-card[data-finish="prismatic"] .tcg-face {
-  border-color: #d7c6ff;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 0 0 1px rgba(28, 24, 48, 0.8),
-    inset 0 0 0 0.42rem #16141c,
-    inset 0 0 0 0.55rem #c9b4ff,
-    0 22px 48px rgba(0, 0, 0, 0.5);
+.tcg-card[data-finish="gold"] .tcg-name,
+.tcg-card[data-finish="gold"] .tcg-hp,
+.tcg-card[data-finish="gold"] .album-state,
+.tcg-card[data-finish="gold"] .tcg-imprint,
+.tcg-card[data-finish="gold"] .tcg-kicker,
+.tcg-card[data-finish="gold"] .tcg-note {
+  color: #2a1c08;
 }
 
-.tcg-card[data-finish="prismatic"] .tcg-foil {
-  display: block;
-  opacity: 0.38;
-  background-image:
-    radial-gradient(circle at var(--mx, 28%) var(--my, 18%), rgba(255, 255, 255, 0.28), transparent 24%),
-    linear-gradient(115deg, transparent 10%, rgba(158, 239, 255, 0.4) 28%, transparent 42%, rgba(255, 224, 138, 0.35) 58%, transparent 70%, rgba(231, 179, 255, 0.4) 86%, transparent);
-  background-size: 100% 100%, 220% 100%;
-  background-position: center, 0% 50%;
+.tcg-card[data-finish="gold"] .tcg-art {
+  border-color: rgba(255, 236, 180, 0.85);
+  box-shadow:
+    inset 0 0 0 1px rgba(90, 60, 10, 0.65),
+    inset 0 12px 18px rgba(0, 0, 0, 0.28);
+}
+
+.tcg-card[data-finish="gold"] .album-stat,
+.tcg-card[data-finish="gold"] .album-stat span {
+  color: #2a1c08;
+}
+
+.tcg-card[data-finish="gold"] .album-stat-fill {
+  background: linear-gradient(90deg, #8a6414, #fff1c4);
+}
+
+.tcg-card[data-finish="gold"] .card-skin {
+  background:
+    linear-gradient(#fff6d4, #fff6d4) 0 0 / 0.7rem 2px no-repeat,
+    linear-gradient(#fff6d4, #fff6d4) 0 0 / 2px 0.7rem no-repeat,
+    linear-gradient(#fff6d4, #fff6d4) 100% 0 / 0.7rem 2px no-repeat,
+    linear-gradient(#fff6d4, #fff6d4) 100% 0 / 2px 0.7rem no-repeat,
+    linear-gradient(#fff6d4, #fff6d4) 0 100% / 0.7rem 2px no-repeat,
+    linear-gradient(#fff6d4, #fff6d4) 0 100% / 2px 0.7rem no-repeat,
+    linear-gradient(#fff6d4, #fff6d4) 100% 100% / 0.7rem 2px no-repeat,
+    linear-gradient(#fff6d4, #fff6d4) 100% 100% / 2px 0.7rem no-repeat;
+}
+
+.tcg-card[data-finish="diamond"] .tcg-face {
+  background:
+    radial-gradient(90% 40% at 50% 0%, rgba(214, 236, 255, 0.16), transparent 46%),
+    linear-gradient(180deg, #1a1e2a 0%, #0c0e14 100%);
+  border: 1px solid rgba(214, 236, 255, 0.35);
+  border-radius: 1.05rem;
+  color: #f7f4ff;
+  box-shadow:
+    inset 0 0 0 1px rgba(8, 10, 16, 0.8),
+    0 18px 40px rgba(8, 10, 20, 0.5);
+}
+
+.tcg-card[data-finish="diamond"] .card-skin {
+  background:
+    linear-gradient(45deg, transparent 46%, #f7fbff 46% 54%, transparent 54%) 0.7rem 0.7rem / 7px 7px no-repeat,
+    linear-gradient(45deg, transparent 46%, #f7fbff 46% 54%, transparent 54%) calc(100% - 0.7rem) 0.7rem / 7px 7px no-repeat,
+    linear-gradient(45deg, transparent 46%, #f7fbff 46% 54%, transparent 54%) 0.7rem calc(100% - 0.7rem) / 7px 7px no-repeat,
+    linear-gradient(45deg, transparent 46%, #f7fbff 46% 54%, transparent 54%) calc(100% - 0.7rem) calc(100% - 0.7rem) / 7px 7px no-repeat;
+}
+
+.tcg-card[data-finish="diamond"] .tcg-art {
+  border-color: rgba(214, 228, 255, 0.55);
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.16), transparent 58%),
+    linear-gradient(180deg, #1a2230, #0c1018);
+}
+
+.tcg-card[data-finish="diamond"] .album-stat-fill {
+  background: linear-gradient(90deg, #8fd0f2, #f2d48a 55%, #d7c4ff);
+}
+
+.tcg-card[data-finish="diamond"] .card-sheen {
+  opacity: 1;
+  padding: 8px;
+  background: linear-gradient(115deg, #7dffe8, #efe4ff 32%, #ffe7a6 58%, #9fd8ff 82%, #7dffe8);
+  background-size: 240% 100%;
   animation: finish-prism 7s ease-in-out infinite alternate;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
 }
 
 @keyframes finish-prism {
   from {
-    background-position: center, 0% 50%;
+    background-position: 0% 50%;
   }
 
   to {
-    background-position: center, 100% 50%;
+    background-position: 100% 50%;
   }
 }
 
-.tcg-finish {
-  margin-top: 0.45rem;
+@media (prefers-reduced-motion: reduce) {
+  .tcg-card[data-finish="diamond"] .card-sheen,
+  .card-sheen {
+    animation: none;
+  }
 }
 
-.tcg-finish-row {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.3rem;
-}
-
-.tcg-finish-option {
-  display: grid;
-  min-height: 2rem;
-  place-items: center;
-  padding: 0.2rem;
-  border: 1px solid rgba(246, 239, 226, 0.2);
-  border-radius: 0.4rem;
-  background: rgba(8, 6, 4, 0.35);
+.album-clear {
+  min-height: 2.75rem;
+  padding: 0 0.8rem;
+  border: 1px solid rgba(142, 246, 223, 0.28);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--radar-quiet);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 
-.tcg-finish-option[aria-pressed="true"] {
-  border-color: #f0d7a4;
+.album-clear:hover,
+.album-clear:focus-visible {
+  border-color: rgba(142, 246, 223, 0.75);
+  color: var(--radar-phosphor-strong);
 }
 
-.tcg-finish-option[aria-disabled="true"] {
-  cursor: default;
-  opacity: 0.45;
+.album-sort-menu {
+  position: relative;
+  min-width: min(16rem, 100%);
 }
 
-.tcg-finish-option:focus-visible {
-  outline: 2px solid #f0d7a4;
+.album-sort-button,
+.album-sort-list,
+.album-sort-option {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  letter-spacing: 0.06em;
+}
+
+.album-sort-button {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 0.9rem;
+  border: 1px solid rgba(142, 246, 223, 0.62);
+  border-radius: 0.7rem;
+  background: #0c2230;
+  color: var(--radar-ink, #e7fff8);
+  text-align: left;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 16px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+}
+
+.album-sort-button:hover,
+.album-sort-button:focus-visible,
+.album-sort-option:hover,
+.album-sort-option:focus-visible,
+.album-sort-option[data-active="true"] {
+  border-color: rgba(142, 246, 223, 0.9);
+  color: #f4fffb;
+}
+
+.album-sort-button:focus-visible,
+.album-sort-option:focus-visible {
+  outline: 2px solid #8ef6df;
   outline-offset: 2px;
 }
 
-.finish-metal {
-  display: block;
+.album-sort-list {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 0.3rem);
+  left: 0;
   width: 100%;
-  height: 0.85rem;
-  border-radius: 0.2rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  border: 1px solid rgba(142, 246, 223, 0.62);
+  border-radius: 0.7rem;
+  background: #0c2230;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 14px 28px rgba(0, 0, 0, 0.38);
 }
 
-.finish-metal[data-finish="base"] {
-  background: linear-gradient(160deg, #3a342c, #1a1612 70%);
+.album-sort-option {
+  width: 100%;
+  min-height: 2.4rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--radar-quiet, #b7d8d0);
+  text-align: left;
+  cursor: pointer;
 }
 
-.finish-metal[data-finish="bronze"] {
-  background: linear-gradient(160deg, #f0c09a, #a86432 55%, #5c3018);
+.album-sort-option[aria-selected="true"] {
+  background: rgba(142, 246, 223, 0.12);
+  color: #f4fffb;
 }
 
-.finish-metal[data-finish="silver"] {
-  background: linear-gradient(160deg, #f7fbff, #aeb9c6 55%, #5e6b78);
-}
-
-.finish-metal[data-finish="gold"] {
-  background: linear-gradient(160deg, #ffe7a0, #e2b340 52%, #8a6414);
-}
-
-.finish-metal[data-finish="prismatic"] {
-  background: linear-gradient(120deg, #d7fff4, #ffe7a8 45%, #f0d0ff);
+@media (prefers-reduced-motion: reduce) {
+  .frame-glint,
+  .frame-spark {
+    animation: none;
+  }
 }

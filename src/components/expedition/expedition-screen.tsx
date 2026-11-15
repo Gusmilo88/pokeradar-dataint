@@ -148,7 +148,7 @@ export function ExpeditionScreen() {
     }
     const kept = new Set<string>();
     for (const [zoneId, list] of byZone) {
-      const report = weather.get(zoneId);
+      const report = weather.reports.get(zoneId);
       const scheduled = list.map((item) => item.id);
       if (!report || report.status !== "ready") {
         for (const id of scheduled) {
@@ -170,7 +170,7 @@ export function ExpeditionScreen() {
       }
     }
     return sightings.filter((sighting) => kept.has(sighting.id));
-  }, [catchLock, fieldTypes, now, sightings, weather]);
+  }, [catchLock, fieldTypes, now, sightings, weather.reports]);
   const zonePins = useMemo(
     () => buildZonePins(EXPEDITION_ZONES, activeSightings),
     [activeSightings],
@@ -319,8 +319,9 @@ export function ExpeditionScreen() {
           {focusedZone ? (
             <RegionBrief
               zone={focusedZone}
-              weather={weather.get(focusedZone.id)}
+              weather={weather.reports.get(focusedZone.id)}
               activeCount={activeSightings.filter((item) => item.zoneId === focusedZone.id).length}
+              onRetry={() => weather.retry(focusedZone.id)}
               onClose={() => setFocusedZoneId(null)}
             />
           ) : null}
@@ -377,6 +378,9 @@ export function ExpeditionScreen() {
         {dexOpen ? (
           <PokedexView
             progress={progress}
+            seen={progress.seen.size}
+            badgesEarned={liveBadges.summary.earned}
+            badgesTotal={liveBadges.summary.total}
             onClose={() => {
               setDexOpen(false);
               const opener = dexOpener.current;

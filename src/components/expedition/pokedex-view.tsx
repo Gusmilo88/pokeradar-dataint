@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { CapturePanel } from "@/components/expedition/capture-panel";
+import { AlbumSortMenu } from "@/components/expedition/album-sort-menu";
 import { TrainerProfile } from "@/components/expedition/trainer-profile";
 import { TrainerXpReadout } from "@/components/expedition/trainer-xp-readout";
 import { useFinishes } from "@/components/expedition/use-finishes";
@@ -22,7 +23,6 @@ import {
   GENERATION_LABEL,
   queryAlbum,
   revealedTypeNames,
-  SORT_KEYS,
   type SortDirection,
   type SortKey,
   type TypeMode,
@@ -36,10 +36,11 @@ import { KANTO_CATALOG, type CatalogEntry } from "@/lib/expedition/kanto";
 import { findZone } from "@/lib/expedition/pins";
 import { discoveryState, type Progress } from "@/lib/expedition/progress";
 import { assessExpedition } from "@/lib/expedition/trainer-xp";
-import { CARD_FINISHES, cardFinish, type CardFinishId } from "@/lib/expedition/trainer-rewards";
+import type { CardFinishId } from "@/lib/expedition/trainer-rewards";
 import { speciesLabel, statLabel, STAT_SCALE, typeLabel } from "@/lib/pokeapi/labels";
 import { blackWhiteStill } from "@/lib/pokeapi/sprites";
 import "./album.css";
+import "./trainer-profile.css";
 
 const ORDERED = [...KANTO_CATALOG].sort(
   (left, right) => left.expeditionNumber - right.expeditionNumber,
@@ -47,21 +48,6 @@ const ORDERED = [...KANTO_CATALOG].sort(
 
 function pad(value: number): string {
   return String(value).padStart(2, "0");
-}
-
-function sortLabel(key: SortKey): string {
-  const labels: Record<SortKey, string> = {
-    expedition: "Registro",
-    name: "Nombre",
-    hp: "PS",
-    attack: "Ataque",
-    defense: "Defensa",
-    "special-attack": "Ataque especial",
-    "special-defense": "Defensa especial",
-    speed: "Velocidad",
-    difficulty: "Dificultad",
-  };
-  return labels[key];
 }
 
 function stateLabel(state: "undiscovered" | "seen" | "caught"): string {
@@ -76,6 +62,9 @@ function stateLabel(state: "undiscovered" | "seen" | "caught"): string {
 
 export function PokedexView({
   progress,
+  seen,
+  badgesEarned,
+  badgesTotal,
   onClose,
   onSeek,
   onCaptured,
@@ -85,6 +74,9 @@ export function PokedexView({
   onTeam,
 }: {
   progress: Progress;
+  seen: number;
+  badgesEarned: number;
+  badgesTotal: number;
   onClose: () => void;
   onSeek: (encounterId: string) => void;
   onCaptured: (encounterId: string) => void;
@@ -99,7 +91,6 @@ export function PokedexView({
   const [focusNumber, setFocusNumber] = useState<number | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [inspectedFinish, setInspectedFinish] = useState<CardFinishId>("base");
   const [filter, setFilter] = useState<AlbumFilter>("all");
   const [query, setQuery] = useState("");
   const [chosenTypes, setChosenTypes] = useState<string[]>([]);
@@ -109,7 +100,7 @@ export function PokedexView({
   const facts = useRevealedFacts(progress);
   const trainer = assessExpedition(progress.caught);
   const trainerLevel = trainer.complete ? trainer.progress.level : 1;
-  const finishes = useFinishes(progress.caught, trainerLevel);
+  const finishes = useFinishes(trainerLevel);
   const typeChoices = revealedTypeNames(facts);
   const focused = ORDERED.find((entry) => entry.expeditionNumber === focusNumber) ?? null;
   const counts = albumCounts(progress);
@@ -149,6 +140,9 @@ export function PokedexView({
         return;
       }
       if (document.querySelector("[data-badge-ceremony]")) {
+        return;
+      }
+      if (document.querySelector(".album-sort-list")) {
         return;
       }
       event.preventDefault();
@@ -278,20 +272,7 @@ export function PokedexView({
             </div>
             <p className="album-generation">{GENERATION_LABEL}</p>
             <div className="album-sort">
-              <label>
-                <span className="sr-only">Ordenar</span>
-                <select
-                  className="album-search"
-                  value={sortKey}
-                  onChange={(event) => setSortKey(event.target.value as SortKey)}
-                >
-                  {SORT_KEYS.map((key) => (
-                    <option key={key} value={key}>
-                      {sortLabel(key)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <AlbumSortMenu value={sortKey} onChange={setSortKey} />
               <button
                 type="button"
                 className="album-filter"
@@ -321,16 +302,18 @@ export function PokedexView({
                     </button>
                   );
                 })}
-                {chosenTypes.length > 1 ? (
-                  <button
-                    type="button"
-                    className="album-filter"
-                    aria-pressed={typeMode === "all"}
-                    onClick={() => setTypeMode((current) => (current === "any" ? "all" : "any"))}
-                  >
-                    {typeMode === "any" ? "Cualquiera" : "Todos"}
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  className="album-clear"
+                  onClick={() => {
+                    setFilter("all");
+                    setChosenTypes([]);
+                    setTypeMode("any");
+                    setQuery("");
+                  }}
+                >
+                  Limpiar filtros
+                </button>
               </div>
             ) : null}
             <label className="block" htmlFor={searchId}>
@@ -358,8 +341,6 @@ export function PokedexView({
                 const accent = revealed ? albumAccent(entry) : null;
                 const zone = entry.zoneId ? (findZone(entry.zoneId) ?? null) : null;
                 const name = revealed ? speciesLabel(entry.speciesName) : "???";
-                const finish = state === "caught" ? finishes.finishOf(entry.encounterId) : "base";
-                const finishLabel = cardFinish(finish)?.label ?? "Base";
                 return (
                   <li key={entry.encounterId}>
                     <button
@@ -369,11 +350,10 @@ export function PokedexView({
                       data-state={state === "undiscovered" ? "unknown" : state}
                       data-accent={accent ?? undefined}
                       data-holo={accent ? "ready" : undefined}
-                      data-finish={state === "caught" && finish !== "base" ? finish : undefined}
                       aria-pressed={focusNumber === entry.expeditionNumber}
                       aria-label={
                         revealed
-                          ? `${name}. Registro ${pad(entry.expeditionNumber)}. ${stateLabel(state)}.${state === "caught" ? ` Acabado ${finishLabel}.` : ""}`
+                          ? `${name}. Registro ${pad(entry.expeditionNumber)}. ${stateLabel(state)}.`
                           : `Registro ${pad(entry.expeditionNumber)}. Identidad desconocida.`
                       }
                       onClick={() => setFocusNumber(entry.expeditionNumber)}
@@ -441,17 +421,19 @@ export function PokedexView({
           inTeam={teamMembers.includes(focused.encounterId)}
           teamFull={teamMembers.length >= TEAM_LIMIT}
           onTeam={() => onTeam(focused.encounterId)}
-          finish={finishes.finishOf(focused.encounterId)}
-          trainerLevel={trainerLevel}
-          onFinish={(finishId) => finishes.assign(focused.encounterId, finishId)}
+          finish={finishes.equipped}
         />
       ) : null}
       {profileOpen ? (
         <TrainerProfile
           progress={trainer.complete ? trainer.progress : null}
+          seen={seen}
           caught={progress.caught.size}
-          inspected={inspectedFinish}
-          onInspect={setInspectedFinish}
+          badgesEarned={badgesEarned}
+          badgesTotal={badgesTotal}
+          sample={ORDERED.find((entry) => progress.caught.has(entry.encounterId)) ?? null}
+          equipped={finishes.equipped}
+          onEquip={finishes.equip}
           onClose={() => setProfileOpen(false)}
         />
       ) : null}
@@ -587,8 +569,6 @@ function DexCard({
   teamFull,
   onTeam,
   finish,
-  trainerLevel,
-  onFinish,
 }: {
   entry: CatalogEntry;
   state: "undiscovered" | "seen" | "caught";
@@ -601,9 +581,8 @@ function DexCard({
   teamFull: boolean;
   onTeam: () => void;
   finish: CardFinishId;
-  trainerLevel: number;
-  onFinish: (finishId: CardFinishId) => void;
 }) {
+  const shown = state === "caught" ? finish : null;
   const revealed = state !== "undiscovered";
   const zone = entry.zoneId ? (findZone(entry.zoneId) ?? null) : null;
   const enclave = findEnclaveByEncounter(entry.encounterId);
@@ -748,7 +727,7 @@ function DexCard({
         data-holo={accent ? "ready" : undefined}
         data-type={primaryType ?? undefined}
         data-face={face}
-        data-finish={state === "caught" && finish !== "base" ? finish : undefined}
+        data-finish={shown ?? undefined}
         data-card="open"
         aria-busy={revealed && dossier.phase === "loading" ? true : undefined}
         onPointerMove={(event) => tiltCard(event, accent !== null)}
@@ -756,6 +735,7 @@ function DexCard({
       >
         <div className="tcg-rotor">
           <div className="tcg-face tcg-front" inert={face === "back" ? true : undefined}>
+            <span className="card-skin" aria-hidden="true"><span className="card-sheen" /></span>
             <div className="tcg-frame" onPointerDown={onCardPointerDown} onPointerUp={onCardPointerUp}>
               <header className="tcg-top">
                 <div className="min-w-0">
@@ -803,6 +783,7 @@ function DexCard({
             <span className="tcg-foil" aria-hidden="true" />
           </div>
           <div className="tcg-face tcg-back" inert={face === "front" ? true : undefined}>
+            <span className="card-skin" aria-hidden="true"><span className="card-sheen" /></span>
             <div className="tcg-frame" onPointerDown={onCardPointerDown} onPointerUp={onCardPointerUp}>
               <header className="tcg-top">
                 <div className="min-w-0">
@@ -870,38 +851,6 @@ function DexCard({
                     onEngage={() => setEngaged(entry.encounterId)}
                     onRelease={() => setEngaged(null)}
                   />
-                </div>
-              ) : null}
-              {state === "caught" && ready ? (
-                <div className="tcg-finish" data-no-flip>
-                  <p className="tcg-note">Acabado. No cambia las estadísticas.</p>
-                  <div className="tcg-finish-row" role="group" aria-label="Elegir acabado de esta carta">
-                    {CARD_FINISHES.map((item) => {
-                      const unlocked = trainerLevel >= item.unlockLevel;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className="tcg-finish-option"
-                          data-finish={item.id}
-                          aria-pressed={finish === item.id}
-                          aria-disabled={!unlocked}
-                          title={unlocked ? item.label : `${item.label}, nivel ${item.unlockLevel}`}
-                          onClick={() => {
-                            if (unlocked) {
-                              onFinish(item.id);
-                            }
-                          }}
-                        >
-                          <span className="finish-metal" data-finish={item.id} />
-                          <span className="sr-only">
-                            {item.label}
-                            {unlocked ? "" : `, bloqueado hasta el nivel ${item.unlockLevel}`}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
               ) : null}
               {state === "caught" && ready ? (

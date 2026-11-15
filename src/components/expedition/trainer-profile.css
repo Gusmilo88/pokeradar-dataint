@@ -20,8 +20,9 @@
   position: relative;
   z-index: 1;
   display: grid;
-  width: min(22rem, 100%);
-  justify-items: center;
+  width: min(42rem, 100%);
+  max-width: 720px;
+  justify-items: stretch;
   gap: 0.35rem;
   margin: auto;
   padding: 1.15rem 1rem 1rem;
@@ -70,7 +71,7 @@
     0 22px 48px rgba(0, 0, 0, 0.45);
 }
 
-.trainer-plaque[data-plate="prismatic"] {
+.trainer-plaque[data-plate="diamond"] {
   border-color: #d7c6ff;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.55),
@@ -98,10 +99,18 @@
   font-size: 0.62rem;
 }
 
-.trainer-seal {
+.trainer-identity,
+.trainer-showcase {
   display: grid;
-  width: 4.4rem;
-  height: 4.4rem;
+  justify-items: center;
+  min-width: 0;
+}
+
+.trainer-seal {
+  position: relative;
+  display: grid;
+  width: 4.6rem;
+  height: 4.6rem;
   place-items: center;
   margin: 0.35rem 0 0.15rem;
   border-radius: 50%;
@@ -136,7 +145,7 @@
     linear-gradient(160deg, #ffe7a0, #e2b340 52%, #8a6414);
 }
 
-.trainer-seal[data-plate="prismatic"] {
+.trainer-seal[data-plate="diamond"] {
   color: #241838;
   background:
     radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.85), transparent 32%),
@@ -144,16 +153,27 @@
 }
 
 .trainer-seal span {
+  position: absolute;
+  top: 0.58rem;
+  left: 50%;
+  margin: 0;
+  transform: translateX(-50%);
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.58rem;
-  letter-spacing: 0.14em;
+  font-size: 0.48rem;
+  line-height: 1;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 .trainer-seal strong {
-  margin-top: -0.35rem;
-  font-size: 1.45rem;
+  margin: 0;
+  font-size: 1.7rem;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
+}
+
+.trainer-seal[data-digits="2"] strong {
+  font-size: 1.35rem;
 }
 
 .trainer-rank {
@@ -262,8 +282,8 @@
   background: linear-gradient(160deg, #ffe7a0, #e2b340 52%, #8a6414);
 }
 
-.trainer-sample-metal[data-finish="prismatic"] {
-  background: conic-gradient(from 20deg, #d7fff4, #ffe7a8, #f0d0ff, #c8f4ff, #d7fff4);
+.trainer-sample-metal[data-finish="diamond"] {
+  background: linear-gradient(145deg, #f4fffb 0%, #d7c4ff 42%, #9fd8ef 100%);
 }
 
 .trainer-sample-name,
@@ -286,6 +306,89 @@
   line-height: 1.35;
 }
 
+.trainer-ledger {
+  display: grid;
+  width: min(18rem, 100%);
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 0.7rem;
+  margin: 0.15rem 0 0;
+}
+
+.trainer-ledger dt,
+.trainer-lock,
+.finish-specimen-name {
+  margin: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(246, 239, 226, 0.66);
+}
+
+.trainer-ledger dd {
+  margin: 0.08rem 0 0;
+  color: #f6efe2;
+  font-size: 0.95rem;
+}
+
+.trainer-ledger dd span {
+  color: rgba(246, 239, 226, 0.62);
+  font-size: 0.72rem;
+}
+
+.finish-specimen {
+  width: min(15.5rem, 100%);
+  margin: 0.15rem auto 0.35rem;
+}
+
+.finish-specimen .finish-mini {
+  width: 100%;
+  margin: 0;
+  animation: none;
+  perspective: none;
+}
+
+.finish-specimen .finish-mini .tcg-face {
+  cursor: default;
+}
+
+.finish-specimen .finish-mini .pixel-sprite {
+  width: 8.4rem;
+  height: 8.4rem;
+}
+
+.finish-chooser {
+  display: grid;
+  width: 100%;
+  justify-items: center;
+  gap: 0.15rem;
+}
+
+.trainer-equip {
+  min-height: 2.4rem;
+  margin-top: 0.15rem;
+  padding: 0.35rem 1rem;
+  border: 1px solid rgba(142, 246, 223, 0.55);
+  border-radius: 999px;
+  background: #102833;
+  color: #e7fff8;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.trainer-equip:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.trainer-equip:focus-visible {
+  outline: 2px solid #8ef6df;
+  outline-offset: 2px;
+}
+
 .trainer-close {
   margin-top: 0.45rem;
   padding: 0.4rem 0.9rem;
@@ -294,6 +397,19 @@
   background: rgba(8, 6, 4, 0.4);
   color: #f6efe2;
   cursor: pointer;
+}
+
+@media (min-width: 640px) {
+  .trainer-plaque {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    align-items: start;
+    column-gap: 0.8rem;
+  }
+
+  .trainer-close {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
 }
 
 @media (max-width: 720px) {
@@ -312,8 +428,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .trainer-seal[data-plate="prismatic"],
-  .trainer-sample-metal[data-finish="prismatic"] {
+  .trainer-seal[data-plate="diamond"],
+  .trainer-sample-metal[data-finish="diamond"] {
     background: linear-gradient(160deg, #efe7ff, #d7fff4 45%, #ffe7a8);
   }
 }

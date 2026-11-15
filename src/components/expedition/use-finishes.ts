@@ -2,20 +2,17 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import {
-  applicableFinishes,
-  assignFinish,
-  emptyFinishes,
+  equippedFinish,
+  equipFinish,
   FINISH_EVENT,
   FINISH_KEY,
-  finishOf,
-  parseFinishes,
-  readFinishes,
-  serializeFinishes,
-  type FinishMap,
+  FINISH_KEY_V1,
+  parseEquipped,
+  serializeFinish,
 } from "@/lib/expedition/finishes";
 import { readProgress } from "@/lib/expedition/progress";
 import { assessExpedition } from "@/lib/expedition/trainer-xp";
-import type { CardFinishId } from "@/lib/expedition/trainer-rewards";
+import { finishUnlocked, type CardFinishId } from "@/lib/expedition/trainer-rewards";
 
 function subscribe(onStoreChange: () => void): () => void {
   window.addEventListener(FINISH_EVENT, onStoreChange);
@@ -34,8 +31,8 @@ function readRaw(): string {
   }
 }
 
-function publish(map: FinishMap): void {
-  const next = serializeFinishes(map);
+function publish(id: CardFinishId): void {
+  const next = serializeFinish(id);
   if (next === readRaw()) {
     return;
   }
@@ -46,13 +43,14 @@ function publish(map: FinishMap): void {
 export function clearStoredFinishes(): void {
   try {
     window.localStorage.removeItem(FINISH_KEY);
+    window.localStorage.removeItem(FINISH_KEY_V1);
     window.dispatchEvent(new Event(FINISH_EVENT));
   } catch {
     return;
   }
 }
 
-function storedContext(): { caught: ReadonlySet<string>; level: number } {
+function storedLevel(): number {
   let progress = readProgress(null);
   try {
     progress = readProgress(window.localStorage.getItem("pokeradar.progress.v1"));
@@ -60,56 +58,56 @@ function storedContext(): { caught: ReadonlySet<string>; level: number } {
     progress = readProgress(null);
   }
   const report = assessExpedition(progress.caught);
-  return {
-    caught: progress.caught,
-    level: report.complete ? report.progress.level : 1,
-  };
+  return report.complete ? report.progress.level : 1;
 }
 
-export function useFinishes(caught: ReadonlySet<string>, level: number): {
-  map: FinishMap;
-  finishOf: (encounterId: string) => CardFinishId;
-  assign: (encounterId: string, finishId: CardFinishId) => void;
+export function useFinishes(level: number): {
+  equipped: CardFinishId;
+  equip: (finishId: CardFinishId) => void;
 } {
   const raw = useSyncExternalStore(subscribe, readRaw, () => "");
-  const hydrated = useSyncExternalStore(subscribe, () => true, () => false);
-  const map = hydrated ? readFinishes(raw || null, caught, level) : emptyFinishes();
-  const caughtKey = [...caught].sort().join("|");
+  const equipped = equippedFinish(raw || null, level);
 
   useEffect(() => {
+    try {
+      if (window.localStorage.getItem(FINISH_KEY_V1) !== null) {
+        window.localStorage.removeItem(FINISH_KEY_V1);
+        window.dispatchEvent(new Event(FINISH_EVENT));
+      }
+    } catch {
+      return;
+    }
     if (!raw) {
       return;
     }
-    const parsed = parseFinishes(raw);
-    if (!parsed) {
-      clearStoredFinishes();
-      return;
-    }
-    const applied = applicableFinishes(parsed, new Set(caughtKey ? caughtKey.split("|") : []), level);
-    const next = serializeFinishes(applied);
-    if (next !== raw) {
+    const parsed = parseEquipped(raw);
+    if (!parsed || parsed === "legacy") {
       try {
-        window.localStorage.setItem(FINISH_KEY, next);
+        window.localStorage.removeItem(FINISH_KEY);
         window.dispatchEvent(new Event(FINISH_EVENT));
       } catch {
         return;
       }
+      return;
     }
-  }, [caughtKey, level, raw]);
+    if (!finishUnlocked(parsed, level)) {
+      publish("base");
+      return;
+    }
+    if (raw.includes('"prismatic"')) {
+      publish("diamond");
+    }
+  }, [level, raw]);
 
-  const assign = useCallback((encounterId: string, finishId: CardFinishId) => {
-    const context = storedContext();
-    const current = readFinishes(readRaw() || null, context.caught, context.level);
-    const next = assignFinish(current, encounterId, finishId, context.caught, context.level);
+  const equip = useCallback((finishId: CardFinishId) => {
+    const currentLevel = storedLevel();
+    const current = equippedFinish(readRaw() || null, currentLevel);
+    const next = equipFinish(current, finishId, currentLevel);
     if (next === current) {
       return;
     }
     publish(next);
   }, []);
 
-  return {
-    map,
-    finishOf: (encounterId: string) => finishOf(map, encounterId),
-    assign,
-  };
+  return { equipped, equip };
 }

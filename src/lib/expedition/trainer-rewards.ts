@@ -9,7 +9,7 @@ export const COSMETIC_FINISHES = [
   { id: "bronze", label: "Bronce", unlockLevel: 3 },
   { id: "silver", label: "Plata", unlockLevel: 5 },
   { id: "gold", label: "Oro", unlockLevel: 8 },
-  { id: "prismatic", label: "Prismático", unlockLevel: 10 },
+  { id: "diamond", label: "Diamante", unlockLevel: 10 },
 ] as const;
 
 export type CosmeticFinishId = (typeof COSMETIC_FINISHES)[number]["id"];
@@ -37,8 +37,8 @@ export function validateCosmeticFinishes(): readonly string[] {
     }
     previous = finish.unlockLevel;
   }
-  if (!COSMETIC_FINISHES.some((finish) => finish.id === "prismatic" && finish.unlockLevel === TRAINER_LEVEL_CAP)) {
-    issues.push("El acabado prismático no está en el nivel máximo.");
+  if (!COSMETIC_FINISHES.some((finish) => finish.id === "diamond" && finish.unlockLevel === TRAINER_LEVEL_CAP)) {
+    issues.push("El acabado diamante no está en el nivel máximo.");
   }
   return issues;
 }
@@ -55,12 +55,15 @@ export function finishesUnlockedAt(level: number): readonly CosmeticFinish[] {
  * Cinco acabados de carta. Base es la apariencia actual y está desde el nivel 1.
  * Los otros cuatro son los metales ya declarados. Ninguno cambia tipo ni poder.
  */
+export const FINISH_SCOPE =
+  "Disponible para las especies capturadas. No cambia tipo, poder ni estadísticas.";
+
 export const CARD_FINISHES = [
-  { id: "base", label: "Base", unlockLevel: 1, note: "Marco de la expedición, sin metal añadido." },
-  { id: "bronze", label: "Bronce", unlockLevel: 3, note: "Marco pulido y reflejo cálido." },
-  { id: "silver", label: "Plata", unlockLevel: 5, note: "Marco frío y brillo contenido." },
-  { id: "gold", label: "Oro", unlockLevel: 8, note: "Marco intenso de carta premium." },
-  { id: "prismatic", label: "Prismático", unlockLevel: 10, note: "Reflejo iridiscente, solo en el marco." },
+  { id: "base", label: "Base", unlockLevel: 1 },
+  { id: "bronze", label: "Bronce", unlockLevel: 3 },
+  { id: "silver", label: "Plata", unlockLevel: 5 },
+  { id: "gold", label: "Oro", unlockLevel: 8 },
+  { id: "diamond", label: "Diamante", unlockLevel: 10 },
 ] as const;
 
 export type CardFinishId = (typeof CARD_FINISHES)[number]["id"];
@@ -69,7 +72,13 @@ export interface CardFinish {
   id: CardFinishId;
   label: string;
   unlockLevel: number;
-  note: string;
+}
+
+export function nextFinishReward(level: number): CardFinish | null {
+  if (!Number.isInteger(level)) {
+    return null;
+  }
+  return CARD_FINISHES.find((finish) => finish.unlockLevel > level) ?? null;
 }
 
 /** Un título por nivel. Identidad de campo, no de gimnasio. */
@@ -92,7 +101,8 @@ export function rankForLevel(level: number): string | null {
 }
 
 export function cardFinish(id: string): CardFinish | null {
-  const finish = CARD_FINISHES.find((item) => item.id === id);
+  const key = id === "prismatic" ? "diamond" : id;
+  const finish = CARD_FINISHES.find((item) => item.id === key);
   return finish ?? null;
 }
 
@@ -112,7 +122,7 @@ export function equipableFinishes(level: number): readonly CardFinish[] {
 /** Metal del sello del perfil. Sigue al nivel, no es una estadística nueva. */
 export function plateForLevel(level: number): CardFinishId {
   if (level >= 10) {
-    return "prismatic";
+    return "diamond";
   }
   if (level >= 8) {
     return "gold";

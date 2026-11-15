@@ -304,7 +304,7 @@ if (finishesUnlockedAt(1).length !== 0 || finishesUnlockedAt(3).map((finish) => 
   fail("Los acabados tempranos no respetan el nivel.");
 }
 const allFinishes = finishesUnlockedAt(10).map((finish) => finish.id);
-if (allFinishes.join() !== "bronze,silver,gold,prismatic") {
+if (allFinishes.join() !== "bronze,silver,gold,diamond") {
   fail(`El nivel 10 no declara los cuatro acabados: ${allFinishes.join()}.`);
 }
 if (finishesUnlockedAt(0).length !== 0 || finishesUnlockedAt(11).length !== 0) {
