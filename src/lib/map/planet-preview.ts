@@ -10,12 +10,14 @@ import { PLANET_SKY } from "@/lib/map/globe";
 import { flattenPolarDem, isPolarDemTile } from "@/lib/map/planet-poles";
 
 /**
- * Prototipo de superficie, solo con ?planetPreview=1 en desarrollo.
+ * Superficie definitiva del globo (océano, batimetría, relieve y atmósfera).
+ * Se aplica por defecto en el navegador, también en producción.
  * No cambia proyección, cámara, marcadores ni el estilo de la expedición.
  * El relieve es una lectura del DEM. No se extruye el terreno, así el globo
  * no desplaza los marcadores.
  */
 
+/** Conservado por compatibilidad con scripts; ya no activa la superficie. */
 export const PLANET_PREVIEW_PARAM = "planetPreview";
 
 /** Terrain Tiles de AWS Open Data. Teselas Terrarium de 256 px, CC BY 4.0 (Mapzen). */
@@ -50,7 +52,7 @@ const PLANET_DEM_ATTRIBUTION =
 const FAILURE_LIMIT = 12;
 
 /**
- * Halo del prototipo. Más ancho y más pálido que el cielo de la expedición,
+ * Atmósfera del planeta definitivo. Más ancha y más pálida que el cielo base,
  * y casi sin niebla sobre el suelo para no apagar Argentina.
  */
 const PREVIEW_SKY: SkySpecification = {
@@ -301,17 +303,7 @@ async function registerDemProtocol(): Promise<void> {
 }
 
 export function planetPreviewEnabled(): boolean {
-  if (process.env.NODE_ENV !== "development") {
-    return false;
-  }
-  if (typeof window === "undefined") {
-    return false;
-  }
-  try {
-    return new URLSearchParams(window.location.search).get(PLANET_PREVIEW_PARAM) === "1";
-  } catch {
-    return false;
-  }
+  return typeof window !== "undefined";
 }
 
 function probeUrl(): string {
@@ -335,7 +327,7 @@ function paintPreviewSky(map: MapLibreMap): void {
   try {
     map.setSky(PREVIEW_SKY);
   } catch (error) {
-    console.warn("La atmósfera del prototipo no se aplicó.", error);
+    console.warn("La atmósfera del planeta no se aplicó.", error);
   }
 }
 
@@ -414,7 +406,7 @@ function watchFailures(map: MapLibreMap): void {
 
 function addPlanetLayers(map: MapLibreMap): void {
   if (!map.getLayer("water")) {
-    console.warn("El estilo no tiene la capa water. No se aplicó el prototipo de superficie.");
+    console.warn("El estilo no tiene la capa water. No se aplicó la superficie del planeta.");
     return;
   }
   if (!map.getSource(PLANET_DEM_SOURCE)) {
@@ -488,7 +480,7 @@ async function mountPlanetPreview(map: MapLibreMap): Promise<void> {
     }
     await response.body?.cancel();
   } catch (error) {
-    console.warn("El relieve del prototipo no respondió. La superficie original sigue activa.", error);
+    console.warn("El relieve del planeta no respondió. La superficie original sigue activa.", error);
     return;
   }
 

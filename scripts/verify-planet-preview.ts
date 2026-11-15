@@ -18,10 +18,10 @@ import {
 } from "../src/lib/map/planet-poles";
 
 if (planetPreviewEnabled()) {
-  throw new Error("el prototipo no debe activarse fuera del navegador de desarrollo");
+  throw new Error("la superficie del planeta no debe activarse fuera del navegador");
 }
 if (PLANET_PREVIEW_PARAM !== "planetPreview") {
-  throw new Error("el parámetro de activación cambió");
+  throw new Error("la constante de compatibilidad del parámetro cambió");
 }
 if (PLANET_DEM_ENCODING !== "terrarium" || !PLANET_DEM_TILES.includes("elevation-tiles-prod")) {
   throw new Error("la fuente de relieve no es Terrarium de AWS Open Data");
@@ -31,8 +31,15 @@ if (PLANET_DEM_TILE_SIZE !== 256 || PLANET_DEM_MAX_ZOOM > 12) {
 }
 
 const preview = readFileSync(new URL("../src/lib/map/planet-preview.ts", import.meta.url), "utf8");
+const enabledBody = preview.slice(
+  preview.indexOf("function planetPreviewEnabled"),
+  preview.indexOf("function probeUrl"),
+);
+if (/location\.search|URLSearchParams|NODE_ENV/.test(enabledBody)) {
+  throw new Error("la superficie del planeta sigue dependiendo del query o de NODE_ENV");
+}
 if (/\.(setTerrain|setProjection|jumpTo)\s*\(/.test(preview)) {
-  throw new Error("el prototipo no puede mover el globo ni extruir el terreno");
+  throw new Error("la superficie no puede mover el globo ni extruir el terreno");
 }
 if (!preview.includes("color-relief") || !preview.includes("hillshade") || !preview.includes("ETOPO1")) {
   throw new Error("faltan el color de elevación, el sombreado o la atribución de batimetría");

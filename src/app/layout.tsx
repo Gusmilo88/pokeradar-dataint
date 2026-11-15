@@ -81,7 +81,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full bg-void font-sans text-ink">
         <Script id="pokeradar-intro-boot" strategy="beforeInteractive">
-          {`(function(){try{var reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;var preview=new URLSearchParams(window.location.search).get("planetPreview")==="1";var seen=false;try{seen=window.sessionStorage.getItem("pokeradar.intro.session")==="seen"}catch(e){seen=true}if(!reduce&&!preview&&!seen){document.documentElement.dataset.intro="play";try{window.sessionStorage.setItem("pokeradar.intro.session","seen")}catch(e){}}else{document.documentElement.dataset.intro="skip"}}catch(e){document.documentElement.dataset.intro="skip"}})();`}
+          {`(function(){try{var reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;var seen=false;try{seen=window.sessionStorage.getItem("pokeradar.intro.session")==="seen"}catch(e){seen=true}if(!reduce&&!seen){document.documentElement.dataset.intro="play";try{window.sessionStorage.setItem("pokeradar.intro.session","seen")}catch(e){}}else{document.documentElement.dataset.intro="skip"}}catch(e){document.documentElement.dataset.intro="skip"}})();`}
         </Script>
         <a className="skip-link" href="#mapa">
           Saltar al mapa
