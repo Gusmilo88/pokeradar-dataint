@@ -96,9 +96,54 @@
   color: var(--radar-quiet);
 }
 
+.album-head-actions {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
 .album-metrics strong {
   color: var(--radar-ink);
   font-weight: 500;
+}
+
+.trainer-xp {
+  display: grid;
+  gap: 0.28rem;
+  max-width: 22rem;
+  margin: 0.4rem 0 0;
+}
+
+.trainer-xp-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.75rem;
+  margin: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--radar-quiet);
+}
+
+.trainer-xp-line strong {
+  color: var(--radar-ink);
+  font-weight: 500;
+}
+
+.trainer-xp-track {
+  height: 0.28rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(142, 246, 223, 0.16);
+  pointer-events: none;
+}
+
+.trainer-xp-fill {
+  display: block;
+  height: 100%;
+  background: var(--radar-phosphor, #8ef6df);
 }
 
 .album-body {
@@ -948,7 +993,8 @@
   .album-stat-fill,
   .tcg-card,
   .tcg-rotor,
-  .tcg-foil {
+  .tcg-foil,
+  .tcg-card[data-finish="prismatic"] .tcg-foil {
     transition: none;
     animation: none;
   }
@@ -956,4 +1002,164 @@
   .tcg-card[data-holo="ready"] {
     transform: none;
   }
+}
+
+.album-card[data-state="caught"][data-finish="bronze"] {
+  border-color: #c9854a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 186, 0.4),
+    inset 0 0 0 1px rgba(92, 48, 22, 0.8),
+    0 14px 28px rgba(0, 0, 0, 0.34);
+}
+
+.album-card[data-state="caught"][data-finish="silver"] {
+  border-color: #d5dee8;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 0 0 1px rgba(36, 46, 58, 0.75),
+    0 14px 28px rgba(0, 0, 0, 0.34);
+}
+
+.album-card[data-state="caught"][data-finish="gold"] {
+  border-color: #f0c14e;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 210, 0.65),
+    inset 0 0 0 1px rgba(92, 64, 12, 0.75),
+    0 14px 28px rgba(0, 0, 0, 0.34);
+}
+
+.album-card[data-state="caught"][data-finish="prismatic"] {
+  border-color: #d7c6ff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 0 0 1px rgba(180, 150, 255, 0.4),
+    0 14px 28px rgba(0, 0, 0, 0.34);
+}
+
+.album-card[data-state="caught"][data-finish="prismatic"]::after {
+  border-color: rgba(158, 239, 255, 0.55);
+}
+
+.tcg-card[data-finish="bronze"] .tcg-face {
+  border-color: #c9854a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 186, 0.5),
+    inset 0 0 0 1px rgba(62, 28, 8, 0.85),
+    inset 0 0 0 0.42rem #2a1a12,
+    inset 0 0 0 0.55rem #a86b3a,
+    0 22px 48px rgba(0, 0, 0, 0.5);
+}
+
+.tcg-card[data-finish="silver"] .tcg-face {
+  border-color: #d5dee8;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.62),
+    inset 0 0 0 1px rgba(28, 36, 44, 0.85),
+    inset 0 0 0 0.42rem #161a20,
+    inset 0 0 0 0.55rem #b7c3d0,
+    0 22px 48px rgba(0, 0, 0, 0.5);
+}
+
+.tcg-card[data-finish="gold"] .tcg-face {
+  border-color: #f0c14e;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 246, 214, 0.7),
+    inset 0 0 0 1px rgba(72, 46, 8, 0.85),
+    inset 0 0 0 0.42rem #241a08,
+    inset 0 0 0 0.55rem #e2b340,
+    0 22px 48px rgba(0, 0, 0, 0.5);
+}
+
+.tcg-card[data-finish="prismatic"] .tcg-face {
+  border-color: #d7c6ff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 0 0 1px rgba(28, 24, 48, 0.8),
+    inset 0 0 0 0.42rem #16141c,
+    inset 0 0 0 0.55rem #c9b4ff,
+    0 22px 48px rgba(0, 0, 0, 0.5);
+}
+
+.tcg-card[data-finish="prismatic"] .tcg-foil {
+  display: block;
+  opacity: 0.38;
+  background-image:
+    radial-gradient(circle at var(--mx, 28%) var(--my, 18%), rgba(255, 255, 255, 0.28), transparent 24%),
+    linear-gradient(115deg, transparent 10%, rgba(158, 239, 255, 0.4) 28%, transparent 42%, rgba(255, 224, 138, 0.35) 58%, transparent 70%, rgba(231, 179, 255, 0.4) 86%, transparent);
+  background-size: 100% 100%, 220% 100%;
+  background-position: center, 0% 50%;
+  animation: finish-prism 7s ease-in-out infinite alternate;
+}
+
+@keyframes finish-prism {
+  from {
+    background-position: center, 0% 50%;
+  }
+
+  to {
+    background-position: center, 100% 50%;
+  }
+}
+
+.tcg-finish {
+  margin-top: 0.45rem;
+}
+
+.tcg-finish-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.tcg-finish-option {
+  display: grid;
+  min-height: 2rem;
+  place-items: center;
+  padding: 0.2rem;
+  border: 1px solid rgba(246, 239, 226, 0.2);
+  border-radius: 0.4rem;
+  background: rgba(8, 6, 4, 0.35);
+  cursor: pointer;
+}
+
+.tcg-finish-option[aria-pressed="true"] {
+  border-color: #f0d7a4;
+}
+
+.tcg-finish-option[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.tcg-finish-option:focus-visible {
+  outline: 2px solid #f0d7a4;
+  outline-offset: 2px;
+}
+
+.finish-metal {
+  display: block;
+  width: 100%;
+  height: 0.85rem;
+  border-radius: 0.2rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.finish-metal[data-finish="base"] {
+  background: linear-gradient(160deg, #3a342c, #1a1612 70%);
+}
+
+.finish-metal[data-finish="bronze"] {
+  background: linear-gradient(160deg, #f0c09a, #a86432 55%, #5c3018);
+}
+
+.finish-metal[data-finish="silver"] {
+  background: linear-gradient(160deg, #f7fbff, #aeb9c6 55%, #5e6b78);
+}
+
+.finish-metal[data-finish="gold"] {
+  background: linear-gradient(160deg, #ffe7a0, #e2b340 52%, #8a6414);
+}
+
+.finish-metal[data-finish="prismatic"] {
+  background: linear-gradient(120deg, #d7fff4, #ffe7a8 45%, #f0d0ff);
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { clearStoredBadges } from "@/lib/badges/ledger";
+import { clearStoredFinishes } from "@/components/expedition/use-finishes";
 import { clearStoredTeam } from "@/components/expedition/use-team";
 import {
   emptyProgress,
@@ -96,6 +97,7 @@ export function useProgress(): {
     publish(serializeProgress(emptyProgress()));
     clearStoredTeam();
     clearStoredBadges();
+    clearStoredFinishes();
   }, []);
 
   return { progress, hydrated, markSeen: reveal, markCaught: capture, reset };

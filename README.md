@@ -36,6 +36,8 @@ La ficha muestra el nombre en español cuando PokéAPI lo trae. Hasta entonces e
 
 Argentina lleva un relleno suave y un contorno celeste, debajo de ríos, calles y etiquetas. Malvinas, Georgias del Sur y Sandwich del Sur usan el mismo trazo, cada una en su feature de Natural Earth 1:10.000.000, sin líneas que las unan por el océano y sin cambiar el borde de los demás países. Sus etiquetas son capas de símbolo: ISLAS MALVINAS, ISLAS GEORGIAS DEL SUR e ISLAS SANDWICH DEL SUR, al norte o al este de la tierra. El mapa base deja de rotular esos nombres en inglés para no duplicarlos. Los nombres de países y de provincias del mapa base bajan de opacidad en el zoom nacional; no se borran. Alrededor de cada ancla hay una mancha de color. Es un acento de la expedición, no un bioma ni un límite provincial. No hay fronteras provinciales dibujadas por este proyecto.
 
+La XP de expedición no se guarda aparte: sale de los ids `caught` y del entero `base_experience` que PokéAPI publicó el 2026-11-14 para esas 56 especies (`src/lib/expedition/trainer-xp-catalog.ts`). Un visto, una ficha abierta o una captura repetida no suman. El nivel 1 es 0 XP y el nivel 10 exige la suma exacta del catálogo, con nueve umbrales `redondeo(T × k(k+1)(2k+1) / 1710)`. Reiniciar vacía `caught` y vuelve al nivel 1. La demostración de medallas usa otro conjunto en memoria y no escribe esta XP. El perfil de la Pokédex muestra el nivel, el rango de campo y los cinco acabados. Base está desde el nivel 1; Bronce, Plata, Oro y Prismático se desbloquean en 3, 5, 8 y 10. Cada especie capturada elige el suyo en `pokeradar.finishes.v1`. Reiniciar también borra esos acabados. No cambian tipo, poder ni estadísticas.
+
 El progreso vive en `localStorage`, clave `pokeradar.progress.v1`, versión 1: listas `seen` y `caught` de ids `kanto-NNN`. Un documento con versión distinta, JSON roto, un id ajeno o un id repetido se descarta entero. Capturado implica visto. Marcar visto no baja un capturado. La primera pintura, incluida la hidratación, sale vacía; el almacenamiento se lee después y no muestra una especie bloqueada como descubierta. Reiniciar pide confirmación. Con la ficha vista, «Atrapar» muestra una dificultad de 1 a 10 calculada al llegar `capture_rate` y las seis estadísticas. La secuencia siempre se registra si se completa o se omite; cancelarla, pulsar Escape o salir no escribe `caught`. Dificultad 1–5 usa 3 movimientos y 6–10 usa 4. La presentación lanza una Pokébola en SVG, absorbe el sprite de Black & White y agita la bola. En un enclave el botón aparece después del rito, sin cerrar la visita ni repetir la ceremonia. El sprite del escenario sigue esa misma fase: visible al lanzar, absorbido hacia la bola y oculto en los movimientos, al omitir y al reingresar ya capturado. El sonido se sintetiza en el navegador y se apaga con «Silencio»; la preferencia vive en `sessionStorage` (`pokeradar.audio.v1`) y no toca el progreso.
 
 El índice y la ficha no comparten el panel: con una criatura elegida, Ficha e Índice alternan. Cerrar guarda la selección. En escritorio el mapa ocupa el ancho que deja el panel; un botón Bitácora lo vuelve a abrir. En el teléfono el panel es una hoja inferior, y al cerrarla el mapa crece. El momento (explorar, descubrir, registrar) es un texto de estado, no un botón.
@@ -85,6 +87,8 @@ scripts/
   copy-maplibre-worker.mjs
   verify-pokeapi.ts
   verify-progress.ts
+  verify-trainer-xp.ts
+  verify-finishes.ts
 ```
 
 La página sigue siendo un Server Component. `MapCanvas` carga `MapView` con `next/dynamic` y `ssr: false`. La instancia del mapa se crea una sola vez por intento. La selección cambia la clase del sello y pide un `flyTo` o un `jumpTo`; no vuelve a construir MapLibre.
@@ -153,6 +157,8 @@ npm run lint
 npm run build
 npx tsx scripts/verify-pokeapi.ts
 npx tsx scripts/verify-progress.ts
+npx tsx scripts/verify-trainer-xp.ts
+npx tsx scripts/verify-finishes.ts
 npx tsx scripts/verify-enclave.ts
 npx tsx scripts/verify-capture.ts
 npx tsx scripts/verify-schedule.ts

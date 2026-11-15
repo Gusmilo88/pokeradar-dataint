@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { CapturePanel } from "@/components/expedition/capture-panel";
+import { TrainerProfile } from "@/components/expedition/trainer-profile";
+import { TrainerXpReadout } from "@/components/expedition/trainer-xp-readout";
+import { useFinishes } from "@/components/expedition/use-finishes";
 import { CreatureSprite } from "@/components/expedition/creature-sprite";
 import { useDossier } from "@/components/expedition/use-dossier";
 import {
@@ -32,6 +35,8 @@ import { explorationHint } from "@/lib/expedition/hints";
 import { KANTO_CATALOG, type CatalogEntry } from "@/lib/expedition/kanto";
 import { findZone } from "@/lib/expedition/pins";
 import { discoveryState, type Progress } from "@/lib/expedition/progress";
+import { assessExpedition } from "@/lib/expedition/trainer-xp";
+import { CARD_FINISHES, cardFinish, type CardFinishId } from "@/lib/expedition/trainer-rewards";
 import { speciesLabel, statLabel, STAT_SCALE, typeLabel } from "@/lib/pokeapi/labels";
 import { blackWhiteStill } from "@/lib/pokeapi/sprites";
 import "./album.css";
@@ -93,6 +98,8 @@ export function PokedexView({
   const searchId = useId();
   const [focusNumber, setFocusNumber] = useState<number | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [inspectedFinish, setInspectedFinish] = useState<CardFinishId>("base");
   const [filter, setFilter] = useState<AlbumFilter>("all");
   const [query, setQuery] = useState("");
   const [chosenTypes, setChosenTypes] = useState<string[]>([]);
@@ -100,6 +107,9 @@ export function PokedexView({
   const [sortKey, setSortKey] = useState<SortKey>("expedition");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const facts = useRevealedFacts(progress);
+  const trainer = assessExpedition(progress.caught);
+  const trainerLevel = trainer.complete ? trainer.progress.level : 1;
+  const finishes = useFinishes(progress.caught, trainerLevel);
   const typeChoices = revealedTypeNames(facts);
   const focused = ORDERED.find((entry) => entry.expeditionNumber === focusNumber) ?? null;
   const counts = albumCounts(progress);
@@ -143,6 +153,10 @@ export function PokedexView({
       }
       event.preventDefault();
       event.stopImmediatePropagation();
+      if (profileOpen) {
+        setProfileOpen(false);
+        return;
+      }
       if (confirmReset) {
         setConfirmReset(false);
         return;
@@ -155,7 +169,7 @@ export function PokedexView({
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [closeCard, confirmReset, focusNumber, onClose]);
+  }, [closeCard, confirmReset, focusNumber, onClose, profileOpen]);
 
   useEffect(() => {
     if (focusNumber === null) {
@@ -198,7 +212,7 @@ export function PokedexView({
       data-card={focused ? "open" : undefined}
       onKeyDown={trapTab}
     >
-      <header className="album-head" inert={focused ? true : undefined}>
+      <header className="album-head" inert={focused || profileOpen ? true : undefined}>
         <div className="album-ring-wrap">
           <svg className="album-ring" viewBox="0 0 36 36" aria-hidden="true">
             <circle className="album-ring-track" cx="18" cy="18" r="15.5" pathLength="100" />
@@ -235,13 +249,19 @@ export function PokedexView({
             <span>Vistos <strong>{counts.seen}</strong></span>
             <span>Capturados <strong>{counts.caught}</strong></span>
           </p>
+          <TrainerXpReadout caught={progress.caught} />
         </div>
-        <button type="button" className="action-button inline-flex items-center justify-center" onClick={onClose} autoFocus>
-          Mapa
-        </button>
+        <div className="album-head-actions">
+          <button type="button" className="action-button inline-flex items-center justify-center" onClick={() => setProfileOpen(true)}>
+            Perfil
+          </button>
+          <button type="button" className="action-button inline-flex items-center justify-center" onClick={onClose} autoFocus>
+            Mapa
+          </button>
+        </div>
       </header>
       <div className="album-body">
-        <div className="album-grid-wrap" inert={focused ? true : undefined}>
+        <div className="album-grid-wrap" inert={focused || profileOpen ? true : undefined}>
           <div className="album-tools">
             <div className="album-filters" role="toolbar" aria-label="Filtrar la colección">
               {ALBUM_FILTERS.map((item) => (
@@ -338,6 +358,8 @@ export function PokedexView({
                 const accent = revealed ? albumAccent(entry) : null;
                 const zone = entry.zoneId ? (findZone(entry.zoneId) ?? null) : null;
                 const name = revealed ? speciesLabel(entry.speciesName) : "???";
+                const finish = state === "caught" ? finishes.finishOf(entry.encounterId) : "base";
+                const finishLabel = cardFinish(finish)?.label ?? "Base";
                 return (
                   <li key={entry.encounterId}>
                     <button
@@ -347,10 +369,11 @@ export function PokedexView({
                       data-state={state === "undiscovered" ? "unknown" : state}
                       data-accent={accent ?? undefined}
                       data-holo={accent ? "ready" : undefined}
+                      data-finish={state === "caught" && finish !== "base" ? finish : undefined}
                       aria-pressed={focusNumber === entry.expeditionNumber}
                       aria-label={
                         revealed
-                          ? `${name}. Registro ${pad(entry.expeditionNumber)}. ${stateLabel(state)}.`
+                          ? `${name}. Registro ${pad(entry.expeditionNumber)}. ${stateLabel(state)}.${state === "caught" ? ` Acabado ${finishLabel}.` : ""}`
                           : `Registro ${pad(entry.expeditionNumber)}. Identidad desconocida.`
                       }
                       onClick={() => setFocusNumber(entry.expeditionNumber)}
@@ -374,7 +397,7 @@ export function PokedexView({
           <div className="album-reset">
             {confirmReset ? (
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm text-quiet">Se borran las vistas de esta expedición.</p>
+                <p className="text-sm text-quiet">Se borran las vistas, las capturas y los acabados de esta expedición.</p>
                 <button
                   type="button"
                   className="action-button inline-flex items-center justify-center"
@@ -418,6 +441,18 @@ export function PokedexView({
           inTeam={teamMembers.includes(focused.encounterId)}
           teamFull={teamMembers.length >= TEAM_LIMIT}
           onTeam={() => onTeam(focused.encounterId)}
+          finish={finishes.finishOf(focused.encounterId)}
+          trainerLevel={trainerLevel}
+          onFinish={(finishId) => finishes.assign(focused.encounterId, finishId)}
+        />
+      ) : null}
+      {profileOpen ? (
+        <TrainerProfile
+          progress={trainer.complete ? trainer.progress : null}
+          caught={progress.caught.size}
+          inspected={inspectedFinish}
+          onInspect={setInspectedFinish}
+          onClose={() => setProfileOpen(false)}
         />
       ) : null}
     </div>
@@ -551,6 +586,9 @@ function DexCard({
   inTeam,
   teamFull,
   onTeam,
+  finish,
+  trainerLevel,
+  onFinish,
 }: {
   entry: CatalogEntry;
   state: "undiscovered" | "seen" | "caught";
@@ -562,6 +600,9 @@ function DexCard({
   inTeam: boolean;
   teamFull: boolean;
   onTeam: () => void;
+  finish: CardFinishId;
+  trainerLevel: number;
+  onFinish: (finishId: CardFinishId) => void;
 }) {
   const revealed = state !== "undiscovered";
   const zone = entry.zoneId ? (findZone(entry.zoneId) ?? null) : null;
@@ -707,6 +748,7 @@ function DexCard({
         data-holo={accent ? "ready" : undefined}
         data-type={primaryType ?? undefined}
         data-face={face}
+        data-finish={state === "caught" && finish !== "base" ? finish : undefined}
         data-card="open"
         aria-busy={revealed && dossier.phase === "loading" ? true : undefined}
         onPointerMove={(event) => tiltCard(event, accent !== null)}
@@ -828,6 +870,38 @@ function DexCard({
                     onEngage={() => setEngaged(entry.encounterId)}
                     onRelease={() => setEngaged(null)}
                   />
+                </div>
+              ) : null}
+              {state === "caught" && ready ? (
+                <div className="tcg-finish" data-no-flip>
+                  <p className="tcg-note">Acabado. No cambia las estadísticas.</p>
+                  <div className="tcg-finish-row" role="group" aria-label="Elegir acabado de esta carta">
+                    {CARD_FINISHES.map((item) => {
+                      const unlocked = trainerLevel >= item.unlockLevel;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className="tcg-finish-option"
+                          data-finish={item.id}
+                          aria-pressed={finish === item.id}
+                          aria-disabled={!unlocked}
+                          title={unlocked ? item.label : `${item.label}, nivel ${item.unlockLevel}`}
+                          onClick={() => {
+                            if (unlocked) {
+                              onFinish(item.id);
+                            }
+                          }}
+                        >
+                          <span className="finish-metal" data-finish={item.id} />
+                          <span className="sr-only">
+                            {item.label}
+                            {unlocked ? "" : `, bloqueado hasta el nivel ${item.unlockLevel}`}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : null}
               {state === "caught" && ready ? (
