@@ -31,6 +31,7 @@ import {
 import { ARGENTINA_LAND_NOTE } from "@/lib/map/argentina-land";
 import { ATLAS_FRAMES, type AtlasFrame } from "@/lib/map/atlas-frames";
 import { applyExpeditionStyle } from "@/lib/map/expedition-style";
+import { applyPlanetPreview } from "@/lib/map/planet-preview";
 import { markerBand } from "@/lib/map/marker-band";
 import { markerLod, type MarkerLod } from "@/lib/map/marker-lod";
 import { StarField } from "@/components/map/star-field";
@@ -244,6 +245,7 @@ export function MapView({
       if (!cancelled) {
         applyExpeditionStyle(activeMap);
         paintPlanet();
+        applyPlanetPreview(activeMap);
       }
     };
 
@@ -253,6 +255,7 @@ export function MapView({
       }
       applyExpeditionStyle(activeMap);
       paintPlanet();
+      applyPlanetPreview(activeMap);
       setPhase("ready");
       setDetail(null);
       publishReadout();
