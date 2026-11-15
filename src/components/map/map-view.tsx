@@ -398,6 +398,20 @@ export function MapView({
           img.src = still;
         });
         button.append(img);
+      } else if (pin.kind === "enclave") {
+        button.textContent = "";
+      } else if (pin.kind === "zone" && pin.complete) {
+        button.classList.add("field-pin-complete");
+        if (!compactZone) {
+          const stamp = document.createElement("span");
+          stamp.textContent = pin.shortLabel.split("\n")[0] ?? "";
+          button.append(stamp);
+        }
+        const star = document.createElement("span");
+        star.className = "field-pin-star";
+        star.setAttribute("aria-hidden", "true");
+        star.textContent = "★";
+        button.append(star);
       } else if (!dot) {
         button.textContent = compactZone ? String(pin.count ?? "") : pin.shortLabel;
       }

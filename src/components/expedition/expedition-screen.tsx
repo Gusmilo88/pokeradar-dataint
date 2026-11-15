@@ -187,8 +187,8 @@ export function ExpeditionScreen() {
     return sightings.filter((sighting) => kept.has(sighting.id));
   }, [catchLock, fieldTypes, now, sightings, weather.reports]);
   const zonePins = useMemo(
-    () => buildZonePins(EXPEDITION_ZONES, activeSightings),
-    [activeSightings],
+    () => buildZonePins(EXPEDITION_ZONES, activeSightings, progress.caught, sightings),
+    [activeSightings, progress.caught, sightings],
   );
   const encounterPins = useMemo(
     () => buildEncounterPins(EXPEDITION_ZONES, activeSightings, knownNames, progress.seen, progress.caught),

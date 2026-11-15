@@ -82,13 +82,28 @@
 }
 
 .field-pin-enclave {
+  position: relative;
   width: 2.75rem;
   min-width: 2.75rem;
   height: 2.75rem;
   min-height: 2.75rem;
   padding: 0;
-  border-radius: 999px;
-  border: 1px solid var(--pin-line, #d9fff4);
+  border-radius: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--pin-ink, #04141c);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+  box-shadow: none;
+}
+
+.field-pin-enclave::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   background: radial-gradient(
     circle at 30% 18%,
     var(--pin-hi, #f3fffb),
@@ -96,16 +111,23 @@
     var(--pin-deep, #3aa0ff) 72%,
     var(--pin-edge, #7a6cff)
   );
-  color: var(--pin-ink, #04141c);
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1;
-  text-transform: none;
-  box-shadow:
-    0 0 0 1px var(--pin-ring, rgba(125, 255, 195, 0.7)),
-    0 0 8px 1px var(--pin-glow, rgba(90, 150, 255, 0.55));
+  clip-path: polygon(
+    50% 0%,
+    63% 35%,
+    100% 38%,
+    70% 59%,
+    82% 100%,
+    50% 76%,
+    18% 100%,
+    30% 59%,
+    0% 38%,
+    37% 35%
+  );
+  filter:
+    drop-shadow(0 0 1px var(--pin-ring, rgba(125, 255, 195, 0.7)))
+    drop-shadow(0 0 6px var(--pin-glow, rgba(90, 150, 255, 0.55)));
   animation: enclave-pulse 2.8s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .field-pin-enclave[data-known]:focus-visible::after {
@@ -136,8 +158,8 @@
   font-size: 0.72rem;
 }
 
-.field-pin-far {
-  box-shadow: 0 0 0 1px var(--pin-ring, rgba(125, 255, 195, 0.7));
+.field-pin-far::before {
+  filter: drop-shadow(0 0 1px var(--pin-ring, rgba(125, 255, 195, 0.7)));
 }
 
 .field-pin-caught {
@@ -168,9 +190,22 @@
   content: "";
   width: 0.85rem;
   height: 0.85rem;
-  border: 2px solid #102029;
+  border: 2px solid #0c3d22;
   border-radius: 999px;
-  background: var(--zone-accent, #f4f7f8);
+  background: #5dff7a;
+  box-shadow: 0 0 7px 2px rgba(80, 255, 140, 0.8);
+  animation: field-dot-pulse 1.8s ease-in-out infinite;
+}
+
+.field-pin-star {
+  color: #e6b325;
+  font-size: 1.05rem;
+  line-height: 1;
+  text-shadow: 0 1px 0 #6a4e10, 0 0 6px rgba(242, 193, 78, 0.65);
+}
+
+.field-pin-compact .field-pin-star {
+  font-size: 1.2rem;
 }
 
 .field-pin.is-selected {
@@ -180,6 +215,10 @@
 
 .field-pin-dot.is-selected::before {
   background: #f2c14e;
+  border-color: #102029;
+  opacity: 1;
+  animation: none;
+  box-shadow: 0 0 0 3px #f2c14e;
 }
 
 .field-pin:focus-visible {
@@ -192,24 +231,35 @@
 }
 
 .field-pin.field-pin-enclave.is-selected {
-  background: radial-gradient(
-    circle at 30% 18%,
-    var(--pin-hi, #f3fffb),
-    var(--pin-mid, #8ef6df) 36%,
-    var(--pin-deep, #3aa0ff) 72%,
-    var(--pin-edge, #7a6cff)
-  );
+  background: transparent;
   color: var(--pin-ink, #04141c);
-  box-shadow:
-    0 0 0 3px var(--pulse-core, #e7fff8),
-    0 0 20px 6px var(--pin-glow, rgba(139, 124, 255, 0.62));
+  box-shadow: none;
+}
+
+.field-pin.field-pin-enclave.is-selected::before {
+  filter:
+    drop-shadow(0 0 2px var(--pulse-core, #e7fff8))
+    drop-shadow(0 0 12px var(--pin-glow, rgba(139, 124, 255, 0.75)));
 }
 
 @keyframes enclave-pulse {
   50% {
-    box-shadow:
-      0 0 0 3px var(--pin-glow-soft, rgba(125, 255, 195, 0.22)),
-      0 0 10px 2px var(--pin-glow, rgba(90, 208, 255, 0.4));
+    filter:
+      drop-shadow(0 0 2px var(--pin-glow-soft, rgba(125, 255, 195, 0.22)))
+      drop-shadow(0 0 12px var(--pin-glow, rgba(90, 208, 255, 0.55)));
+  }
+}
+
+@keyframes field-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 7px 2px rgba(80, 255, 140, 0.8);
+  }
+
+  50% {
+    opacity: 0.28;
+    box-shadow: 0 0 1px 0 rgba(80, 255, 140, 0.15);
   }
 }
 
@@ -236,8 +286,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .field-pin-enclave {
+  .field-pin-enclave,
+  .field-pin-enclave::before,
+  .field-pin-dot::before {
     animation: none;
+  }
+
+  .field-pin-dot::before {
+    opacity: 1;
   }
 
   .star-point {

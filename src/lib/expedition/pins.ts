@@ -40,6 +40,8 @@ export interface FieldPin {
   /** Nombre visible solo al enfocar un enclave ya descubierto. */
   focusName?: string;
   count?: number;
+  /** Todas las presencias de la zona están capturadas. */
+  complete?: boolean;
   presence?: "hidden" | "seen" | "caught";
   nationalId?: number;
   spriteStill?: string;
@@ -53,9 +55,15 @@ function zoneById(zones: readonly ExpeditionZone[]): Map<string, ExpeditionZone>
 export function buildZonePins(
   zones: readonly ExpeditionZone[],
   sightings: readonly Sighting[],
+  caughtIds?: ReadonlySet<string>,
+  roster?: readonly Sighting[],
 ): FieldPin[] {
+  const catalog = roster ?? sightings;
   return zones.map((zone) => {
     const count = sightings.filter((sighting) => sighting.zoneId === zone.id).length;
+    const members = catalog.filter((sighting) => sighting.zoneId === zone.id);
+    const complete =
+      Boolean(caughtIds) && members.length > 0 && members.every((sighting) => caughtIds?.has(sighting.id));
     return {
       id: `zone:${zone.id}`,
       zoneId: zone.id,
@@ -64,7 +72,10 @@ export function buildZonePins(
       latitude: zone.anchor.latitude,
       shortLabel: `${zone.stamp}\n${count}`,
       count,
-      label: `${zone.name}, ${zone.region}. ${count} encuentros de ${HABITAT_LABEL[zone.habitat]}. Acercar.`,
+      ...(complete ? { complete: true } : {}),
+      label: complete
+        ? `${zone.name}, ${zone.region}. Zona completada. Acercar.`
+        : `${zone.name}, ${zone.region}. ${count} encuentros de ${HABITAT_LABEL[zone.habitat]}. Acercar.`,
       accent: zone.accent,
     };
   });

@@ -54,7 +54,11 @@ export function HudBar({
             Medallas
           </button>
           {notebookOpen ? null : (
-            <button type="button" className="action-button hidden lg:inline-flex" onClick={onOpen}>
+            <button
+              type="button"
+              className="action-button hidden items-center justify-center text-center lg:inline-flex"
+              onClick={onOpen}
+            >
               Bitácora
             </button>
           )}
