@@ -1,13 +1,16 @@
 import { ENCLAVES } from "../src/lib/expedition/enclaves";
 import { buildEnclavePins, buildZonePins, REGIONAL_ZOOM } from "../src/lib/expedition/pins";
 import { EXPEDITION_ZONES } from "../src/lib/expedition/argentina";
+import { KANTO_CATALOG } from "../src/lib/expedition/kanto";
+import { buildFieldSightings } from "../src/lib/expedition/sightings";
+import { containsArgentina } from "../src/lib/map/argentina-hit";
 import { FAR_ZOOM, markerLod, markerVisualScale } from "../src/lib/map/marker-lod";
 import { markerBand } from "../src/lib/map/marker-band";
 
 const SPECIALS = [
   ["santuario-glacial", -54.638, -67.759],
   ["central-electrica", -40.58, -70.98],
-  ["santuario-volcanico", -36.42, -69.2],
+  ["santuario-volcanico", -26.5035, -61.1765],
   ["caverna-fosil", -30.12, -67.85],
   ["laboratorio-secreto", -51.7002, -58.8259],
   ["refugio-escondido", -54.4408, -36.5556],
@@ -25,6 +28,38 @@ for (const [id, latitude, longitude] of SPECIALS) {
   if (pin.latitude !== source.point.latitude || pin.longitude !== source.point.longitude) {
     throw new Error(`${id} no conserva el ancla`);
   }
+}
+
+const salsipuedes = EXPEDITION_ZONES.find((zone) => zone.id === "puerto-iguazu");
+const cataratas = EXPEDITION_ZONES.find((zone) => zone.id === "cataratas-iguazu");
+if (!salsipuedes || salsipuedes.name !== "Salsipuedes" || salsipuedes.anchor.latitude !== -31.1372 || salsipuedes.anchor.longitude !== -64.2958) {
+  throw new Error("Salsipuedes no quedó en su ancla");
+}
+if (!cataratas || cataratas.name !== "Cataratas del Iguazú" || cataratas.anchor.latitude !== -25.68988 || cataratas.anchor.longitude !== -54.44369) {
+  throw new Error("Cataratas se movió");
+}
+const forestIds = KANTO_CATALOG.filter((entry) => entry.role === "field" && entry.zoneId === "puerto-iguazu").map((entry) => entry.encounterId);
+if (forestIds.length !== 7) throw new Error("Salsipuedes no conserva las 7 especies");
+const placed = buildFieldSightings().filter((sighting) => sighting.zoneId === "puerto-iguazu");
+if (placed.length !== 7 || placed.some((sighting) => !forestIds.includes(sighting.id))) {
+  throw new Error("las señales de Salsipuedes no son las originales");
+}
+for (const sighting of placed) {
+  const north = Math.abs(sighting.latitude - salsipuedes.anchor.latitude) * 110.574;
+  const east = Math.abs(sighting.longitude - salsipuedes.anchor.longitude) * 111.32 * Math.cos((salsipuedes.anchor.latitude * Math.PI) / 180);
+  if (Math.hypot(north, east) > 12 || !containsArgentina({ latitude: sighting.latitude, longitude: sighting.longitude })) {
+    throw new Error(`${sighting.id} quedó fuera de Salsipuedes`);
+  }
+}
+const falls = buildFieldSightings().filter((sighting) => sighting.zoneId === "cataratas-iguazu");
+if (falls.length !== 4 || falls.some((sighting) => sighting.latitude < -25.72 || sighting.latitude > -25.68)) {
+  throw new Error("Cataratas cambió de encuentros");
+}
+const seenOnly = buildEnclavePins(ENCLAVES, new Set(["kanto-146"]), new Map());
+const caughtOne = buildEnclavePins(ENCLAVES, new Set(["kanto-146"]), new Map(), new Set(["kanto-146"]));
+if (seenOnly.some((pin) => pin.presence === "caught")) throw new Error("ver un especial lo convierte en estrella");
+if (caughtOne.filter((pin) => pin.presence === "caught").length !== 1 || caughtOne.find((pin) => pin.id === "santuario-volcanico")?.presence !== "caught") {
+  throw new Error("la captura no marca la estrella");
 }
 
 const zones = buildZonePins(EXPEDITION_ZONES, []);

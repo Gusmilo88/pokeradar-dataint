@@ -121,6 +121,7 @@
   content: "";
   position: absolute;
   inset: 0;
+  border-radius: 999px;
   background: radial-gradient(
     circle at 30% 18%,
     var(--pin-hi, #f3fffb),
@@ -128,6 +129,25 @@
     var(--pin-deep, #3aa0ff) 72%,
     var(--pin-edge, #7a6cff)
   );
+  filter:
+    drop-shadow(0 0 1px var(--pin-ring, rgba(125, 255, 195, 0.7)))
+    drop-shadow(0 0 6px var(--pin-glow, rgba(90, 150, 255, 0.55)));
+  animation: enclave-pulse 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.field-pin-enclave .field-pin-mark {
+  position: relative;
+  z-index: 1;
+  color: var(--pin-ink, #04141c);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.field-pin-enclave-caught .field-pin-face::before {
+  border-radius: 0;
   clip-path: polygon(
     50% 0%,
     63% 35%,
@@ -140,11 +160,10 @@
     0% 38%,
     37% 35%
   );
-  filter:
-    drop-shadow(0 0 1px var(--pin-ring, rgba(125, 255, 195, 0.7)))
-    drop-shadow(0 0 6px var(--pin-glow, rgba(90, 150, 255, 0.55)));
-  animation: enclave-pulse 2.8s ease-in-out infinite;
-  pointer-events: none;
+}
+
+.field-pin-lod-far.field-pin-enclave .field-pin-mark {
+  font-size: 0.72rem;
 }
 
 .field-pin-enclave[data-known]:focus-visible::after {

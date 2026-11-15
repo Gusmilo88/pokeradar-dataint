@@ -146,8 +146,11 @@ for (const spec of expected) {
     }
   }
   if (spec.id === "santuario-volcanico") {
-    if (enclave.point.latitude !== -36.42 || enclave.point.longitude !== -69.2) {
-      fail("El Santuario Volcánico se movió.");
+    if (enclave.point.latitude !== -26.5035 || enclave.point.longitude !== -61.1765) {
+      fail("El Santuario Volcánico se movió de Pampa del Infierno.");
+    }
+    if (enclave.region !== "Chaco" || enclave.kicker.includes("Payunia") || enclave.kicker.includes("Mendoza")) {
+      fail("El Santuario Volcánico sigue atribuido a Mendoza.");
     }
   }
   const hidden = `${enclave.anomaly} ${enclave.sealed} ${enclave.exterior} ${enclave.interior} Anomalía sin identificar. ${enclave.signal} en ${enclave.region}.`;

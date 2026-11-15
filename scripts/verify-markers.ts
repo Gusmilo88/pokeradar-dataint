@@ -23,7 +23,9 @@ if (hidden.some((pin) => pin.spriteStill || pin.shortLabel !== "???")) throw new
 
 const zones = buildZonePins(EXPEDITION_ZONES, sightings);
 const iguazu = zones.find((pin) => pin.zoneId === "puerto-iguazu");
-if (iguazu?.count !== 1 || !iguazu.shortLabel.includes("Iguazú")) throw new Error("sello regional");
+if (iguazu?.count !== 1 || !iguazu.shortLabel.includes("Salsipuedes") || iguazu.latitude !== -31.1372) {
+  throw new Error("sello regional");
+}
 
 if (markerBand(1.8, 1440) !== "global") throw new Error("global");
 if (markerBand(4, 1440) !== "regional") throw new Error("regional");

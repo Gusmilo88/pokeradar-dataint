@@ -386,7 +386,7 @@ export function MapView({
       const compact = band === "global" && (pin.kind === "zone" || pin.kind === "enclave");
       button.className =
         pin.kind === "enclave"
-          ? `field-pin field-pin-enclave field-pin-lod-${lod}${compact ? " field-pin-compact" : ""}`
+          ? `field-pin field-pin-enclave field-pin-lod-${lod}${compact ? " field-pin-compact" : ""}${pin.presence === "caught" ? " field-pin-enclave-caught" : ""}`
           : pin.kind === "zone"
             ? `field-pin field-pin-zone field-pin-lod-${lod}${compact ? " field-pin-compact" : ""}`
             : pin.kind === "stack"
@@ -419,6 +419,12 @@ export function MapView({
         star.setAttribute("aria-hidden", "true");
         star.textContent = "★";
         face.append(star);
+      } else if (pin.kind === "enclave" && pin.presence !== "caught") {
+        const mark = document.createElement("span");
+        mark.className = "field-pin-mark";
+        mark.setAttribute("aria-hidden", "true");
+        mark.textContent = "?";
+        face.append(mark);
       } else if (!dot && pin.kind !== "enclave") {
         face.textContent = compact ? String(pin.count ?? "") : pin.shortLabel;
       }

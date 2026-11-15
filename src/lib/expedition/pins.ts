@@ -125,9 +125,11 @@ export function buildEnclavePins(
   enclaves: readonly Enclave[],
   revealedIds: ReadonlySet<string>,
   knownNames: ReadonlyMap<string, string>,
+  caughtIds?: ReadonlySet<string>,
 ): FieldPin[] {
   return enclaves.map((enclave) => {
     const revealed = revealedIds.has(enclave.encounterId);
+    const caught = caughtIds?.has(enclave.encounterId) ?? false;
     const card = KANTO_CATALOG.find((entry) => entry.encounterId === enclave.encounterId);
     const name = card
       ? (knownNames.get(card.speciesName) ?? speciesLabel(card.speciesName))
@@ -139,6 +141,7 @@ export function buildEnclavePins(
       longitude: enclave.point.longitude,
       latitude: enclave.point.latitude,
       shortLabel: "?",
+      ...(caught ? { presence: "caught" as const } : {}),
       ...(revealed ? { focusName: name } : {}),
       label: revealed
         ? `${name}. ${enclave.place}. ${enclave.region}.`

@@ -195,8 +195,8 @@ export function ExpeditionScreen() {
     [activeSightings, knownNames, progress.caught, progress.seen],
   );
   const enclavePins = useMemo(
-    () => buildEnclavePins(ENCLAVES, progress.seen, knownNames),
-    [knownNames, progress.seen],
+    () => buildEnclavePins(ENCLAVES, progress.seen, knownNames, progress.caught),
+    [knownNames, progress.caught, progress.seen],
   );
 
   function focusCamera(longitude: number, latitude: number, zoom: number, exact = false) {
