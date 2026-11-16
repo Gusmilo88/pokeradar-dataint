@@ -30,6 +30,7 @@ const description =
 const title = "PokéRadar — Expedición Argentina";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://pokeradar-dataint-ten.vercel.app"),
   title,
   description,
   applicationName: "PokéRadar",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Radar } from "lucide-react";
 import { ATLAS_FRAMES, type AtlasFrame } from "@/lib/map/atlas-frames";
 
 export function RegionNav({ onSelect }: { onSelect: (frame: AtlasFrame) => void }) {
@@ -29,6 +30,7 @@ export function RegionNav({ onSelect }: { onSelect: (frame: AtlasFrame) => void 
       <button
         ref={toggleRef}
         type="button"
+        className="atlas-explore"
         aria-expanded={open}
         aria-controls="atlas-frames"
         onClick={() => {
@@ -43,7 +45,8 @@ export function RegionNav({ onSelect }: { onSelect: (frame: AtlasFrame) => void 
           });
         }}
       >
-        Explorar
+        <Radar aria-hidden="true" strokeWidth={1.75} className="atlas-explore-icon" />
+        <span>Explorar</span>
       </button>
       <ul
         id="atlas-frames"

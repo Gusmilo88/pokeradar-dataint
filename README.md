@@ -4,7 +4,7 @@
 
 Radar de exploración Pokémon sobre el mapa real de Argentina. Las fichas salen de [PokéAPI](https://pokeapi.co/). Las posiciones son encuentros simulados de Kanto por hábitat; no son apariciones reales.
 
-**Producción:** pendiente de la URL pública del despliegue.
+**Producción:** https://pokeradar-dataint-ten.vercel.app/
 
 ## Cómo ejecutarlo
 

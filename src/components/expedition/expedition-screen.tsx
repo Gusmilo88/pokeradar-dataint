@@ -1,7 +1,7 @@
 "use client";
 
 import { MotionConfig, motion } from "framer-motion";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BadgeCase } from "@/components/expedition/badge-case";
 import { CinematicIntro } from "@/components/expedition/cinematic-intro";
 import { BadgeCeremony } from "@/components/expedition/badge-ceremony";
@@ -69,6 +69,7 @@ export function ExpeditionScreen() {
   const [dexOpen, setDexOpen] = useState(false);
   const [badgesOpen, setBadgesOpen] = useState(false);
   const [demoActive, setDemoActive] = useState(false);
+  const [immersive, setImmersive] = useState(false);
   const [enclaveId, setEnclaveId] = useState<string | null>(null);
   const [visit, setVisit] = useState<"gate" | "exterior" | "interior" | null>(null);
   const [examining, setExamining] = useState(false);
@@ -273,44 +274,67 @@ export function ExpeditionScreen() {
     : null;
   const focusedZone = findZone(focusedZoneId ?? "") ?? null;
 
+  useEffect(() => {
+    if (!immersive) {
+      return;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+      if (dexOpen || badgesOpen || selectedId || visit || notebookOpen) {
+        return;
+      }
+      event.preventDefault();
+      setImmersive(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [immersive, dexOpen, badgesOpen, selectedId, visit, notebookOpen]);
+
+  const shellClass = immersive
+    ? "relative grid h-dvh min-h-0 grid-cols-1 grid-rows-[minmax(0,1fr)] overflow-hidden"
+    : notebookOpen
+      ? "relative grid h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(10rem,1fr)_minmax(8.5rem,42dvh)] overflow-hidden lg:grid-cols-[minmax(0,1fr)_22.5rem] lg:grid-rows-[auto_minmax(0,1fr)]"
+      : "relative grid h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden lg:grid-rows-[auto_minmax(0,1fr)]";
+
   return (
     <MotionConfig reducedMotion="user">
-      <div
-        id="expedicion"
-        className={
-          notebookOpen
-            ? "relative grid h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(10rem,1fr)_minmax(8.5rem,42dvh)] overflow-hidden lg:grid-cols-[minmax(0,1fr)_22.5rem] lg:grid-rows-[auto_minmax(0,1fr)]"
-            : "relative grid h-dvh min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden lg:grid-rows-[auto_minmax(0,1fr)]"
-        }
-      >
-        <div className="col-span-full row-start-1">
-          <HudBar
-            notebookOpen={notebookOpen}
-            badgesOpen={badgesOpen}
-            onOpen={() => setNotebookOpen(true)}
-            onDex={() => {
-              dexOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-              setBadgesOpen(false);
-              setDexOpen(true);
-            }}
-            onBadges={() => {
-              badgeOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-              setDexOpen(false);
-              setBadgesOpen(true);
-            }}
-          />
-          <motion.div
-            aria-hidden="true"
-            className="h-px origin-left bg-phosphor"
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-          />
-        </div>
+      <div id="expedicion" className={shellClass} data-immersive={immersive ? "true" : "false"}>
+        {immersive ? null : (
+          <div className="col-span-full row-start-1">
+            <HudBar
+              notebookOpen={notebookOpen}
+              badgesOpen={badgesOpen}
+              onOpen={() => setNotebookOpen(true)}
+              onDex={() => {
+                dexOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+                setBadgesOpen(false);
+                setDexOpen(true);
+              }}
+              onBadges={() => {
+                badgeOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+                setDexOpen(false);
+                setBadgesOpen(true);
+              }}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="h-px origin-left bg-phosphor"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+            />
+          </div>
+        )}
         <main
           id="mapa"
           tabIndex={-1}
-          className="map-stage relative col-start-1 row-start-2 min-h-0 outline-none"
+          className={
+            immersive
+              ? "map-stage relative col-start-1 row-start-1 min-h-0 outline-none"
+              : "map-stage relative col-start-1 row-start-2 min-h-0 outline-none"
+          }
         >
           <MapCanvas
             zonePins={zonePins}
@@ -324,6 +348,8 @@ export function ExpeditionScreen() {
             onFocusZone={focusZone}
             onSelectEnclave={selectEnclave}
             onExplore={exploreRegion}
+            immersive={immersive}
+            onImmersiveChange={setImmersive}
           />
           {hydrated ? (
             <TeamDock
@@ -343,7 +369,7 @@ export function ExpeditionScreen() {
             />
           ) : null}
         </main>
-        {notebookOpen ? (
+        {!immersive && notebookOpen ? (
           <div className="relative z-30 col-start-1 row-start-3 h-full min-h-0 border-t border-phosphor/20 bg-abyss lg:col-start-2 lg:row-start-2 lg:border-t-0 lg:border-l">
             {enclave ? (
               <EnclaveInvite
@@ -375,7 +401,7 @@ export function ExpeditionScreen() {
             />
             )}
           </div>
-        ) : (
+        ) : immersive ? null : (
           <div className="relative z-30 col-start-1 row-start-3 border-t border-phosphor/20 bg-abyss px-4 py-2 lg:hidden">
             <button
               type="button"

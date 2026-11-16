@@ -13,7 +13,9 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./map-theme.css";
 import { StatusPanel } from "@/components/states/status-panel";
 import { prefersReducedMotion } from "@/lib/a11y/motion";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { formatLatitude, formatLongitude } from "@/lib/expedition/format";
+import { CoordsReadout } from "@/components/map/coords-readout";
 import { ARGENTINA_VIEW } from "@/lib/expedition/argentina";
 import { paletteVars } from "@/lib/expedition/enclaves";
 import {
@@ -76,6 +78,8 @@ export interface MapViewProps {
   onFocusZone: (zoneId: string) => void;
   onSelectEnclave: (id: string) => void;
   onExplore: (frame: AtlasFrame) => void;
+  immersive?: boolean;
+  onImmersiveChange?: (value: boolean) => void;
 }
 
 const initialReadout: MapReadout = {
@@ -123,6 +127,8 @@ export function MapView({
   onFocusZone,
   onSelectEnclave,
   onExplore,
+  immersive = false,
+  onImmersiveChange,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -135,9 +141,18 @@ export function MapView({
   const [readout, setReadout] = useState<MapReadout>(initialReadout);
   const [layoutTick, setLayoutTick] = useState(0);
   const [projection, setProjection] = useState<PlanetMode>(readPlanetMode);
+  const [narrowHud, setNarrowHud] = useState(false);
   const projectionRef = useRef(projection);
   const markersRef = useRef<Marker[]>([]);
   const detailLodRef = useRef<MarkerLod | null>(null);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 639px)");
+    const sync = () => setNarrowHud(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     projectionRef.current = projection;
@@ -531,6 +546,14 @@ export function MapView({
     }
   }, [camera, phase]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || phase !== "ready") {
+      return;
+    }
+    map.resize();
+  }, [immersive, phase]);
+
   function chooseProjection(next: PlanetMode) {
     const map = mapRef.current;
     if (!map || next === projection) {
@@ -566,18 +589,45 @@ export function MapView({
       {phase === "ready" ? (
         <>
           <div className="map-tools">
-            <ProjectionToggle
-              mode={projection}
-              showArgentina={false}
-              onMode={chooseProjection}
-              onArgentina={() => undefined}
-            />
-            <RegionNav onSelect={onExplore} />
+            <ProjectionToggle mode={projection} onMode={chooseProjection} />
+            <div className="map-tools-row">
+              {narrowHud && readout.zoom < ARGENTINA_APPROACH_ZOOM ? (
+                <button
+                  type="button"
+                  className="planet-approach"
+                  onClick={() => {
+                    const frame = ATLAS_FRAMES[0];
+                    if (frame) {
+                      onExplore(frame);
+                    }
+                  }}
+                >
+                  Ver Argentina
+                </button>
+              ) : null}
+              <RegionNav onSelect={onExplore} />
+            </div>
           </div>
-          {readout.zoom < ARGENTINA_APPROACH_ZOOM ? (
+          {onImmersiveChange ? (
             <button
               type="button"
-              className="planet-approach absolute right-3 bottom-3 z-10"
+              className="map-immersive"
+              aria-label={immersive ? "Salir de pantalla completa" : "Pantalla completa"}
+              title={immersive ? "Salir" : "Pantalla completa"}
+              aria-pressed={immersive}
+              onClick={() => onImmersiveChange(!immersive)}
+            >
+              {immersive ? (
+                <Minimize2 aria-hidden="true" strokeWidth={1.75} />
+              ) : (
+                <Maximize2 aria-hidden="true" strokeWidth={1.75} />
+              )}
+            </button>
+          ) : null}
+          {!narrowHud && readout.zoom < ARGENTINA_APPROACH_ZOOM ? (
+            <button
+              type="button"
+              className="planet-approach"
               onClick={() => {
                 const frame = ATLAS_FRAMES[0];
                 if (frame) {
@@ -590,10 +640,12 @@ export function MapView({
           ) : null}
         </>
       ) : null}
-      <div className="pointer-events-none absolute top-3 left-3 z-10 rounded-md border border-phosphor/30 bg-void px-3 py-2 font-mono text-[11px] leading-5 text-phosphor-strong">
-        <p>LAT {formatLatitude(readout.latitude)}</p>
-        <p>LON {formatLongitude(readout.longitude)}</p>
-        <p>Z {readout.zoom.toFixed(1)}</p>
+      <div className="coords-anchor">
+        <CoordsReadout
+          latitude={readout.latitude}
+          longitude={readout.longitude}
+          zoom={readout.zoom}
+        />
       </div>
       {phase === "loading" ? (
         <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center bg-void/55 px-6">
