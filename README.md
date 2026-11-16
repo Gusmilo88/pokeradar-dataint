@@ -109,5 +109,4 @@ Básicamente, cuando la IA se va para un lado o quiere hacer algo que no le ped�
 6. Agregar los 151 Pokémon de la primera temporada y que sea mundial, no solo de Argentina.
 7. Poder personalizar el perfil del jugador con más mejoras, incluso un personaje modificable con skins que se van ganando al completar diferentes retos.
 8. Mejorar los santuarios: en vez de imágenes de fondo, que sean videos.
-9. Modo pantalla completa
 
